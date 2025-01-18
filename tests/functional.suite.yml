@@ -1,0 +1,19 @@
+# Codeception Test Suite Configuration
+#
+# Suite for functional tests
+# Emulate web requests and make application process them
+# Include one of framework modules (Symfony2, Yii2, Laravel5, Phalcon4) to use it
+# Remove this suite if you don't use frameworks
+
+actor: FunctionalTester
+modules:
+  enabled:
+    # add a framework module here
+    - \Helper\Functional
+    - WPBrowser # JavaScript-less and headless browser
+    - WPDb # manipulate the database and look up stuff
+    - WPFilesystem # manipulate the WP filesystem, scaffold themes and plugins
+    - REST # to test REST WebServices
+    - Asserts # PHPUnit-like assertions
+    - WPCLI # Why not test also the CLI?
+  step_decorators: ~
