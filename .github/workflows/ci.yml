@@ -1,0 +1,42 @@
+            - name: WordPress Plugin Check
+  # You may pin to the exact commit or the version.
+  # uses: WordPress/plugin-check-action@3997f559f31985076a6fb61d628699498852e1e3
+  uses: WordPress/plugin-check-action@v1.1.0
+  with:
+    # The GITHUB_TOKEN secret
+    repo-token: # optional, default is ${{ github.token }}
+    # Build directory
+    build-dir: # optional, default is ./
+    # Only run specific checks
+    checks: # optional, default is 
+    # Checks to exclude
+    exclude-checks: # optional, default is 
+    # Limit checks to specific categories
+    categories: # optional, default is 
+    # Exclude certain files from checks
+    exclude-files: # optional, default is 
+    # Exclude certain directories from checks
+    exclude-directories: # optional, default is 
+    # Ignore warnings
+    ignore-warnings: # optional, default is false
+    # Ignore errors
+    ignore-errors: # optional, default is false
+    # Include experimental checks
+    include-experimental: # optional, default is false
+    # WordPress version to use
+    wp-version: # optional, default is latest
+    # Severity level
+    severity: # optional, default is 
+    # Error severity level
+    error-severity: # optional, default is 
+    # Warning severity level
+    warning-severity: # optional, default is 
+    # Include errors with lower severity than the threshold as other type.
+    include-low-severity-errors: # optional, default is 
+    # Include warnings with lower severity than the threshold as other type.
+    include-low-severity-warnings: # optional, default is 
+    # Slug to override the default
+    slug: # optional, default is 
+    # Treat everything as an error
+    strict: # optional, default is false
+          
