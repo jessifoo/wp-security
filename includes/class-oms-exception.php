@@ -10,10 +10,13 @@ class OMS_Exception extends Exception
         parent::__construct($message, $code, $previous);
     }
 
-    // @TODO how to handle exceptions?
+    // Basic exception handler used throughout the plugin.
+    // Logs the exception and rethrows it so calling code can decide how to
+    // recover. Returning the exception caused a fatal error in PHP 8.
     public function handleException($e, $context = '')
     {
-        return throw $e;
+        error_log(sprintf('OMS Exception in %s: %s', $context, $e->getMessage()));
+        throw $e;
     }
 
     public function __toString()
