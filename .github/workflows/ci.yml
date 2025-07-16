@@ -17,12 +17,13 @@
     # The GITHUB_TOKEN secret
     repo-token: # optional, default is ${{ github.token }}
     # Build directory
-    build-dir: # optional, default is ./
-    # Only run specific checks
-    checks: # optional, default is 
-    # Checks to exclude
-    exclude-checks: # optional, default is 
-    # Limit checks to specific categories
+        build-dir: ./
+        # Only run specific checks
+        checks: "all"
+        # Checks to exclude
+        exclude-checks: ""
+        # Limit checks to specific categories
+        categories: "security,compatibility,performance"
     categories: # optional, default is 
     # Exclude certain files from checks
     exclude-files: # optional, default is 
