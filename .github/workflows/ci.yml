@@ -38,13 +38,13 @@
     # WordPress version to use
     wp-version: # optional, default is latest
     # Severity level
-    severity: # optional, default is 
-    # Error severity level
-    error-severity: # optional, default is 
-    # Warning severity level
-    warning-severity: # optional, default is 
-    # Include errors with lower severity than the threshold as other type.
-    include-low-severity-errors: # optional, default is 
+        severity: "high"
+        # Error severity level
+        error-severity: "error"
+        # Warning severity level
+        warning-severity: "warning"
+        # Treat everything as an error
+        strict: true
     # Include warnings with lower severity than the threshold as other type.
     include-low-severity-warnings: # optional, default is 
     # Slug to override the default
