@@ -49,7 +49,6 @@ wp-content/
 
 /my-new-plugin/
 
-.github/
 .phpunit/
 
 /languages/
