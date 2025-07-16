@@ -6,6 +6,9 @@
               pull_request:
                 branches: [ main ]
 
+            permissions:
+              contents: read
+
             jobs:
               plugin-check:
                 runs-on: ubuntu-latest
