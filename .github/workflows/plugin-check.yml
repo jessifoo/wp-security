@@ -14,7 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install PHP dependencies
+            - name: Setup Composer Cache
+              uses: actions/cache@v3
+              with:
+                path: ~/.composer/cache
+                key: composer-${{ hashFiles('**/composer.lock') }}
+                restore-keys: composer-
+            - name: Install PHP dependencies
+              run: composer install --no-interaction --no-progress --prefer-dist --no-dev
         run: composer install --no-interaction --no-progress --prefer-dist --no-dev
       - name: WordPress Plugin Check
         uses: WordPress/plugin-check-action@v1.1.0
