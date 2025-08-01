@@ -243,11 +243,11 @@ class OMS_Config
                         'pattern'     => '/(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(\\s*(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(/i',
                         'severity'    => 'HIGH',
                         'description' => 'Nested encoding'
-                ),
                 array(
-                        'pattern'     => '/\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}/i',
-                        'severity'    => 'MEDIUM',
-                        'description' => 'Hex encoded strings'
+                                        'pattern'     => '/\\$_(?:GET|POST|REQUEST|COOKIE)\\s*\\[[\'"](?:\\w+)[\'"]\\]\\s*\\([^)]*\\)/i',
+                                        'severity'    => 'HIGH',
+                                        'description' => 'User input execution'
+                                ),
                 ),
         ); // Define MALWARE_PATTERNS constant
 
