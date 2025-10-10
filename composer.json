@@ -38,6 +38,26 @@
         "php-stubs/wp-cli-stubs": "^2.0",
         "ergebnis/composer-normalize": "^2.6"
     },
+    "autoload": {
+        "classmap": [
+            "includes/",
+            "admin/"
+        ],
+        "files": [
+            "includes/class-oms-config.php",
+            "includes/class-oms-logger.php",
+            "includes/class-oms-utils.php",
+            "includes/class-oms-exception.php",
+            "includes/class-oms-cache.php",
+            "includes/class-oms-rate-limiter.php",
+            "includes/class-file-security-policy.php"
+        ]
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/"
+        ]
+    },
     "config": {
         "allow-plugins": {
             "composer/installers": true,
@@ -53,10 +73,35 @@
     },
     "scripts": {
         "test": "phpunit",
+        "test:unit": "phpunit --testsuite default",
+        "test:coverage": "phpunit --coverage-html coverage",
+        "test:codeception": "codecept run",
+        "test:codeception:unit": "codecept run unit",
+        "test:codeception:functional": "codecept run functional",
+        "test:codeception:acceptance": "codecept run acceptance",
         "phpcs": "phpcs --standard=WordPress",
+        "phpcs:report": "phpcs --standard=WordPress --report=summary",
         "phpcbf": "phpcbf --standard=WordPress",
         "phpstan": "phpstan analyse",
-        "test:coverage": "phpunit --coverage-html coverage"
+        "lint": [
+            "@phpcs",
+            "@phpstan"
+        ],
+        "lint:fix": "@phpcbf",
+        "test:all": [
+            "@test",
+            "@test:codeception"
+        ],
+        "check": [
+            "@lint",
+            "@test:all"
+        ],
+        "post-install-cmd": [
+            "@php -r \"if (!file_exists('vendor/bin/phpcs')) { echo 'Installing code standards...'; }\""
+        ],
+        "post-update-cmd": [
+            "@php -r \"echo 'Dependencies updated successfully.\\n';\""
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true
