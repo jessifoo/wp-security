@@ -7,7 +7,8 @@
         "php": ">=8.1",
         "ext-json": "*",
         "ext-pcre": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "micropackage/requirements": "^1.2"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "1.0.0",
