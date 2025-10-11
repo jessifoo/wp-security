@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7a4e4548580c8d077c7eda5e75d603e7",
+    "content-hash": "8f8d0aaf7ad8cf8b612e616801455b27",
     "packages": [
         {
             "name": "brick/math",
@@ -1921,7 +1921,7 @@
         },
         {
             "name": "stevegrunwell/wp-cache-remember",
-            "version": "dev-master",
+            "version": "v1.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stevegrunwell/wp-cache-remember.git",
@@ -15804,9 +15804,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "stevegrunwell/wp-cache-remember": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
