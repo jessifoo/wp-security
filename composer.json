@@ -19,17 +19,7 @@
         "yahnis-elsts/plugin-update-checker": "^5.4",
         "cmb2/cmb2": "~2.10.0",
         "johnbillion/extended-cpts": "~5.0.8",
-        "stevegrunwell/wp-cache-remember": "^1.1.2",
-        "monolog/monolog": "^2.9|^3.0",
-        "symfony/cache": "^5.4|^6.0",
-        "symfony/filesystem": "^5.4|^6.0",
-        "symfony/finder": "^5.4|^6.0",
-        "guzzlehttp/guzzle": "^7.5",
-        "psr/log": "^1.1|^2.0|^3.0",
-        "psr/cache": "^1.0|^2.0|^3.0",
-        "psr/simple-cache": "^1.0|^2.0|^3.0",
-        "league/flysystem": "^3.0",
-        "ramsey/uuid": "^4.7"
+        "stevegrunwell/wp-cache-remember": "^1.1.2"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "1.0.0",
@@ -49,17 +39,7 @@
         "php-stubs/wordpress-stubs": "^6.2",
         "php-stubs/wordpress-tests-stubs": "^6.2",
         "php-stubs/wp-cli-stubs": "^2.0",
-        "ergebnis/composer-normalize": "^2.6",
-        "mockery/mockery": "^1.6",
-        "fakerphp/faker": "^1.23",
-        "phpstan/phpstan": "^1.10",
-        "phpstan/phpstan-phpunit": "^1.3",
-        "phpstan/phpstan-strict-rules": "^1.5",
-        "phpbench/phpbench": "^1.2",
-        "symfony/var-dumper": "^5.4|^6.0",
-        "phpunit/php-code-coverage": "^9.2",
-        "squizlabs/php_codesniffer": "^3.7",
-        "infection/infection": "^0.27"
+        "ergebnis/composer-normalize": "^2.6"
     },
     "autoload": {
         "classmap": [
@@ -77,8 +57,7 @@
             "composer/installers": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "phpro/grumphp": true,
-            "ergebnis/composer-normalize": true,
-            "infection/extension-installer": true
+            "ergebnis/composer-normalize": true
         },
         "platform": {
             "php": "8.1"
@@ -97,7 +76,6 @@
         "test:codeception:unit": "codecept run unit",
         "test:codeception:functional": "codecept run functional",
         "test:codeception:acceptance": "codecept run acceptance",
-        "test:mutation": "infection --threads=4 --min-msi=70 --min-covered-msi=80",
         "test:all": [
             "@test",
             "@test:codeception"
@@ -112,26 +90,15 @@
             "@phpstan"
         ],
         "lint:fix": "@phpcbf",
-        "bench": "phpbench run --report=default",
-        "bench:compare": "phpbench run --report=default --ref=baseline",
         "check": [
             "@lint",
             "@test:all"
         ],
-        "check:all": [
-            "@lint",
-            "@test:all",
-            "@bench"
-        ],
         "post-install-cmd": [
-            "@php -r \"if (!file_exists('vendor/bin/phpcs')) { echo 'Installing code standards...\\n'; }\"",
-            "@php -r \"echo 'Run composer install completed successfully.\\n';\""
+            "@php -r \"echo 'Composer install completed successfully.\\n';\""
         ],
         "post-update-cmd": [
             "@php -r \"echo 'Dependencies updated successfully.\\n';\""
-        ],
-        "post-autoload-dump": [
-            "@php -r \"echo 'Autoloader dumped successfully.\\n';\""
         ]
     },
     "minimum-stability": "dev",
