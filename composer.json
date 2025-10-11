@@ -65,15 +65,6 @@
         "classmap": [
             "includes/",
             "admin/"
-        ],
-        "files": [
-            "includes/class-oms-config.php",
-            "includes/class-oms-logger.php",
-            "includes/class-oms-utils.php",
-            "includes/class-oms-exception.php",
-            "includes/class-oms-cache.php",
-            "includes/class-oms-rate-limiter.php",
-            "includes/class-file-security-policy.php"
         ]
     },
     "autoload-dev": {
