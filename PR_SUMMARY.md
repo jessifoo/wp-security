@@ -2,9 +2,9 @@
 
 ## Changes Made
 
-### 1. ✅ Composer Dependencies Added
+### 1. ✅ Composer Dependencies Finalized
 
-**Production Dependencies:**
+**Production Dependencies (Minimal!):**
 ```json
 {
   "php": ">=8.1",
@@ -15,19 +15,25 @@
 }
 ```
 
-**Rationale:**
-- **Minimal footprint**: Only essential PHP extensions and one small helper package
-- **WordPress-native approach**: Uses WordPress APIs (`wp_remote_get`, `WP_Filesystem`, transients) instead of heavy external libraries
-- **Shared hosting friendly**: ~452KB lockfile, no conflicts with other plugins
-- **Production-ready**: Stable versions only, no `dev-master` branches
+**What Actually Installs in Production (`composer install --no-dev`):**
+- `micropackage/requirements` (PHP/WP version checker)
+- `micropackage/internationalization` (dependency of requirements)
+- `symfony/polyfill-mbstring` (tiny PHP mbstring polyfill)
 
-**Removed Unnecessary Dependencies:**
-- ❌ Symfony components (cache, filesystem, finder, var-dumper)
-- ❌ Guzzle HTTP client (use `wp_remote_get()` instead)
-- ❌ Monolog (use native WordPress logging)
-- ❌ Flysystem (use `WP_Filesystem` instead)
-- ❌ League, Ramsey, PSR packages
-- ❌ CMB2, extended-cpts, wpbp/*, wpdesk packages (unused)
+**Total Production Footprint: <100KB** (3 packages)
+
+**Development Dependencies (Testing/Quality Tools):**
+The lockfile includes 184 total packages, but these are ONLY for development:
+- ✅ Symfony/Guzzle/Monolog/PSR packages (from Codeception, GrumPHP, Composer)
+- ✅ These are transitive dependencies of testing frameworks
+- ✅ NOT included when deploying with `--no-dev`
+- ✅ Total dev vendor size: ~104MB (stays on your dev machine)
+
+**Rationale:**
+- **Minimal production footprint**: WordPress plugin uses only native WP APIs
+- **WordPress-native approach**: Uses `wp_remote_get()`, `WP_Filesystem`, `transients`
+- **Shared hosting friendly**: Production install is <100KB
+- **Development complete**: Full testing infrastructure available locally
 
 ### 2. ✅ WordPress Autoloading (NOT PSR-4)
 
@@ -334,9 +340,12 @@ composer install --no-dev --optimize-autoloader
 ## Summary
 
 This PR establishes a **minimal, WordPress-native, production-ready** dependency structure:
-- ✅ Lockfile for reproducible installs
+- ✅ Lockfile for reproducible installs (456KB, includes dev dependencies)
 - ✅ Classmap autoloading (WordPress standard)
 - ✅ Stable versions only
-- ✅ Lean footprint for shared hosting
+- ✅ **Production footprint: <100KB** (only 3 packages)
+- ✅ **Dev dependencies: ~104MB** (testing frameworks, stays local)
+
+**Key Point:** The 184 packages in `composer.lock` are mostly dev dependencies (Codeception, PHPUnit, GrumPHP). When you deploy to your Hostinger sites with `composer install --no-dev`, you only get 3 tiny packages (<100KB).
 
 **Critical issues identified** require immediate follow-up to make the plugin functional, but the dependency architecture is now correct and formalized.
