@@ -198,18 +198,58 @@ class OMS_Config
 		'file_(get|put)_contents\s*\(\s*[\'"][^\'"]+[\'"]\s*,\s*\$_(GET|POST|REQUEST)',
 	);
 
-	const MALWARE_PATTERNS = [
-		'/eval\s*\(.*\$.*\)/i' => 'Dynamic code execution (eval)',
-		'/base64_decode\s*\([^)]*\)/i' => 'Base64 decoded execution',
-		'/\$[a-z0-9_]+\s*\(\s*\$[^)]+\)/i' => 'Variable function call',
-		'/preg_replace\s*\([^)]*\/e/i' => 'Executable regex replacement',
-		'/assert\s*\([^)]+\)/i' => 'Assert execution',
-		'/\b(?:exec|shell_exec|system|passthru|popen)\s*\([^)]*\)/i' => 'System command execution',
-		'/\b(?:file_get_contents|fopen|file)\s*\([^)]*(?:https?:|ftp:)[^)]+\)/i' => 'Remote file operations',
-		'/\$_(?:GET|POST|REQUEST|COOKIE)\s*\[[\'"](?:\w+)[\'"]\]\s*\([^)]*\)/i' => 'User input execution',
-		'/(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\s*\(\s*(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\s*\(/i' => 'Nested encoding',
-		'/\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}/i' => 'Hex encoded strings'
-	]; // Define MALWARE_PATTERNS constant
+        const MALWARE_PATTERNS = array(
+                array(
+                                        'pattern'     => '/eval\\s*\\(.*\\$.*\\)/i',
+                                        'severity'    => in_array('CRITICAL', array('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')) ? 'CRITICAL' : 'HIGH',
+                                        'description' => 'Dynamic code execution (eval)'
+                                ),
+                array(
+                        'pattern'     => '/base64_decode\\s*\\([^)]*\\)/i',
+                        'severity'    => 'HIGH',
+                        'description' => 'Base64 decoded execution'
+                ),
+                array(
+                        'pattern'     => '/\\$[a-z0-9_]+\\s*\\(\\s*\\$[^)]+\\)/i',
+                        'severity'    => 'MEDIUM',
+                        'description' => 'Variable function call'
+                ),
+                array(
+                        'pattern'     => '/preg_replace\\s*\\([^)]*\\/e/i',
+                        'severity'    => 'CRITICAL',
+                        'description' => 'Executable regex replacement'
+                ),
+                array(
+                        'pattern'     => '/assert\\s*\\([^)]+\\)/i',
+                        'severity'    => 'HIGH',
+                        'description' => 'Assert execution'
+                ),
+                array(
+                        'pattern'     => '/\\b(?:exec|shell_exec|system|passthru|popen)\\s*\\([^)]*\\)/i',
+                        'severity'    => 'CRITICAL',
+                        'description' => 'System command execution'
+                ),
+                array(
+                        'pattern'     => '/\\b(?:file_get_contents|fopen|file)\\s*\\([^)]*(?:https?:|ftp:)[^)]+\\)/i',
+                        'severity'    => 'MEDIUM',
+                        'description' => 'Remote file operations'
+                ),
+                array(
+                        'pattern'     => '/\$_(?:GET|POST|REQUEST|COOKIE)\s*\[[\'\"](?:\w+)[\'\"]\]\s*\([^)]*\)/i',
+                        'severity'    => 'HIGH',
+                        'description' => 'User input execution'
+                ),
+                array(
+                        'pattern'     => '/(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(\\s*(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(/i',
+                        'severity'    => 'HIGH',
+                        'description' => 'Nested encoding'
+                array(
+                                        'pattern'     => '/\\$_(?:GET|POST|REQUEST|COOKIE)\\s*\\[[\'"](?:\\w+)[\'"]\\]\\s*\\([^)]*\\)/i',
+                                        'severity'    => 'HIGH',
+                                        'description' => 'User input execution'
+                                ),
+                ),
+        ); // Define MALWARE_PATTERNS constant
 
 	/**
 	 * Suspicious patterns that need context checking.
