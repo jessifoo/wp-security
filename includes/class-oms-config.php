@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Configuration class for malware scanner.
  *
@@ -10,15 +9,14 @@
  */
 
 // If this file is called directly, abort.
-if (! defined('ABSPATH')) {
-	die('Direct access is not allowed.');
+if ( ! defined( 'ABSPATH' ) ) {
+	die( 'Direct access is not allowed.' );
 }
 
 /**
  * Configuration class for malware scanner.
  */
-class OMS_Config
-{
+class OMS_Config {
 	/**
 	 * Malware pattern severity levels.
 	 */
@@ -198,58 +196,53 @@ class OMS_Config
 		'file_(get|put)_contents\s*\(\s*[\'"][^\'"]+[\'"]\s*,\s*\$_(GET|POST|REQUEST)',
 	);
 
-        const MALWARE_PATTERNS = array(
-                array(
-                                        'pattern'     => '/eval\\s*\\(.*\\$.*\\)/i',
-                                        'severity'    => in_array('CRITICAL', array('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')) ? 'CRITICAL' : 'HIGH',
-                                        'description' => 'Dynamic code execution (eval)'
-                                ),
-                array(
-                        'pattern'     => '/base64_decode\\s*\\([^)]*\\)/i',
-                        'severity'    => 'HIGH',
-                        'description' => 'Base64 decoded execution'
-                ),
-                array(
-                        'pattern'     => '/\\$[a-z0-9_]+\\s*\\(\\s*\\$[^)]+\\)/i',
-                        'severity'    => 'MEDIUM',
-                        'description' => 'Variable function call'
-                ),
-                array(
-                        'pattern'     => '/preg_replace\\s*\\([^)]*\\/e/i',
-                        'severity'    => 'CRITICAL',
-                        'description' => 'Executable regex replacement'
-                ),
-                array(
-                        'pattern'     => '/assert\\s*\\([^)]+\\)/i',
-                        'severity'    => 'HIGH',
-                        'description' => 'Assert execution'
-                ),
-                array(
-                        'pattern'     => '/\\b(?:exec|shell_exec|system|passthru|popen)\\s*\\([^)]*\\)/i',
-                        'severity'    => 'CRITICAL',
-                        'description' => 'System command execution'
-                ),
-                array(
-                        'pattern'     => '/\\b(?:file_get_contents|fopen|file)\\s*\\([^)]*(?:https?:|ftp:)[^)]+\\)/i',
-                        'severity'    => 'MEDIUM',
-                        'description' => 'Remote file operations'
-                ),
-                array(
-                        'pattern'     => '/\$_(?:GET|POST|REQUEST|COOKIE)\s*\[[\'\"](?:\w+)[\'\"]\]\s*\([^)]*\)/i',
-                        'severity'    => 'HIGH',
-                        'description' => 'User input execution'
-                ),
-                array(
-                        'pattern'     => '/(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(\\s*(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(/i',
-                        'severity'    => 'HIGH',
-                        'description' => 'Nested encoding'
-                array(
-                                        'pattern'     => '/\\$_(?:GET|POST|REQUEST|COOKIE)\\s*\\[[\'"](?:\\w+)[\'"]\\]\\s*\\([^)]*\\)/i',
-                                        'severity'    => 'HIGH',
-                                        'description' => 'User input execution'
-                                ),
-                ),
-        ); // Define MALWARE_PATTERNS constant
+	const MALWARE_PATTERNS = array(
+		array(
+			'pattern'     => '/eval\\s*\\(.*\\$.*\\)/i',
+			'severity'    => in_array( 'CRITICAL', array( 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL' ), true ) ? 'CRITICAL' : 'HIGH',
+			'description' => 'Dynamic code execution (eval)',
+		),
+		array(
+			'pattern'     => '/base64_decode\\s*\\([^)]*\\)/i',
+			'severity'    => 'HIGH',
+			'description' => 'Base64 decoded execution',
+		),
+		array(
+			'pattern'     => '/\\$[a-z0-9_]+\\s*\\(\\s*\\$[^)]+\\)/i',
+			'severity'    => 'MEDIUM',
+			'description' => 'Variable function call',
+		),
+		array(
+			'pattern'     => '/preg_replace\\s*\\([^)]*\\/e/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'Executable regex replacement',
+		),
+		array(
+			'pattern'     => '/assert\\s*\\([^)]+\\)/i',
+			'severity'    => 'HIGH',
+			'description' => 'Assert execution',
+		),
+		array(
+			'pattern'     => '/\\b(?:exec|shell_exec|system|passthru|popen)\\s*\\([^)]*\\)/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'System command execution',
+		),
+		array(
+			'pattern'     => '/\\b(?:file_get_contents|fopen|file)\\s*\\([^)]*(?:https?:|ftp:)[^)]+\\)/i',
+			'severity'    => 'MEDIUM',
+			'description' => 'Remote file operations',
+		),
+		array(
+			'pattern'     => '/\$_(?:GET|POST|REQUEST|COOKIE)\s*\[[\'\"](?:\w+)[\'\"]\]\s*\([^)]*\)/i',
+			'severity'    => 'HIGH',
+			'description' => 'User input execution',
+		),
+		array(
+			'pattern'     => '/(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(\\s*(?:chr|ord|gzinflate|str_rot13|convert_uudecode|base64_decode|urldecode)\\s*\\(/i',
+			'severity'    => 'HIGH',
+			'description' => 'Nested encoding',
+		),
+	);
 
 	/**
 	 * Suspicious patterns that need context checking.
@@ -307,52 +300,52 @@ class OMS_Config
 		'convert_uudecode',
 		'hebrev',
 	);
-	const QUARANTINE_CONFIG = [
-		'path' => WP_CONTENT_DIR . '/oms-quarantine',
-		'retention_days' => 30,
-		'max_size' => 500 * 1024 * 1024,  // 500MB max quarantine size
-		'cleanup_batch_size' => 50        // Files to process per cleanup batch
-	]; // Define QUARANTINE_CONFIG constant
+	const QUARANTINE_CONFIG = array(
+		'path'             => WP_CONTENT_DIR . '/oms-quarantine',
+		'retention_days'   => 30,
+		'max_size'         => 500 * 1024 * 1024,  // 500MB max quarantine size.
+		'cleanup_batch_size' => 50,                // Files to process per cleanup batch.
+	);
 
-	const RATE_LIMIT_CONFIG = [
-		'max_cpu_load' => 80,
+	const RATE_LIMIT_CONFIG = array(
+		'max_cpu_load'      => 80,
 		'max_memory_percent' => 80,
 		'requests_per_hour' => 100,
-		'peak_hour_start' => 9,
-		'peak_hour_end' => 17
-	]; // Define RATE_LIMIT_CONFIG constant
+		'peak_hour_start'   => 9,
+		'peak_hour_end'     => 17,
+	);
 
-	const SCAN_CONFIG = [
-		'chunk_size' => 1024 * 1024,     // 1MB default chunk size
-		'overlap_size' => 1024,          // 1KB overlap between chunks
-		'batch_size' => 100,             // Files per batch
-		'batch_pause' => 100,            // Milliseconds between batches
-		'max_file_size' => 100 * 1024 * 1024, // 100MB max file size
-		'allowed_permissions' => [
+	const SCAN_CONFIG = array(
+		'chunk_size'         => 1024 * 1024,     // 1MB default chunk size.
+		'overlap_size'       => 1024,            // 1KB overlap between chunks.
+		'batch_size'         => 100,             // Files per batch.
+		'batch_pause'        => 100,             // Milliseconds between batches.
+		'max_file_size'      => 100 * 1024 * 1024, // 100MB max file size.
+		'allowed_permissions' => array(
 			'file' => 0644,
-			'dir' => 0755
-		],
-		'excluded_dirs' => ['.git', 'node_modules', 'vendor'],
-		'excluded_files' => ['.DS_Store', 'Thumbs.db']
-	]; // Define SCAN_CONFIG constant
+			'dir'  => 0755,
+		),
+		'excluded_dirs'      => array( '.git', 'node_modules', 'vendor' ),
+		'excluded_files'     => array( '.DS_Store', 'Thumbs.db' ),
+	);
 
-	const SECURITY_CONFIG = [
-		'max_execution_time' => 300,     // 5 minutes
-		'memory_limit' => '256M',
-		'max_input_time' => 60,
-		'max_input_vars' => 1000,
-		'post_max_size' => '64M',
+	const SECURITY_CONFIG = array(
+		'max_execution_time' => 300,     // 5 minutes.
+		'memory_limit'       => '256M',
+		'max_input_time'     => 60,
+		'max_input_vars'     => 1000,
+		'post_max_size'      => '64M',
 		'upload_max_filesize' => '32M',
-		'allowed_permissions' => [
-			'file' => 0644,
-			'directory' => 0755
-		]
-	]; // Define SECURITY_CONFIG constant
+		'allowed_permissions' => array(
+			'file'      => 0644,
+			'directory' => 0755,
+		),
+	);
 
-	const LOG_CONFIG = [
-		'path' => WP_CONTENT_DIR . '/logs',
-		'levels' => ['debug', 'info', 'warning', 'error', 'critical']
-	];
+	const LOG_CONFIG = array(
+		'path'   => WP_CONTENT_DIR . '/logs',
+		'levels' => array( 'debug', 'info', 'warning', 'error', 'critical' ),
+	);
 
-	const NOTIFICATION_THRESHOLD = ['low', 'medium', 'high'];
+	const NOTIFICATION_THRESHOLD = array( 'low', 'medium', 'high' );
 }
