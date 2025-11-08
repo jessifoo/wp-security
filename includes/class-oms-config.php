@@ -162,7 +162,7 @@ class OMS_Config {
 	 * Suspicious file modification times.
 	 */
 	const SUSPICIOUS_TIMES = array(
-		'night_hours'  => array(0, 5),  // Suspicious if modified between midnight and 5am.
+		'night_hours'  => array( 0, 5 ),  // Suspicious if modified between midnight and 5am.
 		'max_age_days' => 7,           // Flag files modified in last week.
 	);
 
@@ -300,41 +300,41 @@ class OMS_Config {
 		'convert_uudecode',
 		'hebrev',
 	);
-	const QUARANTINE_CONFIG = array(
-		'path'             => WP_CONTENT_DIR . '/oms-quarantine',
-		'retention_days'   => 30,
-		'max_size'         => 500 * 1024 * 1024,  // 500MB max quarantine size.
+	const QUARANTINE_CONFIG   = array(
+		'path'               => WP_CONTENT_DIR . '/oms-quarantine',
+		'retention_days'     => 30,
+		'max_size'           => 500 * 1024 * 1024,  // 500MB max quarantine size.
 		'cleanup_batch_size' => 50,                // Files to process per cleanup batch.
 	);
 
 	const RATE_LIMIT_CONFIG = array(
-		'max_cpu_load'      => 80,
+		'max_cpu_load'       => 80,
 		'max_memory_percent' => 80,
-		'requests_per_hour' => 100,
-		'peak_hour_start'   => 9,
-		'peak_hour_end'     => 17,
+		'requests_per_hour'  => 100,
+		'peak_hour_start'    => 9,
+		'peak_hour_end'      => 17,
 	);
 
 	const SCAN_CONFIG = array(
-		'chunk_size'         => 1024 * 1024,     // 1MB default chunk size.
-		'overlap_size'       => 1024,            // 1KB overlap between chunks.
-		'batch_size'         => 100,             // Files per batch.
-		'batch_pause'        => 100,             // Milliseconds between batches.
-		'max_file_size'      => 100 * 1024 * 1024, // 100MB max file size.
+		'chunk_size'          => 1024 * 1024,     // 1MB default chunk size.
+		'overlap_size'        => 1024,            // 1KB overlap between chunks.
+		'batch_size'          => 100,             // Files per batch.
+		'batch_pause'         => 100,             // Milliseconds between batches.
+		'max_file_size'       => 100 * 1024 * 1024, // 100MB max file size.
 		'allowed_permissions' => array(
 			'file' => 0644,
 			'dir'  => 0755,
 		),
-		'excluded_dirs'      => array( '.git', 'node_modules', 'vendor' ),
-		'excluded_files'     => array( '.DS_Store', 'Thumbs.db' ),
+		'excluded_dirs'       => array( '.git', 'node_modules', 'vendor' ),
+		'excluded_files'      => array( '.DS_Store', 'Thumbs.db' ),
 	);
 
 	const SECURITY_CONFIG = array(
-		'max_execution_time' => 300,     // 5 minutes.
-		'memory_limit'       => '256M',
-		'max_input_time'     => 60,
-		'max_input_vars'     => 1000,
-		'post_max_size'      => '64M',
+		'max_execution_time'  => 300,     // 5 minutes.
+		'memory_limit'        => '256M',
+		'max_input_time'      => 60,
+		'max_input_vars'      => 1000,
+		'post_max_size'       => '64M',
 		'upload_max_filesize' => '32M',
 		'allowed_permissions' => array(
 			'file'      => 0644,

@@ -20,11 +20,11 @@ class OMS_File_Security_Policy {
 	 * @var array
 	 */
 	private $allowed_types = array(
-		'image/jpeg'     => array( 'jpg', 'jpeg' ),
-		'image/png'      => array( 'png' ),
-		'image/gif'      => array( 'gif' ),
+		'image/jpeg'      => array( 'jpg', 'jpeg' ),
+		'image/png'       => array( 'png' ),
+		'image/gif'       => array( 'gif' ),
 		'application/pdf' => array( 'pdf' ),
-		'text/plain'     => array( 'txt' ),
+		'text/plain'      => array( 'txt' ),
 	);
 
 	/**
@@ -34,17 +34,46 @@ class OMS_File_Security_Policy {
 	 */
 	private $forbidden_extensions = array(
 		// PHP variants.
-		'php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'pht', 'phar', 'inc',
+		'php',
+		'phtml',
+		'php3',
+		'php4',
+		'php5',
+		'php7',
+		'pht',
+		'phar',
+		'inc',
 		// Other server-side.
-		'cgi', 'pl', 'py', 'rb', 'asp', 'aspx', 'jsp',
+		'cgi',
+		'pl',
+		'py',
+		'rb',
+		'asp',
+		'aspx',
+		'jsp',
 		// JavaScript.
-		'js', 'jsx', 'mjs',
+		'js',
+		'jsx',
+		'mjs',
 		// Shell scripts.
-		'sh', 'bash', 'ksh', 'zsh', 'bat', 'cmd',
+		'sh',
+		'bash',
+		'ksh',
+		'zsh',
+		'bat',
+		'cmd',
 		// System files.
-		'htaccess', 'htpasswd', 'ini', 'phps', 'sql',
+		'htaccess',
+		'htpasswd',
+		'ini',
+		'phps',
+		'sql',
 		// Compressed files that might contain malicious code.
-		'zip', 'rar', 'tar', 'gz', '7z',
+		'zip',
+		'rar',
+		'tar',
+		'gz',
+		'7z',
 	);
 
 	/**

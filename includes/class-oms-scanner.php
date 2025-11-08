@@ -333,15 +333,15 @@ class OMS_Scanner {
 	 */
 	private function extract_match_context( $content, $match_pos ) {
 		$context_size = 50; // Characters before and after match.
-		$start         = max( 0, $match_pos - $context_size );
-		$length        = min( $context_size * 2, strlen( $content ) - $start );
+		$start        = max( 0, $match_pos - $context_size );
+		$length       = min( $context_size * 2, strlen( $content ) - $start );
 		return substr( $content, $start, $length );
 	}
 
 	/**
 	 * Check if a file is suspicious based on its characteristics
 	 *
-	 * @param string     $path File path.
+	 * @param string      $path File path.
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if file is suspicious.
 	 */
@@ -365,7 +365,7 @@ class OMS_Scanner {
 	/**
 	 * Check if file size is suspicious
 	 *
-	 * @param string     $path File path.
+	 * @param string      $path File path.
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if size is suspicious.
 	 */
@@ -386,7 +386,7 @@ class OMS_Scanner {
 	/**
 	 * Check if file permissions are suspicious
 	 *
-	 * @param string     $path File path.
+	 * @param string      $path File path.
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if permissions are suspicious.
 	 */
@@ -408,7 +408,7 @@ class OMS_Scanner {
 	/**
 	 * Check if file modification time is suspicious
 	 *
-	 * @param string     $path File path.
+	 * @param string      $path File path.
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if modification time is suspicious.
 	 */

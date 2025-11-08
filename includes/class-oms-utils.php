@@ -58,8 +58,8 @@ class OMS_Utils {
 	 * @return string Relative path from WordPress root.
 	 */
 	public static function get_relative_path( $path ) {
-		$path     = wp_normalize_path( $path );
-		$wp_root  = wp_normalize_path( ABSPATH );
+		$path    = wp_normalize_path( $path );
+		$wp_root = wp_normalize_path( ABSPATH );
 
 		// If path starts with WordPress root, remove it.
 		if ( 0 === strpos( $path, $wp_root ) ) {

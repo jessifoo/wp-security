@@ -3,45 +3,45 @@
  */
 
 .oms-admin-content {
-    margin: 20px 0;
+	margin: 20px 0;
 }
 
 .oms-status-panel {
-    background: #fff;
-    border: 1px solid #ccd0d4;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
-    padding: 20px;
-    margin-bottom: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0,0,0,.04);
+	padding: 20px;
+	margin-bottom: 20px;
 }
 
 .oms-status {
-    margin: 15px 0;
+	margin: 15px 0;
 }
 
 .oms-status p {
-    margin: 8px 0;
+	margin: 8px 0;
 }
 
 .oms-actions {
-    margin: 20px 0;
+	margin: 20px 0;
 }
 
 .oms-issues {
-    margin-top: 30px;
+	margin-top: 30px;
 }
 
 .oms-issues .widefat {
-    margin-top: 15px;
+	margin-top: 15px;
 }
 
 .oms-issues th {
-    font-weight: 600;
+	font-weight: 600;
 }
 
 .oms-issues td {
-    vertical-align: middle;
+	vertical-align: middle;
 }
 
 .oms-issues .button {
-    min-width: 80px;
+	min-width: 80px;
 }
