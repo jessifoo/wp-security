@@ -1,0 +1,51 @@
+name: PHPCS WordPress Coding Standards
+
+on:
+  push:
+    branches: [ main, 'cursor/**' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phpcs:
+    name: WordPress Coding Standards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: mbstring, xml, curl
+          coverage: none
+
+      - name: Setup Composer Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPCS
+        run: composer phpcs
+        continue-on-error: false
+
+      - name: Upload PHPCS results
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: phpcs-results
+          path: |
+            phpcs-report.txt
+          retention-days: 7
