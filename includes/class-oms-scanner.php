@@ -74,13 +74,18 @@ class OMS_Scanner {
 		$patterns = array();
 		foreach ( OMS_Config::MALWARE_PATTERNS as $name => $pattern ) {
 			try {
-				// Validate and compile each pattern.
-				if ( false === @preg_match( $pattern, '' ) ) {
+				// Validate and compile each pattern without suppressing errors.
+				$last_error    = error_get_last();
+				$test_result   = preg_match( $pattern, '' );
+				$current_error = error_get_last();
+				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
+					$error_msg = ( $current_error !== $last_error ) ? $current_error['message'] : 'Invalid regex pattern';
 					$this->logger->error(
 						'Invalid malware pattern',
 						array(
 							'pattern_name' => $name,
 							'pattern'      => $pattern,
+							'error'        => esc_html( $error_msg ),
 						)
 					);
 					continue;
