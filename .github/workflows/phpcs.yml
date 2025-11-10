@@ -38,14 +38,6 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Run PHPCS
-        run: vendor/bin/phpcs --standard=WordPress --report-full=phpcs-report.txt includes/ admin/ obfuscated-malware-scanner.php
+        run: vendor/bin/phpcs --standard=WordPress includes/ admin/ obfuscated-malware-scanner.php
         continue-on-error: false
 
-      - name: Upload PHPCS results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: phpcs-results
-          path: phpcs-report.txt
-          retention-days: 7
-          if-no-files-found: ignore
