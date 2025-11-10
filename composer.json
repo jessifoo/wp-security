@@ -70,9 +70,9 @@
             "@test",
             "@test:codeception"
         ],
-        "phpcs": "phpcs --standard=WordPress",
+        "phpcs": "phpcs includes/ admin/ obfuscated-malware-scanner.php",
         "phpcs:report": "phpcs --standard=WordPress --report=summary",
-        "phpcbf": "phpcbf --standard=WordPress",
+        "phpcbf": "phpcbf includes/ admin/ obfuscated-malware-scanner.php",
         "phpstan": "phpstan analyse --memory-limit=1G",
         "phpstan:baseline": "phpstan analyse --generate-baseline",
         "lint": [

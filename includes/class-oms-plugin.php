@@ -19,21 +19,21 @@ class OMS_Plugin {
 	 *
 	 * @var OMS_Plugin
 	 */
-	private static $instance   = null;
+	private static $instance = null;
 
 	/**
 	 * Scanner instance.
 	 *
 	 * @var Obfuscated_Malware_Scanner
 	 */
-	private $scanner          = null;
+	private $scanner = null;
 
 	/**
 	 * Cache instance.
 	 *
 	 * @var OMS_Cache
 	 */
-	private $cache            = null;
+	private $cache = null;
 
 	/**
 	 * Get plugin instance.
@@ -51,8 +51,8 @@ class OMS_Plugin {
 	 * Initialize plugin.
 	 */
 	public function init() {
-               $this->cache = new OMS_Cache();
-               $this->scanner = new Obfuscated_Malware_Scanner();
+		$this->cache   = new OMS_Cache();
+		$this->scanner = new Obfuscated_Malware_Scanner();
 
 		// Initialize scanner.
 		$this->scanner->init();
