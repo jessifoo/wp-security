@@ -17,20 +17,26 @@ name: PHPMD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+    branches: [ main ]
   schedule:
     - cron: '40 8 * * 6'
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+# Prevent multiple workflows from running simultaneously
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   PHPMD:
     name: Run PHPMD scanning
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read # for checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -41,8 +47,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@aa1fe473f9c687b6fb896056d771232c0bc41161
+        uses: shivammathur/setup-php@v2
         with:
+          php-version: '8.1'
+          extensions: mbstring, xml, curl, json
           coverage: none
           tools: phpmd
 
@@ -52,6 +60,7 @@ jobs:
 
       - name: Upload analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: phpmd-results.sarif
           wait-for-processing: true
