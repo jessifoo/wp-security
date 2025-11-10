@@ -53,8 +53,8 @@
     },
     "scripts": {
         "test": "phpunit",
-        "phpcs": "phpcs --standard=WordPress",
-        "phpcbf": "phpcbf --standard=WordPress",
+        "phpcs": "phpcs",
+        "phpcbf": "phpcbf",
         "phpstan": "phpstan analyse",
         "test:coverage": "phpunit --coverage-html coverage"
     },
