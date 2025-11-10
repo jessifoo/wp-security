@@ -52,7 +52,7 @@ class OMS_Plugin {
 	 */
 	public function init() {
 		$this->cache   = new OMS_Cache();
-		$this->scanner = new Obfuscated_Malware_Scanner( $this->cache );
+		$this->scanner = new Obfuscated_Malware_Scanner();
 
 		// Initialize scanner.
 		$this->scanner->init();
@@ -79,6 +79,6 @@ class OMS_Plugin {
 	 * Render admin page.
 	 */
 	public function render_admin_page() {
-		include_once OMS_PLUGIN_DIR . 'templates/admin-page.php';
+               include_once OMS_PLUGIN_DIR . 'admin/partials/oms-admin-display.php';
 	}
 }

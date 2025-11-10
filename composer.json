@@ -4,19 +4,11 @@
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "require": {
-        "php": ">=8.0",
-        "composer/installers": "^1.0",
-        "micropackage/requirements": "^1.2",
-        "wpbp/debug": "~1.1.0",
-        "wpbp/cronplus": "~1.0.0",
-        "wpbp/template": "~1.0.0",
-        "wpbp/widgets-helper": "~1.0.0",
-        "wpbp/page-madness-detector": "^1.0",
-        "wpdesk/wp-notice": "^3.2",
-        "yahnis-elsts/plugin-update-checker": "^5.4",
-        "cmb2/cmb2": "~2.10.0",
-        "johnbillion/extended-cpts": "~5.0.8",
-        "stevegrunwell/wp-cache-remember": "dev-master"
+        "php": ">=8.1",
+        "ext-json": "*",
+        "ext-pcre": "*",
+        "ext-mbstring": "*",
+        "micropackage/requirements": "^1.2"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "1.0.0",
@@ -24,7 +16,7 @@
         "phpunit/phpunit": "^9.2",
         "phpro/grumphp": "^1.13",
         "szepeviktor/phpstan-wordpress": "^1.1.6",
-        "codeception/codeception": "~4.2.0",
+        "codeception/codeception": "^4.2|^5.0",
         "codeception/module-asserts": "^1.0",
         "codeception/module-cli": "^1.0",
         "codeception/module-db": "^1.0",
@@ -38,6 +30,18 @@
         "php-stubs/wp-cli-stubs": "^2.0",
         "ergebnis/composer-normalize": "^2.6"
     },
+    "autoload": {
+        "_comment": "Using classmap (WordPress standard) instead of PSR-4. See AUTOLOAD_STANDARDS.md for rationale.",
+        "classmap": [
+            "includes/",
+            "admin/"
+        ]
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/"
+        ]
+    },
     "config": {
         "allow-plugins": {
             "composer/installers": true,
@@ -46,17 +50,46 @@
             "ergebnis/composer-normalize": true
         },
         "platform": {
-            "php": "8.0"
+            "php": "8.1"
         },
         "optimize-autoloader": true,
-        "sort-packages": true
+        "sort-packages": true,
+        "preferred-install": {
+            "*": "dist"
+        }
     },
     "scripts": {
         "test": "phpunit",
+        "test:unit": "phpunit --testsuite default",
+        "test:coverage": "phpunit --coverage-html coverage",
+        "test:codeception": "codecept run",
+        "test:codeception:unit": "codecept run unit",
+        "test:codeception:functional": "codecept run functional",
+        "test:codeception:acceptance": "codecept run acceptance",
+        "test:all": [
+            "@test",
+            "@test:codeception"
+        ],
         "phpcs": "phpcs includes/ admin/ obfuscated-malware-scanner.php",
+        "phpcs:report": "phpcs --standard=WordPress --report=summary",
         "phpcbf": "phpcbf includes/ admin/ obfuscated-malware-scanner.php",
-        "phpstan": "phpstan analyse",
-        "test:coverage": "phpunit --coverage-html coverage"
+        "phpstan": "phpstan analyse --memory-limit=1G",
+        "phpstan:baseline": "phpstan analyse --generate-baseline",
+        "lint": [
+            "@phpcs",
+            "@phpstan"
+        ],
+        "lint:fix": "@phpcbf",
+        "check": [
+            "@lint",
+            "@test:all"
+        ],
+        "post-install-cmd": [
+            "@php -r \"echo 'Composer install completed successfully.\\n';\""
+        ],
+        "post-update-cmd": [
+            "@php -r \"echo 'Dependencies updated successfully.\\n';\""
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true

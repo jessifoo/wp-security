@@ -26,7 +26,7 @@ class OMS_Exception extends Exception {
 	}
 
 	/**
-	 * Handle exception
+	 * Handle exception.
 	 *
 	 * @param Exception $e Exception to handle.
 	 * @param string    $context Context information.
@@ -34,6 +34,7 @@ class OMS_Exception extends Exception {
 	 * @throws Exception Always throws the exception.
 	 */
 	public function handleException( $e, $context = '' ) {
+		error_log( sprintf( 'OMS Exception in %s: %s', $context, esc_html( $e->getMessage() ) ) );
 		throw $e;
 	}
 
