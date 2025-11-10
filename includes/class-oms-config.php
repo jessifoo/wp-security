@@ -199,7 +199,7 @@ class OMS_Config {
 	const MALWARE_PATTERNS = array(
 		array(
 			'pattern'     => '/eval\\s*\\(.*\\$.*\\)/i',
-			'severity'    => in_array( 'CRITICAL', array( 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL' ), true ) ? 'CRITICAL' : 'HIGH',
+			'severity'    => 'CRITICAL',
 			'description' => 'Dynamic code execution (eval)',
 		),
 		array(

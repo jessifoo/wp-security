@@ -266,9 +266,9 @@ class OMS_File_Security_Policy {
 			}
 
 			// Check modification time.
-			$mod_hour = (int) get_date_from_gmt( date( 'Y-m-d H:i:s', $stat['mtime'] ), 'G' );
+			$mod_hour = (int) get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $stat['mtime'] ), 'G' );
 			if ( $mod_hour >= $this->suspicious_times['night_hours'][0] &&
-				$mod_hour <= $this->suspicious_times['night_hours'][1] ) {
+			$mod_hour <= $this->suspicious_times['night_hours'][1] ) {
 				if ( ! $is_theme_file ) {
 					return array(
 						'valid'  => false,
@@ -286,7 +286,7 @@ class OMS_File_Security_Policy {
 			);
 
 		} catch ( Exception $e ) {
-			throw new OMS_Security_Exception( 'File validation failed: ' . $e->getMessage() );
+			throw new OMS_Security_Exception( 'File validation failed: ' . esc_html( $e->getMessage() ) );
 		}
 	}
 

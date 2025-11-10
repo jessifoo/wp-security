@@ -424,7 +424,7 @@ class OMS_Scanner {
 				'Suspicious file modification time',
 				array(
 					'path'  => $path,
-					'mtime' => date( 'Y-m-d H:i:s', $mtime ),
+					'mtime' => gmdate( 'Y-m-d H:i:s', $mtime ),
 				)
 			);
 			return true;

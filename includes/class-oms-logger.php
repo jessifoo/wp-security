@@ -104,7 +104,7 @@ class OMS_Logger {
 			return;
 		}
 
-		$backup = $this->log_file . '.' . date( 'Y-m-d-H-i-s' );
+		$backup = $this->log_file . '.' . gmdate( 'Y-m-d-H-i-s' );
 		rename( $this->log_file, $backup );
 
 		// Keep only last 5 backups.
@@ -157,7 +157,7 @@ class OMS_Logger {
 
 		// Store in database.
 		if ( function_exists( 'update_option' ) ) {
-			$log_key   = 'oms_security_log_' . date( 'Y-m-d' );
+			$log_key   = 'oms_security_log_' . gmdate( 'Y-m-d' );
 			$daily_log = get_option( $log_key, array() );
 
 			$daily_log[] = array(
@@ -208,12 +208,13 @@ class OMS_Logger {
 	private function cleanup_old_logs() {
 		global $wpdb;
 
-		$cutoff_date = date( 'Y-m-d', strtotime( '-7 days' ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-7 days' ) );
 		$old_logs    = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name FROM $wpdb->options 
-				WHERE option_name LIKE 'oms_security_log_%%' 
+				WHERE option_name LIKE %s 
 				AND option_name < %s",
+				'oms_security_log_%',
 				'oms_security_log_' . $cutoff_date
 			)
 		);
