@@ -17,8 +17,8 @@
 			<h3><?php esc_html_e( 'Scanner Status', 'obfuscated-malware-scanner' ); ?></h3>
 			<div class="oms-status">
 				<?php
-				$scanner = new ObfuscatedMalwareScanner();
-				$scanner_status  = $scanner->get_status();
+				$scanner        = new ObfuscatedMalwareScanner();
+				$scanner_status = $scanner->get_status();
 				echo '<p><strong>' . esc_html__( 'Last Scan:', 'obfuscated-malware-scanner' ) . '</strong> ' .
 					esc_html( $scanner_status['last_scan'] ) . '</p>';
 				echo '<p><strong>' . esc_html__( 'Files Scanned:', 'obfuscated-malware-scanner' ) . '</strong> ' .
