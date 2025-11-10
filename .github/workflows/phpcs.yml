@@ -38,7 +38,7 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Run PHPCS
-        run: composer phpcs
+        run: composer phpcs --report-full=phpcs-report.txt
         continue-on-error: false
 
       - name: Upload PHPCS results
@@ -46,6 +46,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phpcs-results
-          path: |
-            phpcs-report.txt
+          path: phpcs-report.txt
           retention-days: 7
+          if-no-files-found: ignore

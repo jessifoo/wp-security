@@ -53,8 +53,8 @@
     },
     "scripts": {
         "test": "phpunit",
-        "phpcs": "phpcs",
-        "phpcbf": "phpcbf",
+        "phpcs": "phpcs includes/ admin/ obfuscated-malware-scanner.php",
+        "phpcbf": "phpcbf includes/ admin/ obfuscated-malware-scanner.php",
         "phpstan": "phpstan analyse",
         "test:coverage": "phpunit --coverage-html coverage"
     },
