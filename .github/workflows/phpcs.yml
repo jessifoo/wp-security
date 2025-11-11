@@ -31,6 +31,14 @@ jobs:
           php-version: '8.1'
           extensions: mbstring, xml, curl, json
           coverage: none
+          tools: composer
+          update: true
+
+      - name: Verify PHP Version
+        run: |
+          php -v
+          php -r "if (version_compare(PHP_VERSION, '8.1.0', '<')) { echo 'ERROR: PHP version ' . PHP_VERSION . ' is less than 8.1.0'; exit(1); }"
+          echo "✅ PHP version check passed: $(php -r 'echo PHP_VERSION;')"
 
       - name: Get Composer Cache Directory
         id: composer-cache
@@ -41,9 +49,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php8.1-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-composer-
+            ${{ runner.os }}-php8.1-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --ansi
