@@ -11,11 +11,6 @@
         "micropackage/requirements": "^1.2"
     },
     "require-dev": {
-        "dealerdirect/phpcodesniffer-composer-installer": "1.0.0",
-        "wp-coding-standards/wpcs": "^3.0",
-        "phpunit/phpunit": "^9.2",
-        "phpro/grumphp": "^1.13",
-        "szepeviktor/phpstan-wordpress": "^1.1.6",
         "codeception/codeception": "^4.2|^5.0",
         "codeception/module-asserts": "^1.0",
         "codeception/module-cli": "^1.0",
@@ -24,11 +19,18 @@
         "codeception/module-phpbrowser": "^1.0",
         "codeception/module-rest": "^1.2",
         "codeception/module-webdriver": "^1.0",
+        "dealerdirect/phpcodesniffer-composer-installer": "1.0.0",
+        "ergebnis/composer-normalize": "^2.6",
         "lucatume/wp-browser": "^3.6",
         "php-stubs/wordpress-stubs": "^6.2",
         "php-stubs/wordpress-tests-stubs": "^6.2",
         "php-stubs/wp-cli-stubs": "^2.0",
-        "ergebnis/composer-normalize": "^2.6"
+        "phpmd/phpmd": "^2.15",
+        "phpro/grumphp": "^1.13",
+        "phpunit/phpunit": "^9.2",
+        "szepeviktor/phpstan-wordpress": "^1.1.6",
+        "vimeo/psalm": "^0.3.14",
+        "wp-coding-standards/wpcs": "^3.0"
     },
     "autoload": {
         "_comment": "Using classmap (WordPress standard) instead of PSR-4. See AUTOLOAD_STANDARDS.md for rationale.",

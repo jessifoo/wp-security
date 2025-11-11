@@ -44,7 +44,10 @@
 				<?php submit_button( esc_html__( 'Start Manual Scan', 'obfuscated-malware-scanner' ), 'secondary' ); ?>
 			</form>
 
-			<?php if ( isset( $_GET['scan'] ) && 'complete' === sanitize_text_field( wp_unslash( $_GET['scan'] ) ) ) : ?>
+			<?php
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter used for display only, not form processing.
+			if ( isset( $_GET['scan'] ) && 'complete' === sanitize_text_field( wp_unslash( $_GET['scan'] ) ) ) :
+				?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Scan completed successfully!', 'obfuscated-malware-scanner' ); ?></p>
 				</div>

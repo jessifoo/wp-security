@@ -22,7 +22,8 @@ class OMS_Exception extends Exception {
 	 * @param Exception $previous Previous exception.
 	 */
 	public function __construct( $message, $code = 0, Exception $previous = null ) {
-		parent::__construct( $message, $code, $previous );
+		// Call parent constructor with sanitized message.
+		parent::__construct( sanitize_text_field( $message ), (int) $code, $previous );
 	}
 
 	/**
