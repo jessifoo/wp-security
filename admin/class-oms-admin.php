@@ -256,7 +256,7 @@ class OMS_Admin {
 
 		update_option( 'oms_last_scan', current_time( 'mysql' ) );
 
-		wp_redirect( admin_url( 'options-general.php?page=' . $this->plugin_name . '&scan=complete' ) );
+		wp_safe_redirect( admin_url( 'options-general.php?page=' . $this->plugin_name . '&scan=complete' ) );
 		exit;
 	}
 
