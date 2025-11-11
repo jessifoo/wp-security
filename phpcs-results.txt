@@ -1,0 +1,23 @@
+
+PHP CODE SNIFFER REPORT SUMMARY
+-----------------------------------------------------------------------------
+FILE                                                         ERRORS  WARNINGS
+-----------------------------------------------------------------------------
+/workspace/admin/class-oms-admin.php                         0       1
+/workspace/admin/js/oms-admin.js                             3       0
+/workspace/admin/partials/oms-admin-display.php              0       2
+/workspace/includes/class-file-security-policy.php           2       13
+/workspace/includes/class-obfuscated-malware-scanner.php     0       30
+/workspace/includes/class-oms-exception.php                  0       2
+/workspace/includes/class-oms-logger.php                     0       15
+/workspace/includes/class-oms-plugin.php                     0       3
+/workspace/includes/class-oms-scanner.php                    0       4
+/workspace/includes/class-oms-utils.php                      0       1
+-----------------------------------------------------------------------------
+A TOTAL OF 5 ERRORS AND 71 WARNINGS WERE FOUND IN 10 FILES
+-----------------------------------------------------------------------------
+PHPCBF CAN FIX 7 OF THESE SNIFF VIOLATIONS AUTOMATICALLY
+-----------------------------------------------------------------------------
+
+Time: 587ms; Memory: 32MB
+

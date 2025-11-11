@@ -11,4 +11,8 @@
     <rule ref="PSR12.Functions.ReturnTypeDeclaration">
         <exclude name="PSR12.Functions.ReturnTypeDeclaration"/>
     </rule>
+    <!-- Allow class-file-security-policy.php naming (legacy compatibility) -->
+    <rule ref="WordPress.Files.FileName">
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+    </rule>
 </ruleset>

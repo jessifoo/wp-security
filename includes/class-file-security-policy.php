@@ -471,9 +471,9 @@ class OMS_File_Security_Policy {
 				$logger->warning(
 					'High-severity malware detected in theme file - quarantining',
 					array(
-						'path'         => $path,
-						'backup_path'  => $backup_created ? $backup_path : null,
-						'reason'       => $content_check['reason'],
+						'path'        => $path,
+						'backup_path' => $backup_created ? $backup_path : null,
+						'reason'      => $content_check['reason'],
 					)
 				);
 			} else {
@@ -492,7 +492,7 @@ class OMS_File_Security_Policy {
 						'reason' => 'High-severity malware detected - requires quarantine',
 					);
 				} catch ( Exception $e ) {
-					error_log( "OMS: Failed to quarantine theme file: " . $e->getMessage() );
+					error_log( 'OMS: Failed to quarantine theme file: ' . $e->getMessage() );
 				}
 			}
 
@@ -508,9 +508,9 @@ class OMS_File_Security_Policy {
 			$logger->warning(
 				'Low-severity suspicious content in theme file - monitoring',
 				array(
-					'path'         => $path,
-					'backup_path'  => $backup_created ? $backup_path : null,
-					'reason'       => $content_check['reason'],
+					'path'        => $path,
+					'backup_path' => $backup_created ? $backup_path : null,
+					'reason'      => $content_check['reason'],
 				)
 			);
 		} else {
