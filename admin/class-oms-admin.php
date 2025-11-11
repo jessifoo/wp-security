@@ -50,8 +50,16 @@ class OMS_Admin {
 
 	/**
 	 * Register the stylesheets for the admin area.
+	 *
+	 * @since 1.0.0
 	 */
 	public function enqueue_styles() {
+		// Only load on plugin admin pages.
+		$screen = get_current_screen();
+		if ( ! $screen || ( false === strpos( $screen->id, $this->plugin_name ) && 'settings_page_' . $this->plugin_name !== $screen->id ) ) {
+			return;
+		}
+
 		wp_enqueue_style(
 			$this->plugin_name,
 			plugin_dir_url( __FILE__ ) . 'css/oms-admin.css',
@@ -63,8 +71,16 @@ class OMS_Admin {
 
 	/**
 	 * Register the JavaScript for the admin area.
+	 *
+	 * @since 1.0.0
 	 */
 	public function enqueue_scripts() {
+		// Only load on plugin admin pages.
+		$screen = get_current_screen();
+		if ( ! $screen || ( false === strpos( $screen->id, $this->plugin_name ) && 'settings_page_' . $this->plugin_name !== $screen->id ) ) {
+			return;
+		}
+
 		wp_enqueue_script(
 			$this->plugin_name,
 			plugin_dir_url( __FILE__ ) . 'js/oms-admin.js',
@@ -116,7 +132,7 @@ class OMS_Admin {
 			'oms_auto_quarantine',
 			array(
 				'type'              => 'boolean',
-				'sanitize_callback' => 'rest_sanitize_boolean',
+				'sanitize_callback' => array( $this, 'sanitize_boolean' ),
 				'default'           => true,
 			)
 		);
@@ -126,7 +142,7 @@ class OMS_Admin {
 			'oms_email_notifications',
 			array(
 				'type'              => 'boolean',
-				'sanitize_callback' => 'rest_sanitize_boolean',
+				'sanitize_callback' => array( $this, 'sanitize_boolean' ),
 				'default'           => true,
 			)
 		);
@@ -242,5 +258,16 @@ class OMS_Admin {
 
 		wp_redirect( admin_url( 'options-general.php?page=' . $this->plugin_name . '&scan=complete' ) );
 		exit;
+	}
+
+	/**
+	 * Sanitize boolean values for settings.
+	 *
+	 * @since 1.0.0
+	 * @param mixed $value Value to sanitize.
+	 * @return bool Sanitized boolean value.
+	 */
+	public function sanitize_boolean( $value ) {
+		return filter_var( $value, FILTER_VALIDATE_BOOLEAN );
 	}
 }
