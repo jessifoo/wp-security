@@ -2,7 +2,7 @@ name: PHPCS WordPress Coding Standards
 
 on:
   push:
-    branches: [ main, 'cursor/**' ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -50,4 +50,3 @@ jobs:
 
       - name: Run PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml
-        continue-on-error: false
