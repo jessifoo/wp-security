@@ -63,4 +63,5 @@ jobs:
         if: always()
         with:
           sarif_file: phpmd-results.sarif
+          category: phpmd
           wait-for-processing: true
