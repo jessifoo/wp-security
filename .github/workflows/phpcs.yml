@@ -32,7 +32,6 @@ jobs:
           extensions: mbstring, xml, curl, json
           coverage: none
           tools: composer
-          update: true
 
       - name: Verify PHP Version
         run: |
