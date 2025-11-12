@@ -47,4 +47,8 @@
     <rule ref="WordPress.DB.DirectDatabaseQuery">
         <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
     </rule>
+    <!-- Error suppression needed for regex validation -->
+    <rule ref="WordPress.PHP.NoSilencedErrors">
+        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
+    </rule>
 </ruleset>

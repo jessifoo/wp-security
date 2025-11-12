@@ -55,7 +55,7 @@ class OMS_Config {
 
 		// WordPress hook abuse.
 		array(
-			'pattern'     => 'add_action\s*\(\s*[\'"](?:admin_init|wp_head|wp_footer|init|admin_notices)[\'"]\s*,\s*(?:\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*|\s*create_function\s*\(|\s*(?:base64_decode|eval)\s*\(',
+			'pattern'     => 'add_action\s*\(\s*[\'"](?:admin_init|wp_head|wp_footer|init|admin_notices)[\'"]\s*,\s*(?:\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*|\s*create_function\s*\([^\)]*\)|\s*(?:base64_decode|eval)\s*\([^\)]*\))',
 			'severity'    => 'HIGH',
 			'description' => 'WordPress hook abuse detected.',
 		),

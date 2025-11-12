@@ -8,3 +8,10 @@ License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 A simple plugin to scan for obfuscated malware in WordPress installations.
+
+== Changelog ==
+
+= 1.0.0 =
+* Initial release
+* Added WordPress 6.4+ compatibility for wp_admin_notice() function
+* Backward compatible with WordPress 6.0+ using fallback notice markup

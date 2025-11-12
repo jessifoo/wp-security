@@ -1,151 +1,225 @@
 # WordPress Environment Setup Guide
 
-## Overview
-This document describes how to set up a local WordPress environment for plugin development and testing.
+This guide explains how to set up a local WordPress environment for plugin development using the `setup-wordpress.sh` script.
 
-## Environment Status
-✅ **WordPress Environment Successfully Configured**
+## Important: WordPress Core Not Included
 
-- **WordPress Version**: 6.8.3
-- **Database**: MariaDB 10.11.13
-- **PHP Version**: 8.1.33
-- **WP-CLI**: Installed and configured
-- **Plugin Check**: Installed and active
+**WordPress core files are NOT included in this repository.** They are downloaded dynamically:
+- **Local development**: The `setup-wordpress.sh` script downloads WordPress via WP-CLI (`wp core download`)
+- **CI/CD**: GitHub Actions workflows use `WordPress/plugin-check-action` which handles WordPress installation automatically
+- **Never commit**: The `/wordpress/` directory is in `.gitignore` and should never be committed
 
-## Setup Instructions
+This ensures the repository stays lightweight and WordPress core is always up-to-date.
 
-### 1. Install Dependencies
+## Quick Start
 
 ```bash
-# Install MariaDB
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client
-
-# Install PHP MySQL extensions
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y php8.1-mysql php8.1-mysqli
-
-# Enable PHP extensions
-sudo phpenmod mysqli pdo_mysql
+./setup-wordpress.sh
 ```
 
-### 2. Start Database
+## Environment Variables
 
+The script supports the following environment variables to customize database credentials:
+
+### Database Configuration
+
+- **`DB_NAME`** (default: `wordpress_test`)
+  - Database name for WordPress installation
+  - Example: `DB_NAME=my_wp_db ./setup-wordpress.sh`
+
+- **`DB_USER`** (default: `wpuser`)
+  - Database username
+  - Example: `DB_USER=my_wp_user ./setup-wordpress.sh`
+
+- **`DB_PASS`** (default: `wppass`)
+  - Database password
+  - Example: `DB_PASS=secure_password123 ./setup-wordpress.sh`
+
+### Debug Mode
+
+- **`DEBUG`** (default: `0`)
+  - Set to `1` for verbose output and detailed error messages
+  - Example: `DEBUG=1 ./setup-wordpress.sh`
+
+## Usage Examples
+
+### Basic Setup (Default Credentials)
 ```bash
-# Start MariaDB
-sudo mysqld_safe --user=mysql --datadir=/var/lib/mysql \
-  --pid-file=/var/run/mysqld/mysqld.pid \
-  --socket=/var/run/mysqld/mysqld.sock --port=3306 > /dev/null 2>&1 &
-
-# Create database and user
-sudo mysql -u root <<EOF
-CREATE DATABASE IF NOT EXISTS wordpress_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'wpuser'@'localhost' IDENTIFIED BY 'wppass';
-GRANT ALL PRIVILEGES ON wordpress_test.* TO 'wpuser'@'localhost';
-FLUSH PRIVILEGES;
-EOF
+./setup-wordpress.sh
 ```
 
-### 3. Install WordPress
-
+### Custom Database Credentials
 ```bash
-# Download WordPress
-mkdir -p wordpress
-cd wordpress
-wp core download --force --allow-root
-
-# Configure WordPress
-cp wp-config-sample.php wp-config.php
-sed -i "s/database_name_here/wordpress_test/" wp-config.php
-sed -i "s/username_here/wpuser/" wp-config.php
-sed -i "s/password_here/wppass/" wp-config.php
-
-# Install WordPress
-wp core install --url=http://localhost --title="Test Site" \
-  --admin_user=admin --admin_password=admin \
-  --admin_email=admin@example.com --allow-root
+DB_NAME=my_plugin_dev DB_USER=dev_user DB_PASS=secure_pass123 ./setup-wordpress.sh
 ```
 
-### 4. Install Plugin Check
-
+### Debug Mode with Custom Credentials
 ```bash
-# Clone plugin-check
-git clone https://github.com/WordPress/plugin-check.git wordpress/wp-content/plugins/plugin-check
-
-# Install dependencies
-cd wordpress/wp-content/plugins/plugin-check
-composer install --no-interaction --no-progress
-
-# Activate plugin-check
-cd ../../..
-wp plugin activate plugin-check --path=wordpress --allow-root
+DEBUG=1 DB_NAME=test_db DB_USER=test_user DB_PASS=test_pass ./setup-wordpress.sh
 ```
 
-### 5. Copy Your Plugin
+## ⚠️ SECURITY WARNING
 
-```bash
-# Copy plugin to WordPress plugins directory
-mkdir -p wordpress/wp-content/plugins/obfuscated-malware-scanner
-rsync -av --exclude='wordpress' --exclude='vendor' \
-  --exclude='.git' --exclude='node_modules' \
-  . wordpress/wp-content/plugins/obfuscated-malware-scanner/
-```
+**CRITICAL: The default database credentials (`wordpress_test`/`wpuser`/`wppass`) are for LOCAL DEVELOPMENT ONLY.**
 
-## Running Plugin Check
+### Never Use Default Credentials In:
+- ❌ Production environments
+- ❌ Publicly accessible systems
+- ❌ Shared development servers
+- ❌ Docker containers exposed to the internet
+- ❌ CI/CD pipelines with public artifacts
+- ❌ Any system accessible from outside your local network
 
-```bash
-# Run plugin check
-wp plugin check obfuscated-malware-scanner --path=wordpress --allow-root
+### Security Best Practices:
 
-# View only plugin-specific issues
-wp plugin check obfuscated-malware-scanner --path=wordpress --allow-root 2>&1 | \
-  grep -E "FILE:.*obfuscated-malware-scanner" -A 200
-```
+1. **Always override credentials** for non-local environments:
+   ```bash
+   DB_NAME=secure_db_name DB_USER=secure_user DB_PASS=$(openssl rand -base64 32) ./setup-wordpress.sh
+   ```
 
-## Current Plugin Check Results
+2. **Use strong passwords** (minimum 16 characters, mix of letters, numbers, symbols)
 
-### Main Plugin File (`obfuscated-malware-scanner.php`)
+3. **Never commit credentials** to version control:
+   - Use `.env` files (add to `.gitignore`)
+   - Use environment variables in CI/CD
+   - Use secret management tools for production
 
-**Errors:**
-1. **Plugin Headers**:
-   - Invalid Plugin URI domain (example.com)
-   - Invalid Author URI domain (example.com)
-   - Invalid Network header (should be removed if not needed)
-   - Domain Path points to non-existent folder
+4. **Restrict database access**:
+   - Use `localhost` only (default)
+   - Limit user privileges to only what's needed
+   - Regularly rotate credentials
 
-2. **Naming Conventions**:
-   - Constants should be prefixed: `OMS_VERSION`, `OMS_PLUGIN_DIR`, `OMS_PLUGIN_URL`, `OMS_PLUGIN_BASENAME`, `OMS_NOTIFY_ADMIN`
-   - Function `run_obfuscated_malware_scanner` should be prefixed
+5. **Monitor database access**:
+   - Review MySQL logs regularly
+   - Set up alerts for suspicious activity
+   - Use firewall rules to restrict access
 
-### Scanner Class (`includes/class-obfuscated-malware-scanner.php`)
+## What the Script Does
 
-**Errors:**
-1. **Naming Conventions**:
-   - Class `Obfuscated_Malware_Scanner` should be prefixed
-   - Constant `OMS_RATE_LIMIT_ENABLED` should be prefixed
+1. **Installs Dependencies**
+   - MariaDB server and client
+   - PHP 8.1 MySQL extensions
+   - Enables required PHP modules
 
-2. **File Operations**:
-   - Multiple uses of direct PHP file functions instead of WP_Filesystem:
-     - `fopen()`, `fread()`, `fclose()`
-     - `mkdir()`, `is_writable()`, `rename()`, `unlink()`, `chmod()`
+2. **Starts MariaDB**
+   - Prefers systemd (`systemctl`) if available
+   - Falls back to `mysqld_safe` if needed
+   - Waits for database to be ready (30s timeout)
+   - Verifies startup with health checks
 
-**Warnings:**
-1. **Debug Functions**:
-   - `error_log()` usage (lines 104, 1200)
-   - `debug_backtrace()` usage (line 1189)
+3. **Creates Database**
+   - Creates database with UTF8MB4 charset
+   - Creates database user with specified credentials
+   - Grants necessary privileges
 
-2. **PHP Functions**:
-   - `ini_set()` usage (line 575)
+4. **Downloads WordPress**
+   - Downloads latest WordPress core
+   - Uses WP-CLI for installation
 
-## Next Steps
+5. **Configures WordPress**
+   - Creates `wp-config.php` with database credentials
+   - Sets up WordPress configuration
 
-1. **Fix Plugin Headers**: Update Plugin URI and Author URI to valid domains
-2. **Remove Network Header**: Remove if not needed for multisite
-3. **Create Languages Directory**: Create `languages/` folder or remove Domain Path header
-4. **Consider WP_Filesystem**: Evaluate if file operations should use WP_Filesystem API
-5. **Review Debug Code**: Remove or conditionally enable debug functions
+6. **Installs WordPress**
+   - Runs WordPress installation
+   - Creates admin user (admin/admin)
 
-## Notes
+7. **Installs Plugin Check**
+   - Clones WordPress Plugin Check tool
+   - Installs Composer dependencies
 
-- The WordPress environment is located in `/workspace/wordpress/`
-- Database credentials: `wpuser` / `wppass` / `wordpress_test`
-- WordPress admin: `admin` / `admin`
-- Plugin Check is checking all plugins, filter output to see only your plugin's issues
+8. **Copies Plugin**
+   - Copies plugin files to WordPress plugins directory
+   - Excludes unnecessary files (vendor, .git, etc.)
+
+## Troubleshooting
+
+### Database Connection Issues
+
+If you encounter database connection errors:
+
+1. **Check MariaDB is running:**
+   ```bash
+   sudo systemctl status mariadb
+   # or
+   pgrep -x mysqld
+   ```
+
+2. **Verify credentials:**
+   ```bash
+   mysql -u ${DB_USER} -p${DB_PASS} ${DB_NAME}
+   ```
+
+3. **Check socket file:**
+   ```bash
+   ls -la /var/run/mysqld/mysqld.sock
+   ```
+
+4. **Run with DEBUG=1 for detailed output:**
+   ```bash
+   DEBUG=1 ./setup-wordpress.sh
+   ```
+
+### Permission Issues
+
+If you encounter permission errors:
+
+1. **Ensure script is executable:**
+   ```bash
+   chmod +x setup-wordpress.sh
+   ```
+
+2. **Check sudo access:**
+   ```bash
+   sudo -v
+   ```
+
+### WordPress Installation Issues
+
+If WordPress installation fails:
+
+1. **Check WP-CLI is installed:**
+   ```bash
+   wp --version
+   ```
+
+2. **Verify database credentials in wp-config.php:**
+   ```bash
+   grep -E "DB_NAME|DB_USER|DB_PASS" wordpress/wp-config.php
+   ```
+
+3. **Check WordPress directory permissions:**
+   ```bash
+   ls -la wordpress/
+   ```
+
+## Post-Setup
+
+After successful setup:
+
+1. **Access WordPress:**
+   - URL: `http://localhost`
+   - Admin: `admin` / `admin`
+
+2. **Run Plugin Check:**
+   ```bash
+   wp plugin check obfuscated-malware-scanner --path=wordpress --allow-root
+   ```
+
+3. **Access Database:**
+   ```bash
+   mysql -u ${DB_USER} -p${DB_PASS} ${DB_NAME}
+   ```
+
+## Additional Resources
+
+- [WordPress Plugin Check Documentation](https://github.com/WordPress/plugin-check)
+- [WP-CLI Documentation](https://wp-cli.org/)
+- [MariaDB Documentation](https://mariadb.com/kb/en/documentation/)
+
+## Support
+
+For issues or questions:
+1. Check the troubleshooting section above
+2. Run with `DEBUG=1` for detailed error output
+3. Review script error messages and diagnostics
