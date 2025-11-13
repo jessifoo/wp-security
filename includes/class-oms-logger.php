@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logger class for the Obfuscated Malware Scanner
  */
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Logger class name follows plugin naming convention.
 class OMS_Logger {
 	/**
 	 * Log levels
@@ -105,6 +106,7 @@ class OMS_Logger {
 		}
 
 		$backup = $this->log_file . '.' . gmdate( 'Y-m-d-H-i-s' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
 		rename( $this->log_file, $backup );
 
 		// Keep only last 5 backups.
@@ -119,6 +121,7 @@ class OMS_Logger {
 
 			$old_backups = array_slice( $backups, 5 );
 			foreach ( $old_backups as $old_backup ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log cleanup requires direct file deletion.
 				unlink( $old_backup );
 			}
 		}
@@ -139,8 +142,12 @@ class OMS_Logger {
 		}
 
 		$timestamp = current_time( 'mysql' );
-		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 2 );
-		$caller    = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+		$caller    = 'unknown';
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Debug only when WP_DEBUG is enabled.
+			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 2 );
+			$caller    = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+		}
 
 		$log_message = sprintf(
 			'[%s] [%s] [%s] %s',
@@ -150,9 +157,9 @@ class OMS_Logger {
 			$message
 		);
 
-		// Log to WordPress error log for warning and above.
-		if ( in_array( $level, array( 'warning', 'error', 'critical' ), true ) ) {
-			error_log( $log_message );
+		// Log to WordPress error log for warning and above (only when WP_DEBUG is enabled).
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && in_array( $level, array( 'warning', 'error', 'critical' ), true ) ) {
+			error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
 		}
 
 		// Store in database.
@@ -184,9 +191,10 @@ class OMS_Logger {
 			$log_dir  = dirname( $log_file );
 
 			if ( ! is_dir( $log_dir ) ) {
-				mkdir( $log_dir, 0755, true );
+				wp_mkdir_p( $log_dir );
 			}
 
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Logging requires checking directory writability.
 			if ( is_writable( $log_dir ) ) {
 				file_put_contents(
 					$log_file,
@@ -234,6 +242,7 @@ class OMS_Logger {
 
 		// Remove oldest backup if exists.
 		if ( file_exists( $log_file . '.' . $max_backups ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log rotation requires direct file deletion.
 			unlink( $log_file . '.' . $max_backups );
 		}
 
@@ -242,15 +251,19 @@ class OMS_Logger {
 			$old_file = $log_file . '.' . $i;
 			$new_file = $log_file . '.' . ( $i + 1 );
 			if ( file_exists( $old_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
 				rename( $old_file, $new_file );
 			}
 		}
 
 		// Rotate current log file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
 		rename( $log_file, $log_file . '.1' );
 
 		// Create new empty log file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Log rotation requires creating new log file.
 		touch( $log_file );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Log rotation requires setting file permissions.
 		chmod( $log_file, 0644 );
 	}
 }
