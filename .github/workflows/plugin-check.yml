@@ -19,7 +19,7 @@ jobs:
   plugin-check:
     name: WordPress Plugin Check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     
     steps:
       - name: Checkout code
@@ -49,7 +49,7 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist --no-dev --ansi
       
       - name: WordPress Plugin Check
-        uses: WordPress/plugin-check-action@v1.1.0
+        uses: WordPress/plugin-check-action@v1.1.4
         with:
           build-dir: ./
           categories: security,compatibility,performance
