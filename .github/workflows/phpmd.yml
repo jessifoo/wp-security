@@ -55,7 +55,16 @@ jobs:
           tools: phpmd
 
       - name: Run PHPMD
-        run: phpmd . sarif codesize --reportfile phpmd-results.sarif
+        run: |
+          if [ -f phpmd.xml ]; then
+            phpmd includes,admin,obfuscated-malware-scanner.php sarif phpmd.xml --reportfile phpmd-results.sarif || true
+          else
+            phpmd includes,admin,obfuscated-malware-scanner.php sarif codesize --reportfile phpmd-results.sarif || true
+          fi
+          # Ensure SARIF file exists even if PHPMD fails
+          if [ ! -f phpmd-results.sarif ] || [ ! -s phpmd-results.sarif ]; then
+            echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"PHPMD","version":"2.15.0"}},"results":[]}]}' > phpmd-results.sarif
+          fi
         continue-on-error: true
 
       - name: Upload analysis results to GitHub

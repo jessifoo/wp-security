@@ -12,8 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Logger class for the Obfuscated Malware Scanner
+ *
+ * @phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Logger class name follows plugin naming convention.
  */
-// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Logger class name follows plugin naming convention.
 class OMS_Logger {
 	/**
 	 * Log levels
