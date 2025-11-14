@@ -270,7 +270,7 @@ class OMS_File_Security_Policy {
 					);
 				}
 				// For theme files, just log the suspicious modification.
-				error_log( "Theme file modified during suspicious hours: $path" );
+				error_log( 'Theme file modified during suspicious hours: ' . esc_html( $path ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 			}
 
 			// All checks passed.
@@ -460,7 +460,7 @@ class OMS_File_Security_Policy {
 
 		if ( ! $backup_created ) {
 			// Backup failed - log but continue with caution.
-			error_log( "OMS: Failed to create backup of theme file: $path" );
+			error_log( 'OMS: Failed to create backup of theme file: ' . esc_html( $path ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 		}
 
 		// If high-severity malware detected, quarantine the file.
@@ -477,7 +477,7 @@ class OMS_File_Security_Policy {
 					sprintf( 'High-severity malware detected in theme file - quarantining - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $content_check['reason'] ) )
 				);
 			} else {
-				error_log( "OMS: High-severity malware detected in theme file: $path (backup: " . ( $backup_created ? $backup_path : 'failed' ) . ')' );
+				error_log( 'OMS: High-severity malware detected in theme file: ' . esc_html( $path ) . ' (backup: ' . esc_html( $backup_created ? $backup_path : 'failed' ) . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 			}
 
 			// Attempt to quarantine using scanner if available.
@@ -492,7 +492,7 @@ class OMS_File_Security_Policy {
 						'reason' => 'High-severity malware detected - requires quarantine',
 					);
 				} catch ( Exception $e ) {
-					error_log( 'OMS: Failed to quarantine theme file: ' . $e->getMessage() );
+					error_log( 'OMS: Failed to quarantine theme file: ' . esc_html( $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 				}
 			}
 
@@ -509,7 +509,7 @@ class OMS_File_Security_Policy {
 				sprintf( 'Low-severity suspicious content in theme file - monitoring - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $content_check['reason'] ) )
 			);
 		} else {
-			error_log( "OMS: Potentially malicious content in theme file: $path (backup: " . ( $backup_created ? $backup_path : 'failed' ) . ')' );
+			error_log( 'OMS: Potentially malicious content in theme file: ' . esc_html( $path ) . ' (backup: ' . esc_html( $backup_created ? $backup_path : 'failed' ) . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 		}
 
 		// Return valid but flagged for monitoring.

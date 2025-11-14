@@ -218,15 +218,25 @@ class OMS_Logger {
 		global $wpdb;
 
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-7 days' ) );
-		$old_logs    = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT option_name FROM $wpdb->options 
-				WHERE option_name LIKE %s 
-				AND option_name < %s",
-				'oms_security_log_%',
-				'oms_security_log_' . $cutoff_date
-			)
-		);
+		$cache_key   = 'oms_old_logs_' . $cutoff_date;
+
+		// Check cache first.
+		$old_logs = wp_cache_get( $cache_key, 'oms_logs' );
+		if ( false === $old_logs ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Log cleanup requires direct query, caching added.
+			$old_logs = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT option_name FROM $wpdb->options 
+					WHERE option_name LIKE %s 
+					AND option_name < %s",
+					'oms_security_log_%',
+					'oms_security_log_' . $cutoff_date
+				)
+			);
+
+			// Cache for 1 hour.
+			wp_cache_set( $cache_key, $old_logs, 'oms_logs', HOUR_IN_SECONDS );
+		}
 
 		foreach ( $old_logs as $log ) {
 			delete_option( $log->option_name );

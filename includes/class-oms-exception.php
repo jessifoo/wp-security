@@ -45,7 +45,7 @@ class OMS_Exception extends Exception {
 	 * @return string String representation of exception.
 	 */
 	public function __toString() {
-		return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+		return __CLASS__ . ': [' . esc_html( (string) $this->code ) . ']: ' . esc_html( $this->message ) . "\n";
 	}
 
 	/**
