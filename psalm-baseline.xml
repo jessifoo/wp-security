@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
+  <file src="includes/class-obfuscated-malware-scanner.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$pattern]]></code>
+    </ArgumentTypeCoercion>
+    <InvalidArrayAccess>
+      <code><![CDATA[$validation_result['reason']]]></code>
+      <code><![CDATA[$validation_result['valid']]]></code>
+    </InvalidArrayAccess>
+    <InvalidArrayOffset>
+      <code><![CDATA[OMS_Config::SEVERITY_LEVELS[ OMS_Config::NOTIFICATION_THRESHOLD ]]]></code>
+    </InvalidArrayOffset>
+    <InvalidGlobal>
+      <code><![CDATA[global $wp_version;]]></code>
+    </InvalidGlobal>
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <RedundantCondition>
+      <code><![CDATA[self::OMS_NOTIFY_ADMIN['enabled']]]></code>
+      <code><![CDATA[self::OMS_NOTIFY_ADMIN['include_context']]]></code>
+      <code><![CDATA[self::OMS_NOTIFY_ADMIN['notification_types']['critical_errors']]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainType>
+      <code><![CDATA['']]></code>
+    </TypeDoesNotContainType>
+    <UndefinedMethod>
+      <code><![CDATA[calculateOptimalChunkSize]]></code>
+    </UndefinedMethod>
+    <UndefinedVariable>
+      <code><![CDATA[$context]]></code>
+    </UndefinedVariable>
+  </file>
+  <file src="includes/class-oms-exception.php">
+    <MethodSignatureMustProvideReturnType>
+      <code><![CDATA[__toString]]></code>
+    </MethodSignatureMustProvideReturnType>
+  </file>
+  <file src="includes/class-oms-logger.php">
+    <RedundantCondition>
+      <code><![CDATA[OMS_Config::LOG_CONFIG]]></code>
+    </RedundantCondition>
+  </file>
+  <file src="includes/class-oms-plugin.php">
+    <PossiblyNullPropertyAssignmentValue>
+      <code><![CDATA[null]]></code>
+      <code><![CDATA[null]]></code>
+      <code><![CDATA[null]]></code>
+    </PossiblyNullPropertyAssignmentValue>
+  </file>
+  <file src="includes/class-oms-scanner.php">
+    <InvalidArrayOffset>
+      <code><![CDATA[OMS_Config::SCAN_CONFIG['max_chunk_size']]]></code>
+      <code><![CDATA[OMS_Config::SCAN_CONFIG['memory_limit']]]></code>
+      <code><![CDATA[OMS_Config::SCAN_CONFIG['min_chunk_size']]]></code>
+    </InvalidArrayOffset>
+    <UndefinedMethod>
+      <code><![CDATA[should_throttle]]></code>
+    </UndefinedMethod>
+  </file>
+</files>

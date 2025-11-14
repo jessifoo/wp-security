@@ -28,6 +28,16 @@ wp-content/wp-cache-config.php
 wp-content/plugins/hello.php
 wp-content/
 
+# WordPress Core Files (should never be bundled with plugins)
+# CRITICAL: Bundling WordPress core files (especially admin-ajax.php) causes AJAX requests
+# to hit the plugin's private wp-load.php instead of the host site's core, leading to fatals.
+# WordPress core is downloaded dynamically via:
+# - setup-wordpress.sh (uses wp core download)
+# - GitHub Actions workflows (WordPress/plugin-check-action handles WordPress installation)
+# - Never commit WordPress core files to this repository
+/wordpress/
+wordpress/
+
 # Unit tests
 /tmp
 /tests/coverage/
@@ -52,3 +62,14 @@ wp-content/
 .phpunit/
 
 /languages/
+
+# Generated reports (should be artifacts, not committed)
+phpcs-json-report.json
+phpcs-full-report.txt
+phpcs-output.txt
+phpcs-results.txt
+plugin-check-results.txt
+plugin-check-full.txt
+phpmd-results.sarif
+results.sarif
+*.sarif

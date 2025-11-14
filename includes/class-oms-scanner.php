@@ -72,33 +72,27 @@ class OMS_Scanner {
 		}
 
 		$patterns = array();
-		foreach ( OMS_Config::MALWARE_PATTERNS as $name => $pattern ) {
+		foreach ( OMS_Config::MALWARE_PATTERNS as $index => $pattern_data ) {
 			try {
 				// Validate and compile each pattern without suppressing errors.
-				$last_error    = error_get_last();
-				$test_result   = preg_match( $pattern, '' );
-				$current_error = error_get_last();
-				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
-					$error_msg = ( $current_error !== $last_error ) ? $current_error['message'] : 'Invalid regex pattern';
-					$this->logger->error(
-						'Invalid malware pattern',
-						array(
-							'pattern_name' => $name,
-							'pattern'      => $pattern,
-							'error'        => esc_html( $error_msg ),
-						)
-					);
+				// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- Pattern validation required.
+				if ( ! isset( $pattern_data['pattern'] ) ) {
 					continue;
 				}
-				$patterns[ $name ] = $pattern;
+				$pattern_str   = $pattern_data['pattern'];
+				$last_error    = error_get_last();
+				$test_result   = preg_match( $pattern_str, '' );
+				$current_error = error_get_last();
+				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
+					$error_msg    = ( $current_error !== $last_error && isset( $current_error['message'] ) ) ? $current_error['message'] : 'Invalid regex pattern';
+					$pattern_name = isset( $pattern_data['description'] ) ? $pattern_data['description'] : (string) $index;
+					$this->logger->error( sprintf( 'Invalid malware pattern - Name: %s, Pattern: %s, Error: %s', esc_html( $pattern_name ), esc_html( $pattern_str ), esc_html( $error_msg ) ) );
+					continue;
+				}
+				$patterns[ $index ] = $pattern_data;
 			} catch ( Exception $e ) {
-				$this->logger->error(
-					'Failed to compile pattern',
-					array(
-						'pattern_name' => $name,
-						'error'        => $e->getMessage(),
-					)
-				);
+				$pattern_name = isset( $pattern_data['description'] ) ? $pattern_data['description'] : (string) $index;
+				$this->logger->error( sprintf( 'Failed to compile pattern - Name: %s, Error: %s', esc_html( $pattern_name ), esc_html( $e->getMessage() ) ) );
 			}
 		}
 
@@ -166,33 +160,21 @@ class OMS_Scanner {
 	 */
 	public function contains_malware( $path ) {
 		if ( ! file_exists( $path ) ) {
-			$this->logger->error(
-				'File not found for malware scan',
-				array( 'path' => $path )
-			);
+			$this->logger->error( sprintf( 'File not found for malware scan: %s', esc_html( $path ) ) );
 			return false;
 		}
 
 		try {
 			$filesize = filesize( $path );
 			if ( 0 === $filesize ) {
-				$this->logger->warning(
-					'Empty file detected',
-					array( 'path' => $path )
-				);
+				$this->logger->warning( sprintf( 'Empty file detected: %s', esc_html( $path ) ) );
 				return false;
 			}
 
 			$chunk_size = $this->calculate_optimal_chunk_size( $filesize );
 			return $this->scan_file_chunks( $path, $chunk_size );
 		} catch ( Exception $e ) {
-			$this->logger->error(
-				'Failed to scan file for malware',
-				array(
-					'path'  => $path,
-					'error' => $e->getMessage(),
-				)
-			);
+				$this->logger->error( sprintf( 'Failed to scan file for malware: %s - Error: %s', esc_html( $path ), esc_html( $e->getMessage() ) ) );
 			return false;
 		}
 	}
@@ -208,10 +190,7 @@ class OMS_Scanner {
 	private function scan_file_chunks( $path, $chunk_size ) {
 		$fp = fopen( $path, 'rb' );
 		if ( ! $fp ) {
-			$this->logger->error(
-				'Unable to open file',
-				array( 'path' => $path )
-			);
+			$this->logger->error( sprintf( 'Unable to open file: %s', esc_html( $path ) ) );
 			return false;
 		}
 
@@ -220,10 +199,7 @@ class OMS_Scanner {
 			while ( ! feof( $fp ) ) {
 				$chunk = fread( $fp, $chunk_size );
 				if ( false === $chunk ) {
-					$this->logger->error(
-						'Failed to read file chunk',
-						array( 'path' => $path )
-					);
+					$this->logger->error( sprintf( 'Failed to read file chunk: %s', esc_html( $path ) ) );
 					return false;
 				}
 
@@ -319,13 +295,7 @@ class OMS_Scanner {
 		$context = $this->extract_match_context( $content, $match_pos );
 
 		$this->logger->warning(
-			'Malware pattern detected',
-			array(
-				'path'         => $path,
-				'pattern_name' => $pattern_name,
-				'position'     => $position - strlen( $content ) + $match_pos,
-				'context'      => $context,
-			)
+			sprintf( 'Malware pattern detected - Path: %s, Pattern: %s, Position: %d, Context: %s', esc_html( $path ), esc_html( $pattern_name ), $match_pos, esc_html( substr( $context, 0, 100 ) ) )
 		);
 	}
 
@@ -356,13 +326,7 @@ class OMS_Scanner {
 				|| $this->check_permissions( $path, $file )
 				|| $this->check_modification_time( $path, $file );
 		} catch ( Exception $e ) {
-			$this->logger->error(
-				'Failed to check file suspiciousness',
-				array(
-					'path'  => $path,
-					'error' => $e->getMessage(),
-				)
-			);
+			$this->logger->error( sprintf( 'Failed to check file suspiciousness: %s - Error: %s', esc_html( $path ), esc_html( $e->getMessage() ) ) );
 			return true; // Treat as suspicious if verification fails.
 		}
 	}
@@ -376,13 +340,7 @@ class OMS_Scanner {
 	 */
 	private function check_size( $path, SplFileInfo $file ) {
 		if ( $file->getSize() > OMS_Config::MAX_FILE_SIZE ) {
-			$this->logger->warning(
-				'File exceeds maximum size',
-				array(
-					'path' => $path,
-					'size' => $file->getSize(),
-				)
-			);
+			$this->logger->warning( sprintf( 'File exceeds maximum size: %s (%d bytes)', esc_html( $path ), $file->getSize() ) );
 			return true;
 		}
 		return false;
@@ -398,13 +356,7 @@ class OMS_Scanner {
 	private function check_permissions( $path, SplFileInfo $file ) {
 		$perms = $file->getPerms();
 		if ( ( $perms & 0111 ) && ! $file->isDir() ) {
-			$this->logger->warning(
-				'Suspicious file permissions',
-				array(
-					'path'        => $path,
-					'permissions' => substr( sprintf( '%o', $perms ), -4 ),
-				)
-			);
+			$this->logger->warning( sprintf( 'Suspicious file permissions: %s (%s)', esc_html( $path ), substr( sprintf( '%o', $perms ), -4 ) ) );
 			return true;
 		}
 		return false;
@@ -420,13 +372,7 @@ class OMS_Scanner {
 	private function check_modification_time( $path, SplFileInfo $file ) {
 		$mtime = $file->getMTime();
 		if ( $mtime > time() || $mtime < strtotime( '-1 year' ) ) {
-			$this->logger->warning(
-				'Suspicious file modification time',
-				array(
-					'path'  => $path,
-					'mtime' => gmdate( 'Y-m-d H:i:s', $mtime ),
-				)
-			);
+			$this->logger->warning( sprintf( 'Suspicious file modification time: %s (%s)', esc_html( $path ), gmdate( 'Y-m-d H:i:s', $mtime ) ) );
 			return true;
 		}
 		return false;

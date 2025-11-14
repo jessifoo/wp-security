@@ -19,14 +19,20 @@ delete_option( 'oms_last_scan' );
 wp_clear_scheduled_hook( 'oms_scheduled_scan' );
 
 // Remove any temporary files.
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
 $upload_dir = wp_upload_dir();
-$oms_dir = trailingslashit( $upload_dir['basedir'] ) . 'oms-temp';
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
+$oms_dir    = trailingslashit( $upload_dir['basedir'] ) . 'oms-temp';
 if ( is_dir( $oms_dir ) ) {
-    $files = glob( $oms_dir . '/*' );
-    foreach ( $files as $file ) {
-        if ( is_file( $file ) ) {
-            unlink( $file );
-        }
-    }
-    rmdir( $oms_dir );
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
+	$files = glob( $oms_dir . '/*' );
+	foreach ( $files as $file ) {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
+		if ( is_file( $file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Plugin uninstall requires direct file deletion.
+			unlink( $file );
+		}
+	}
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Plugin uninstall requires direct directory removal.
+	rmdir( $oms_dir );
 }

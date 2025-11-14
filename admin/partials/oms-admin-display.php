@@ -17,7 +17,7 @@
 			<h3><?php esc_html_e( 'Scanner Status', 'obfuscated-malware-scanner' ); ?></h3>
 			<div class="oms-status">
 				<?php
-				$scanner        = new ObfuscatedMalwareScanner();
+				$scanner        = new Obfuscated_Malware_Scanner();
 				$scanner_status = $scanner->get_status();
 				echo '<p><strong>' . esc_html__( 'Last Scan:', 'obfuscated-malware-scanner' ) . '</strong> ' .
 					esc_html( $scanner_status['last_scan'] ) . '</p>';
@@ -34,9 +34,25 @@
 				<?php
 				settings_fields( 'oms_options' );
 				do_settings_sections( 'oms_options' );
-				submit_button( esc_html__( 'Start Scan', 'obfuscated-malware-scanner' ) );
+				submit_button( esc_html__( 'Save Settings', 'obfuscated-malware-scanner' ) );
 				?>
 			</form>
+
+			<form method="post" action="">
+				<?php wp_nonce_field( 'oms_manual_scan' ); ?>
+				<input type="hidden" name="oms_manual_scan" value="1" />
+				<?php submit_button( esc_html__( 'Start Manual Scan', 'obfuscated-malware-scanner' ), 'secondary' ); ?>
+			</form>
+
+			<?php
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter used for display only, not form processing.
+			$scan_param = isset( $_GET['scan'] ) && is_string( $_GET['scan'] ) ? sanitize_text_field( wp_unslash( $_GET['scan'] ) ) : '';
+			if ( 'complete' === $scan_param ) :
+				?>
+				<div class="notice notice-success is-dismissible">
+					<p><?php esc_html_e( 'Scan completed successfully!', 'obfuscated-malware-scanner' ); ?></p>
+				</div>
+			<?php endif; ?>
 		</div>
 
 		<?php if ( ! empty( $scanner_status['issues'] ) ) : ?>

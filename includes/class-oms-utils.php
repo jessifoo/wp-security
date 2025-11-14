@@ -171,4 +171,62 @@ class OMS_Utils {
 			'reason' => 'File content appears safe',
 		);
 	}
+
+	/**
+	 * Display an admin notice with WordPress 6.4+ compatibility.
+	 *
+	 * This function provides backward compatibility for wp_admin_notice() which
+	 * was introduced in WordPress 6.4. On earlier versions, it falls back to
+	 * the traditional notice markup.
+	 *
+	 * @since 1.0.0
+	 * @param string $message The message to display.
+	 * @param array  $args {
+	 *     Optional. Array of arguments for the admin notice.
+	 *
+	 *     @type string $type               The type of notice. Accepts 'error', 'warning', 'success', 'info'.
+	 *                                      Default 'info'.
+	 *     @type string $id                 HTML ID attribute for the notice. Default empty.
+	 *     @type array  $additional_classes Additional CSS classes. Default empty array.
+	 *     @type bool   $dismissible        Whether the notice is dismissible. Default false.
+	 *     @type bool   $paragraph_wrap    Whether to wrap content in <p> tags. Default true.
+	 * }
+	 */
+	public static function display_admin_notice( $message, $args = array() ) {
+		$defaults = array(
+			'type'               => 'info',
+			'id'                 => '',
+			'additional_classes' => array(),
+			'dismissible'        => false,
+			'paragraph_wrap'     => true,
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		// Use wp_admin_notice() if available (WordPress 6.4+).
+		if ( function_exists( 'wp_admin_notice' ) ) {
+			wp_admin_notice( $message, $args );
+			return;
+		}
+
+		// Fallback for WordPress < 6.4.
+		$classes = array( 'notice', 'notice-' . esc_attr( $args['type'] ) );
+		if ( ! empty( $args['additional_classes'] ) ) {
+			$classes = array_merge( $classes, array_map( 'esc_attr', (array) $args['additional_classes'] ) );
+		}
+		if ( $args['dismissible'] ) {
+			$classes[] = 'is-dismissible';
+		}
+
+		$id_attr    = ! empty( $args['id'] ) ? ' id="' . esc_attr( $args['id'] ) . '"' : '';
+		$class_attr = ' class="' . esc_attr( implode( ' ', $classes ) ) . '"';
+
+		echo '<div' . $id_attr . $class_attr . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
+		if ( $args['paragraph_wrap'] ) {
+			echo '<p>' . wp_kses_post( $message ) . '</p>';
+		} else {
+			echo wp_kses_post( $message );
+		}
+		echo '</div>';
+	}
 }
