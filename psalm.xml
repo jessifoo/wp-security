@@ -20,7 +20,12 @@
             <directory name="src" />
         </ignoreFiles>
     </projectFiles>
+    <!-- WordPress Stubs for type checking -->
+    <stubs>
+        <file name="vendor/php-stubs/wordpress-stubs/wordpress-stubs.php" />
+    </stubs>
     <issueHandlers>
+        <!-- WordPress functions are defined in stubs but may not be recognized in all contexts -->
         <UndefinedFunction>
             <errorLevel type="suppress">
                 <directory name="includes" />
@@ -28,10 +33,34 @@
                 <file name="obfuscated-malware-scanner.php" />
             </errorLevel>
         </UndefinedFunction>
+        <!-- WordPress constants are defined at runtime -->
+        <UndefinedConstant>
+            <errorLevel type="suppress">
+                <directory name="includes" />
+                <directory name="admin" />
+                <file name="obfuscated-malware-scanner.php" />
+            </errorLevel>
+        </UndefinedConstant>
+        <!-- WordPress hooks may call methods that appear unused -->
         <PossiblyUnusedMethod>
             <errorLevel type="suppress">
                 <directory name="admin" />
             </errorLevel>
         </PossiblyUnusedMethod>
+        <!-- WordPress properties may be set via hooks/filters -->
+        <PropertyNotSetInConstructor>
+            <errorLevel type="suppress">
+                <directory name="includes" />
+                <directory name="admin" />
+            </errorLevel>
+        </PropertyNotSetInConstructor>
+        <!-- WordPress methods often don't have explicit return types for compatibility -->
+        <MissingReturnType>
+            <errorLevel type="info">
+                <directory name="includes" />
+                <directory name="admin" />
+                <file name="obfuscated-malware-scanner.php" />
+            </errorLevel>
+        </MissingReturnType>
     </issueHandlers>
 </psalm>

@@ -72,20 +72,27 @@ class OMS_Scanner {
 		}
 
 		$patterns = array();
-		foreach ( OMS_Config::MALWARE_PATTERNS as $name => $pattern ) {
+		foreach ( OMS_Config::MALWARE_PATTERNS as $index => $pattern_data ) {
 			try {
 				// Validate and compile each pattern without suppressing errors.
-				$last_error    = error_get_last();
-				$test_result   = preg_match( $pattern, '' );
-				$current_error = error_get_last();
-				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
-					$error_msg = ( $current_error !== $last_error ) ? $current_error['message'] : 'Invalid regex pattern';
-					$this->logger->error( sprintf( 'Invalid malware pattern - Name: %s, Pattern: %s, Error: %s', esc_html( $name ), esc_html( $pattern ), esc_html( $error_msg ) ) );
+				// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- Pattern validation required.
+				if ( ! isset( $pattern_data['pattern'] ) ) {
 					continue;
 				}
-				$patterns[ $name ] = $pattern;
+				$pattern_str   = $pattern_data['pattern'];
+				$last_error    = error_get_last();
+				$test_result   = preg_match( $pattern_str, '' );
+				$current_error = error_get_last();
+				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
+					$error_msg    = ( $current_error !== $last_error && isset( $current_error['message'] ) ) ? $current_error['message'] : 'Invalid regex pattern';
+					$pattern_name = isset( $pattern_data['description'] ) ? $pattern_data['description'] : (string) $index;
+					$this->logger->error( sprintf( 'Invalid malware pattern - Name: %s, Pattern: %s, Error: %s', esc_html( $pattern_name ), esc_html( $pattern_str ), esc_html( $error_msg ) ) );
+					continue;
+				}
+				$patterns[ $index ] = $pattern_data;
 			} catch ( Exception $e ) {
-				$this->logger->error( sprintf( 'Failed to compile pattern - Name: %s, Error: %s', esc_html( $name ), esc_html( $e->getMessage() ) ) );
+				$pattern_name = isset( $pattern_data['description'] ) ? $pattern_data['description'] : (string) $index;
+				$this->logger->error( sprintf( 'Failed to compile pattern - Name: %s, Error: %s', esc_html( $pattern_name ), esc_html( $e->getMessage() ) ) );
 			}
 		}
 

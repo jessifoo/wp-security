@@ -46,7 +46,8 @@
 
 			<?php
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter used for display only, not form processing.
-			if ( isset( $_GET['scan'] ) && 'complete' === sanitize_text_field( wp_unslash( $_GET['scan'] ) ) ) :
+			$scan_param = isset( $_GET['scan'] ) && is_string( $_GET['scan'] ) ? sanitize_text_field( wp_unslash( $_GET['scan'] ) ) : '';
+			if ( 'complete' === $scan_param ) :
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Scan completed successfully!', 'obfuscated-malware-scanner' ); ?></p>

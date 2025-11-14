@@ -199,8 +199,8 @@ class OMS_File_Security_Policy {
 			}
 
 			// Check file extension.
-			$ext = strtolower( $file_type['ext'] );
-			if ( in_array( $ext, $this->forbidden_extensions, true ) ) {
+			$ext = isset( $file_type['ext'] ) && is_string( $file_type['ext'] ) ? strtolower( $file_type['ext'] ) : '';
+			if ( ! empty( $ext ) && in_array( $ext, $this->forbidden_extensions, true ) ) {
 				return array(
 					'valid'  => false,
 					'reason' => 'Forbidden file extension',
