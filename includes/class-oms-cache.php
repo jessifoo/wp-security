@@ -47,9 +47,10 @@ class OMS_Cache {
 	 *
 	 * @param string $key Cache key.
 	 * @param mixed  $value Value to cache.
+	 * @param int    $ttl Time to live in seconds (optional, for compatibility, currently unused).
 	 * @return void
 	 */
-	public function set( $key, $value ) {
+	public function set( $key, $value, $ttl = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- TTL parameter for future use and API compatibility.
 		// Maintain cache size limit.
 		if ( count( $this->cache ) >= OMS_Config::MAX_CACHE_SIZE ) {
 			// Remove oldest cache entry.

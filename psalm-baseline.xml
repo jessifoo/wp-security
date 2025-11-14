@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
   <file src="includes/class-file-security-policy.php">
-    <TooManyArguments>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-    </TooManyArguments>
     <UndefinedConstant>
       <code><![CDATA[ABSPATH]]></code>
       <code><![CDATA[WP_CONTENT_DIR]]></code>
@@ -35,37 +31,6 @@
       <code><![CDATA[self::OMS_NOTIFY_ADMIN['include_context']]]></code>
       <code><![CDATA[self::OMS_NOTIFY_ADMIN['notification_types']['critical_errors']]]></code>
     </RedundantCondition>
-    <TooManyArguments>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[info]]></code>
-      <code><![CDATA[info]]></code>
-      <code><![CDATA[info]]></code>
-      <code><![CDATA[info]]></code>
-      <code><![CDATA[info]]></code>
-      <code><![CDATA[run_full_cleanup]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-    </TooManyArguments>
     <TypeDoesNotContainType>
       <code><![CDATA['']]></code>
     </TypeDoesNotContainType>
@@ -141,21 +106,6 @@
     <PossiblyNullArrayAccess>
       <code><![CDATA[$current_error['message']]]></code>
     </PossiblyNullArrayAccess>
-    <TooManyArguments>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[error]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-      <code><![CDATA[warning]]></code>
-    </TooManyArguments>
     <UndefinedConstant>
       <code><![CDATA[OMS_Config::CACHE_CONFIG]]></code>
       <code><![CDATA[OMS_Config::MAX_FILE_SIZE]]></code>

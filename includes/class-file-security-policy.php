@@ -467,14 +467,14 @@ class OMS_File_Security_Policy {
 		if ( $has_high_severity ) {
 			// Use WordPress logger if available, otherwise use error_log.
 			if ( class_exists( 'OMS_Logger' ) ) {
-				$logger = new OMS_Logger();
+				$logger  = new OMS_Logger();
+				$context = array(
+					'path'        => $path,
+					'backup_path' => $backup_created ? $backup_path : null,
+					'reason'      => $content_check['reason'],
+				);
 				$logger->warning(
-					'High-severity malware detected in theme file - quarantining',
-					array(
-						'path'        => $path,
-						'backup_path' => $backup_created ? $backup_path : null,
-						'reason'      => $content_check['reason'],
-					)
+					sprintf( 'High-severity malware detected in theme file - quarantining - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $content_check['reason'] ) )
 				);
 			} else {
 				error_log( "OMS: High-severity malware detected in theme file: $path (backup: " . ( $backup_created ? $backup_path : 'failed' ) . ')' );
@@ -506,12 +506,7 @@ class OMS_File_Security_Policy {
 		if ( class_exists( 'OMS_Logger' ) ) {
 			$logger = new OMS_Logger();
 			$logger->warning(
-				'Low-severity suspicious content in theme file - monitoring',
-				array(
-					'path'        => $path,
-					'backup_path' => $backup_created ? $backup_path : null,
-					'reason'      => $content_check['reason'],
-				)
+				sprintf( 'Low-severity suspicious content in theme file - monitoring - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $content_check['reason'] ) )
 			);
 		} else {
 			error_log( "OMS: Potentially malicious content in theme file: $path (backup: " . ( $backup_created ? $backup_path : 'failed' ) . ')' );
