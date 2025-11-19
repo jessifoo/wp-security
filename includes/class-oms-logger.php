@@ -51,7 +51,10 @@ class OMS_Logger {
 		// Secure the log directory.
 		$htaccess = $log_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
-			file_put_contents( $htaccess, "Order deny,allow\nDeny from all" );
+			$result = file_put_contents( $htaccess, "Order deny,allow\nDeny from all" );
+			if ( false === $result ) {
+				error_log( 'OMS Logger: Failed to create .htaccess file for log directory: ' . esc_html( $htaccess ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			}
 		}
 	}
 
@@ -108,7 +111,11 @@ class OMS_Logger {
 
 		$backup = $this->log_file . '.' . gmdate( 'Y-m-d-H-i-s' );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-		rename( $this->log_file, $backup );
+		$rename_result = rename( $this->log_file, $backup );
+		if ( false === $rename_result ) {
+			error_log( 'OMS Logger: Failed to rename log file for rotation: ' . esc_html( $this->log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			return;
+		}
 
 		// Keep only last 5 backups.
 		$backups = glob( $this->log_file . '.*' );
@@ -123,7 +130,10 @@ class OMS_Logger {
 			$old_backups = array_slice( $backups, 5 );
 			foreach ( $old_backups as $old_backup ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log cleanup requires direct file deletion.
-				unlink( $old_backup );
+				$unlink_result = unlink( $old_backup );
+				if ( false === $unlink_result ) {
+					error_log( 'OMS Logger: Failed to delete old backup log file: ' . esc_html( $old_backup ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				}
 			}
 		}
 	}
@@ -197,14 +207,17 @@ class OMS_Logger {
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Logging requires checking directory writability.
 			if ( is_writable( $log_dir ) ) {
-				file_put_contents(
+				$result = file_put_contents(
 					$log_file,
 					$log_message . PHP_EOL,
 					FILE_APPEND | LOCK_EX
 				);
+				if ( false === $result ) {
+					error_log( 'OMS Logger: Failed to write to log file: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				}
 
 				// Rotate log file if it exceeds 5MB.
-				if ( filesize( $log_file ) > 5 * 1024 * 1024 ) {
+				if ( file_exists( $log_file ) && filesize( $log_file ) > 5 * 1024 * 1024 ) {
 					$this->rotate_log_file( $log_file );
 				}
 			}
@@ -254,7 +267,10 @@ class OMS_Logger {
 		// Remove oldest backup if exists.
 		if ( file_exists( $log_file . '.' . $max_backups ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log rotation requires direct file deletion.
-			unlink( $log_file . '.' . $max_backups );
+			$unlink_result = unlink( $log_file . '.' . $max_backups );
+			if ( false === $unlink_result ) {
+				error_log( 'OMS Logger: Failed to delete oldest backup log file: ' . esc_html( $log_file . '.' . $max_backups ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			}
 		}
 
 		// Rotate existing backups.
@@ -263,18 +279,32 @@ class OMS_Logger {
 			$new_file = $log_file . '.' . ( $i + 1 );
 			if ( file_exists( $old_file ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-				rename( $old_file, $new_file );
+				$rename_result = rename( $old_file, $new_file );
+				if ( false === $rename_result ) {
+					error_log( 'OMS Logger: Failed to rotate backup log file: ' . esc_html( $old_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				}
 			}
 		}
 
 		// Rotate current log file.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-		rename( $log_file, $log_file . '.1' );
+		$rename_result = rename( $log_file, $log_file . '.1' );
+		if ( false === $rename_result ) {
+			error_log( 'OMS Logger: Failed to rename current log file for rotation: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			return;
+		}
 
 		// Create new empty log file.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Log rotation requires creating new log file.
-		touch( $log_file );
+		$touch_result = touch( $log_file );
+		if ( false === $touch_result ) {
+			error_log( 'OMS Logger: Failed to create new log file: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			return;
+		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Log rotation requires setting file permissions.
-		chmod( $log_file, 0644 );
+		$chmod_result = chmod( $log_file, 0644 );
+		if ( false === $chmod_result ) {
+			error_log( 'OMS Logger: Failed to set permissions on log file: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+		}
 	}
 }

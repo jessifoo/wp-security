@@ -449,7 +449,10 @@ class OMS_File_Security_Policy {
 			// Create .htaccess to protect backups.
 			$htaccess_file = $backup_dir . '/.htaccess';
 			if ( ! file_exists( $htaccess_file ) ) {
-				file_put_contents( $htaccess_file, "deny from all\n" );
+				$result = file_put_contents( $htaccess_file, "deny from all\n" );
+				if ( false === $result ) {
+					error_log( 'OMS File Security Policy: Failed to create .htaccess file for backup directory: ' . esc_html( $htaccess_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				}
 			}
 		}
 
