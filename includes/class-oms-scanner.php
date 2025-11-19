@@ -186,15 +186,15 @@ class OMS_Scanner {
 	 */
 	private function initialize_wp_filesystem() {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
-		
+
 		$initialized = WP_Filesystem();
-		
+
 		global $wp_filesystem;
 		if ( false === $initialized || ! $wp_filesystem ) {
 			$this->logger->error( 'Failed to initialize WordPress Filesystem API' );
 			return false;
 		}
-		
+
 		return true;
 	}
 
