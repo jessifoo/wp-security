@@ -17,12 +17,13 @@ class OMS_Exception extends Exception {
 	/**
 	 * Constructor
 	 *
-	 * @param string    $message Exception message.
-	 * @param int       $code Exception code.
-	 * @param Exception $previous Previous exception.
+	 * @param string         $message Exception message.
+	 * @param int            $code Exception code.
+	 * @param Exception|null $previous Previous exception.
 	 */
-	public function __construct( $message, $code = 0, Exception $previous = null ) {
-		parent::__construct( $message, $code, $previous );
+	public function __construct( string $message, int $code = 0, ?Exception $previous = null ) {
+		// Call parent constructor with sanitized message.
+		parent::__construct( sanitize_text_field( $message ), (int) $code, $previous );
 	}
 
 	/**
@@ -33,8 +34,8 @@ class OMS_Exception extends Exception {
 	 * @return never
 	 * @throws Exception Always throws the exception.
 	 */
-	public function handleException( $e, $context = '' ) {
-		error_log( sprintf( 'OMS Exception in %s: %s', $context, esc_html( $e->getMessage() ) ) );
+	public function handleException( Exception $e, string $context = '' ): never {
+		error_log( sprintf( 'OMS Exception in %s: %s', esc_html( $context ), esc_html( $e->getMessage() ) ) );
 		throw $e;
 	}
 
@@ -44,7 +45,7 @@ class OMS_Exception extends Exception {
 	 * @return string String representation of exception.
 	 */
 	public function __toString() {
-		return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+		return __CLASS__ . ': [' . esc_html( (string) $this->code ) . ']: ' . esc_html( $this->message ) . "\n";
 	}
 
 	/**

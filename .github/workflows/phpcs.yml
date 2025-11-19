@@ -2,13 +2,18 @@ name: PHPCS WordPress Coding Standards
 
 on:
   push:
-    branches: [ main, 'cursor/**' ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# Prevent multiple workflows from running simultaneously
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   phpcs:
@@ -21,23 +26,46 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
         with:
-          php-version: '8.0'
-          extensions: mbstring, xml, curl
+          php-version: '8.1'
+          extensions: mbstring, xml, curl, json
           coverage: none
+          tools: composer
 
-      - name: Setup Composer Cache
-        uses: actions/cache@v3
+      - name: Verify PHP Version
+        run: |
+          php -v
+          php -r "if (version_compare(PHP_VERSION, '8.1.0', '<')) { echo 'ERROR: PHP version ' . PHP_VERSION . ' is less than 8.1.0'; exit(1); }"
+          echo "✅ PHP version check passed: $(php -r 'echo PHP_VERSION;')"
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: |
+          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
         with:
-          path: ~/.composer/cache
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php8.1-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php8.1-composer-
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
+        run: composer install --no-interaction --no-progress --prefer-dist --ansi
 
       - name: Run PHPCS
-        run: vendor/bin/phpcs --standard=WordPress includes/ admin/ obfuscated-malware-scanner.php
-        continue-on-error: false
+        run: vendor/bin/phpcs --standard=phpcs.xml
 
+      - name: Generate PHPCS JSON Report
+        if: always()
+        run: vendor/bin/phpcs --standard=phpcs.xml --report=json > phpcs-json-report.json || true
+
+      - name: Upload PHPCS Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpcs-report
+          path: phpcs-json-report.json
+          retention-days: 7

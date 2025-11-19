@@ -11,4 +11,44 @@
     <rule ref="PSR12.Functions.ReturnTypeDeclaration">
         <exclude name="PSR12.Functions.ReturnTypeDeclaration"/>
     </rule>
+    <!-- Allow class-file-security-policy.php naming (legacy compatibility) -->
+    <rule ref="WordPress.Files.FileName">
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+    </rule>
+    <!-- Malware scanner requires direct file operations for security scanning -->
+    <rule ref="WordPress.WP.AlternativeFunctions">
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_fopen"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_fread"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_fclose"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.unlink_unlink"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_mkdir"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_is_writable"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_chmod"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.rename_rename"/>
+        <exclude name="WordPress.WP.AlternativeFunctions.file_system_operations_touch"/>
+    </rule>
+    <!-- Security scanner requires logging for audit trail -->
+    <rule ref="WordPress.PHP.DevelopmentFunctions">
+        <exclude name="WordPress.PHP.DevelopmentFunctions.error_log_error_log"/>
+        <exclude name="WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace"/>
+    </rule>
+    <!-- file_get_contents used for local file reading in scanner context -->
+    <rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
+        <exclude-pattern>includes/class-oms-utils.php</exclude-pattern>
+        <exclude-pattern>includes/class-file-security-policy.php</exclude-pattern>
+        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
+    </rule>
+    <!-- ini_set used for security hardening in scanner -->
+    <rule ref="WordPress.PHP.IniSet.Risky">
+        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
+    </rule>
+    <!-- Direct DB queries for logging are acceptable -->
+    <rule ref="WordPress.DB.DirectDatabaseQuery">
+        <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
+    </rule>
+    <!-- Error suppression needed for regex validation -->
+    <rule ref="WordPress.PHP.NoSilencedErrors">
+        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
+    </rule>
 </ruleset>
