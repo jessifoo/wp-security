@@ -230,6 +230,11 @@ class OMS_Logger {
 	private function cleanup_old_logs() {
 		global $wpdb;
 
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+			error_log( 'OMS Logger: WordPress database object not available for log cleanup' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			return;
+		}
+
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-7 days' ) );
 		$cache_key   = 'oms_old_logs_' . $cutoff_date;
 

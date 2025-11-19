@@ -191,7 +191,7 @@ class OMS_File_Security_Policy {
 
 			// Use WordPress file type verification.
 			$file_type = wp_check_filetype( basename( $path ) );
-			if ( ! $file_type['type'] ) {
+			if ( ! is_array( $file_type ) || ! isset( $file_type['type'] ) || ! $file_type['type'] ) {
 				return array(
 					'valid'  => false,
 					'reason' => 'Invalid file type',
@@ -231,20 +231,28 @@ class OMS_File_Security_Policy {
 
 			// Perform content checks.
 			$content_check = OMS_Utils::check_file_content( $path );
-			if ( ! $content_check['safe'] ) {
+			if ( ! is_array( $content_check ) || ! isset( $content_check['safe'] ) || ! $content_check['safe'] ) {
 				// If it's a theme file, we need to be more careful.
 				if ( $is_theme_file ) {
 					return $this->handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path );
 				}
+				$reason = isset( $content_check['reason'] ) ? $content_check['reason'] : 'File content validation failed';
 				return array(
 					'valid'  => false,
-					'reason' => $content_check['reason'],
+					'reason' => $reason,
 				);
 			}
 
 			// Check permissions using WordPress functions.
 			$stat = stat( $path );
 			if ( false === $stat ) {
+				return array(
+					'valid'  => false,
+					'reason' => 'Unable to check file permissions',
+				);
+			}
+
+			if ( ! isset( $stat['mode'] ) ) {
 				return array(
 					'valid'  => false,
 					'reason' => 'Unable to check file permissions',
@@ -260,6 +268,13 @@ class OMS_File_Security_Policy {
 			}
 
 			// Check modification time.
+			if ( ! isset( $stat['mtime'] ) ) {
+				return array(
+					'valid'  => false,
+					'reason' => 'Unable to check file modification time',
+				);
+			}
+
 			$mod_hour = (int) get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $stat['mtime'] ), 'G' );
 			if ( $mod_hour >= $this->suspicious_times['night_hours'][0] &&
 			$mod_hour <= $this->suspicious_times['night_hours'][1] ) {
@@ -471,13 +486,14 @@ class OMS_File_Security_Policy {
 			// Use WordPress logger if available, otherwise use error_log.
 			if ( class_exists( 'OMS_Logger' ) ) {
 				$logger  = new OMS_Logger();
+				$reason  = isset( $content_check['reason'] ) ? $content_check['reason'] : 'High-severity malware detected';
 				$context = array(
 					'path'        => $path,
 					'backup_path' => $backup_created ? $backup_path : null,
-					'reason'      => $content_check['reason'],
+					'reason'      => $reason,
 				);
 				$logger->warning(
-					sprintf( 'High-severity malware detected in theme file - quarantining - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $content_check['reason'] ) )
+					sprintf( 'High-severity malware detected in theme file - quarantining - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $reason ) )
 				);
 			} else {
 				error_log( 'OMS: High-severity malware detected in theme file: ' . esc_html( $path ) . ' (backup: ' . esc_html( $backup_created ? $backup_path : 'failed' ) . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
@@ -509,7 +525,7 @@ class OMS_File_Security_Policy {
 		if ( class_exists( 'OMS_Logger' ) ) {
 			$logger = new OMS_Logger();
 			$logger->warning(
-				sprintf( 'Low-severity suspicious content in theme file - monitoring - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $content_check['reason'] ) )
+				sprintf( 'Low-severity suspicious content in theme file - monitoring - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( isset( $content_check['reason'] ) ? $content_check['reason'] : 'Suspicious content detected' ) )
 			);
 		} else {
 			error_log( 'OMS: Potentially malicious content in theme file: ' . esc_html( $path ) . ' (backup: ' . esc_html( $backup_created ? $backup_path : 'failed' ) . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
