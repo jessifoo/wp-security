@@ -62,11 +62,13 @@ This document tracks what's been implemented vs what's documented/promised in th
 - **Source**: `decisions.md` requires database security features
 - **Action Required**: Implement database scanning and integrity checks
 
-### 3. Multi-Site Support
-- ❌ **MISSING**: Multi-site specific optimizations
-- ❌ **MISSING**: Resource-aware batch processing for multiple sites
+### 3. Multiple WordPress Installations Support
+- ❌ **MISSING**: Support for scanning multiple separate WordPress installations on same server
+- ❌ **MISSING**: Resource-aware batch processing across multiple installations
+- ❌ **MISSING**: Configuration to specify multiple WordPress root paths
+- **Clarification**: This refers to multiple separate WordPress installations (e.g., 4 sites on Hostinger), NOT WordPress Multisite
 - **Source**: `decisions.md` mentions multi-site focus
-- **Action Required**: Add multi-site detection and optimization
+- **Action Required**: Add support for scanning multiple WordPress installations with resource management
 
 ## ❌ Missing Features (Documented but Not Implemented)
 
@@ -120,10 +122,12 @@ This document tracks what's been implemented vs what's documented/promised in th
 - [ ] **Database content scanning** ❌
 - [ ] **Critical table backup** ❌
 
-### Phase 3: Multi-Site Support ❌ NOT STARTED
-- [ ] Multi-site detection
-- [ ] Resource-aware batch processing
-- [ ] Multi-site scanning optimization
+### Phase 3: Multiple WordPress Installations Support ❌ NOT STARTED
+- [ ] Configuration to specify multiple WordPress root paths
+- [ ] CLI command or script to scan all installations
+- [ ] Resource-aware batch processing across installations
+- [ ] Per-installation scanning with resource limits
+- **Note**: This is for multiple separate WordPress installations on same server (e.g., 4 sites on Hostinger), NOT WordPress Multisite
 
 ### Phase 4: Automation and Maintenance ⚠️ PARTIAL
 - [x] Core file auto-repair
@@ -161,9 +165,11 @@ This document tracks what's been implemented vs what's documented/promised in th
    - Safe state fallbacks
 
 ### Low Priority
-7. **Multi-Site Optimization**
-   - Multi-site detection
-   - Resource-aware processing
+7. **Multiple WordPress Installations Support**
+   - Configuration for multiple WordPress root paths
+   - CLI command to scan all installations
+   - Resource-aware processing across installations
+   - **Note**: For separate WordPress installations on same server, NOT Multisite
 
 8. **Pattern Auto-Updates**
    - Automatic pattern updates from remote source
