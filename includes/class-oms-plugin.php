@@ -132,6 +132,20 @@ class OMS_Plugin {
 			}
 		}
 
+		// Create database backup directory.
+		$db_backup_dir = WP_CONTENT_DIR . '/oms-db-backups';
+		if ( ! file_exists( $db_backup_dir ) ) {
+			wp_mkdir_p( $db_backup_dir );
+			// Create .htaccess to protect backups.
+			$htaccess_file = $db_backup_dir . '/.htaccess';
+			if ( ! file_exists( $htaccess_file ) ) {
+				$result = file_put_contents( $htaccess_file, "deny from all\n" );
+				if ( false === $result ) {
+					error_log( 'OMS Plugin: Failed to create .htaccess file for database backup directory: ' . esc_html( $htaccess_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				}
+			}
+		}
+
 		// Schedule cron job for daily cleanup.
 		if ( ! wp_next_scheduled( 'oms_daily_cleanup' ) ) {
 			wp_schedule_event( time(), 'daily', 'oms_daily_cleanup' );
