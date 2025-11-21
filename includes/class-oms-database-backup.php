@@ -77,6 +77,30 @@ class OMS_Database_Backup {
 	}
 
 	/**
+	 * Validate and sanitize database table name
+	 *
+	 * @param string $table_name Table name to validate.
+	 * @return string|false Sanitized table name or false if invalid.
+	 */
+	private function validate_db_table_name( $table_name ) {
+		if ( ! is_string( $table_name ) || empty( $table_name ) ) {
+			return false;
+		}
+
+		// Remove backticks if present.
+		$table_name = str_replace( '`', '', $table_name );
+
+		// Check against whitelist (without prefix).
+		global $wpdb;
+		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		if ( in_array( $table_base, $this->critical_tables, true ) ) {
+			return $table_name;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Backup critical tables
 	 *
 	 * @return array Backup result.
@@ -115,7 +139,7 @@ class OMS_Database_Backup {
 				);
 
 				if ( ! $table_exists ) {
-					$this->logger->warning( sprintf( 'Table %s does not exist, skipping backup', $full_table_name ) );
+					$this->logger->warning( sprintf( 'Table %s does not exist, skipping backup', esc_html( $full_table_name ) ) );
 					continue;
 				}
 
@@ -173,12 +197,18 @@ class OMS_Database_Backup {
 		global $wpdb;
 
 		try {
+			// Validate table name.
+			$validated_table = $this->validate_db_table_name( $table_name );
+			if ( false === $validated_table ) {
+				$this->logger->error( sprintf( 'Invalid table name for backup: %s', esc_html( $table_name ) ) );
+				return false;
+			}
+
 			// Get table data.
-			// Table name is validated and comes from WordPress core table list (critical_tables whitelist).
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			// Database backup requires direct query, table name is validated from WordPress core tables whitelist. Backup needs current data not cached.
+			// Database backup requires direct query, table name is validated via validate_db_table_name(). Backup needs current data not cached.
 			$rows = $wpdb->get_results(
-				"SELECT * FROM `{$table_name}`",
+				"SELECT * FROM `{$validated_table}`",
 				ARRAY_A
 			);
 			// phpcs:enable
@@ -303,6 +333,15 @@ class OMS_Database_Backup {
 		global $wpdb;
 
 		try {
+			// Validate table name.
+			$validated_table = $this->validate_db_table_name( $table_name );
+			if ( false === $validated_table ) {
+				return array(
+					'success' => false,
+					'message' => 'Invalid table name',
+				);
+			}
+
 			// Load backup data.
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local backup file, not remote URL.
 			$backup_json = file_get_contents( $backup_file );
@@ -316,8 +355,8 @@ class OMS_Database_Backup {
 			}
 
 			// Truncate table first.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Database restore requires direct query, table name is validated.
-			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Database restore requires direct query, table name is validated via validate_db_table_name().
+			$wpdb->query( "TRUNCATE TABLE `{$validated_table}`" );
 
 			// Restore data in batches.
 			$batch_size = 100;
@@ -327,7 +366,7 @@ class OMS_Database_Backup {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database restore requires direct query.
 				foreach ( $batch as $row ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database restore requires direct query.
-					$wpdb->insert( $table_name, $row );
+					$wpdb->insert( $validated_table, $row );
 				}
 			}
 

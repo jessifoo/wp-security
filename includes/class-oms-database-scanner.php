@@ -74,6 +74,36 @@ class OMS_Database_Scanner {
 	}
 
 	/**
+	 * Validate and sanitize database table/column name
+	 *
+	 * @param string $identifier Table or column name to validate.
+	 * @return string|false Sanitized identifier or false if invalid.
+	 */
+	private function validate_db_identifier( $identifier ) {
+		if ( ! is_string( $identifier ) || empty( $identifier ) ) {
+			return false;
+		}
+
+		// Allow only alphanumeric, underscore, and backtick characters.
+		// Remove backticks if present (we'll add them ourselves).
+		$identifier = str_replace( '`', '', $identifier );
+
+		// Check against whitelist for table names (without prefix).
+		global $wpdb;
+		$table_base = str_replace( $wpdb->prefix, '', $identifier );
+		if ( in_array( $table_base, $this->critical_tables, true ) ) {
+			return $identifier;
+		}
+
+		// For column names, validate format (alphanumeric and underscore only).
+		if ( preg_match( '/^[a-zA-Z0-9_]+$/', $identifier ) ) {
+			return $identifier;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Scan database for malicious content
 	 *
 	 * @return array Scan results with issues found.
@@ -169,7 +199,7 @@ class OMS_Database_Scanner {
 						'type'     => 'missing_table',
 						'table'    => $full_table_name,
 						'severity' => 'CRITICAL',
-						'message'  => sprintf( 'Critical table missing: %s', $full_table_name ),
+						'message'  => sprintf( 'Critical table missing: %s', esc_html( $full_table_name ) ),
 					);
 					continue;
 				}
@@ -239,7 +269,7 @@ class OMS_Database_Scanner {
 						'table'    => $table_name,
 						'column'   => $expected_column,
 						'severity' => 'HIGH',
-						'message'  => sprintf( 'Missing column %s in table %s', $expected_column, $table_name ),
+						'message'  => sprintf( 'Missing column %s in table %s', esc_html( $expected_column ), esc_html( $table_name ) ),
 					);
 				}
 			}
@@ -252,7 +282,7 @@ class OMS_Database_Scanner {
 						'table'    => $table_name,
 						'column'   => $actual_column,
 						'severity' => 'MEDIUM',
-						'message'  => sprintf( 'Unexpected column %s in table %s', $actual_column, $table_name ),
+						'message'  => sprintf( 'Unexpected column %s in table %s', esc_html( $actual_column ), esc_html( $table_name ) ),
 					);
 				}
 			}
@@ -304,7 +334,7 @@ class OMS_Database_Scanner {
 						'table'    => $table_name,
 						'index'    => $expected_index,
 						'severity' => 'MEDIUM',
-						'message'  => sprintf( 'Missing index %s in table %s', $expected_index, $table_name ),
+						'message'  => sprintf( 'Missing index %s in table %s', esc_html( $expected_index ), esc_html( $table_name ) ),
 					);
 				}
 			}
@@ -413,11 +443,19 @@ class OMS_Database_Scanner {
 			$offset     = 0;
 
 			while ( true ) {
+				// Validate table and column names.
+				$validated_table  = $this->validate_db_identifier( $table_name );
+				$validated_column = $this->validate_db_identifier( $column );
+				if ( false === $validated_table || false === $validated_column ) {
+					$this->logger->error( sprintf( 'Invalid database identifier: table=%s, column=%s', esc_html( $table_name ), esc_html( $column ) ) );
+					break;
+				}
+
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, content scanning needs current data not cached.
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column name is validated.
-						"SELECT ID, `{$column}` FROM `{$table_name}` WHERE `{$column}` IS NOT NULL AND `{$column}` != '' LIMIT %d OFFSET %d",
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
+						"SELECT ID, `{$validated_column}` FROM `{$validated_table}` WHERE `{$validated_column}` IS NOT NULL AND `{$validated_column}` != '' LIMIT %d OFFSET %d",
 						$batch_size,
 						$offset
 					),
@@ -447,7 +485,7 @@ class OMS_Database_Scanner {
 								'row_id'   => isset( $row['ID'] ) ? $row['ID'] : null,
 								'pattern'  => $pattern,
 								'severity' => $severity,
-								'message'  => sprintf( 'Malicious content detected in %s.%s (row: %s)', $table_name, $column, isset( $row['ID'] ) ? $row['ID'] : 'unknown' ),
+								'message'  => sprintf( 'Malicious content detected in %s.%s (row: %s)', esc_html( $table_name ), esc_html( $column ), isset( $row['ID'] ) ? esc_html( (string) $row['ID'] ) : 'unknown' ),
 								'match'    => isset( $matches[0] ) ? substr( $matches[0], 0, 100 ) : '',
 							);
 						}
@@ -519,12 +557,19 @@ class OMS_Database_Scanner {
 		);
 
 		try {
+			// Validate table name.
+			$validated_table = $this->validate_db_identifier( $options_table );
+			if ( false === $validated_table ) {
+				$this->logger->error( sprintf( 'Invalid options table name: %s', esc_html( $options_table ) ) );
+				return $issues;
+			}
+
 			foreach ( $suspicious_option_names as $pattern ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, needs current data for security checks.
 				$options = $wpdb->get_results(
 					$wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated.
-						"SELECT option_id, option_name, option_value FROM `{$options_table}` WHERE option_name LIKE %s",
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
+						"SELECT option_id, option_name, option_value FROM `{$validated_table}` WHERE option_name LIKE %s",
 						$pattern
 					),
 					ARRAY_A
@@ -568,12 +613,19 @@ class OMS_Database_Scanner {
 				'%backdoor%',
 			);
 
+			// Validate table name.
+			$validated_table = $this->validate_db_identifier( $usermeta_table );
+			if ( false === $validated_table ) {
+				$this->logger->error( sprintf( 'Invalid usermeta table name: %s', esc_html( $usermeta_table ) ) );
+				return $issues;
+			}
+
 			foreach ( $suspicious_keys as $pattern ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, needs current data for security checks.
 				$meta = $wpdb->get_results(
 					$wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated.
-						"SELECT umeta_id, user_id, meta_key FROM `{$usermeta_table}` WHERE meta_key LIKE %s",
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
+						"SELECT umeta_id, user_id, meta_key FROM `{$validated_table}` WHERE meta_key LIKE %s",
 						$pattern
 					),
 					ARRAY_A
@@ -763,9 +815,9 @@ class OMS_Database_Scanner {
 		global $wpdb;
 
 		try {
-			$table_name = $issue['table'];
-			$column     = $issue['column'];
-			$row_id     = $issue['row_id'];
+			$table_name = isset( $issue['table'] ) ? $issue['table'] : '';
+			$column     = isset( $issue['column'] ) ? $issue['column'] : '';
+			$row_id     = isset( $issue['row_id'] ) ? $issue['row_id'] : null;
 
 			if ( empty( $row_id ) ) {
 				return array(
@@ -774,15 +826,32 @@ class OMS_Database_Scanner {
 				);
 			}
 
+			// Validate table and column names.
+			$validated_table  = $this->validate_db_identifier( $table_name );
+			$validated_column = $this->validate_db_identifier( $column );
+			if ( false === $validated_table || false === $validated_column ) {
+				return array(
+					'success' => false,
+					'message' => 'Invalid table or column name',
+				);
+			}
+
 			// Determine ID column name.
-			$id_column = $this->get_id_column_name( $table_name );
+			$id_column           = $this->get_id_column_name( $validated_table );
+			$validated_id_column = $this->validate_db_identifier( $id_column );
+			if ( false === $validated_id_column ) {
+				return array(
+					'success' => false,
+					'message' => 'Invalid ID column name',
+				);
+			}
 
 			// Clean the malicious content by setting to empty or safe value.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database cleanup requires direct query, cleanup operations need immediate effect.
 			$result = $wpdb->query(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column names are validated.
-					"UPDATE `{$table_name}` SET `{$column}` = %s WHERE `{$id_column}` = %d",
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
+					"UPDATE `{$validated_table}` SET `{$validated_column}` = %s WHERE `{$validated_id_column}` = %d",
 					'',
 					$row_id
 				)
