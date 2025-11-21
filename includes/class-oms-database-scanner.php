@@ -146,7 +146,7 @@ class OMS_Database_Scanner {
 				$full_table_name = $prefix . $table_name;
 
 				// Check if table exists.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database integrity check requires direct query.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
 				$table_exists = $wpdb->get_var(
 					$wpdb->prepare(
 						'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s',
@@ -208,7 +208,7 @@ class OMS_Database_Scanner {
 			}
 
 			// Get actual table structure.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database integrity check requires direct query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
 			$actual_columns = $wpdb->get_results(
 				$wpdb->prepare(
 					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT 
@@ -273,7 +273,7 @@ class OMS_Database_Scanner {
 			}
 
 			// Get actual indexes.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database integrity check requires direct query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
 			$actual_indexes = $wpdb->get_results(
 				$wpdb->prepare(
 					'SELECT INDEX_NAME FROM information_schema.STATISTICS 
@@ -356,7 +356,7 @@ class OMS_Database_Scanner {
 
 		try {
 			// Get all text columns from the table.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database security scan requires direct query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, information_schema queries don't benefit from caching.
 			$columns = $wpdb->get_col(
 				$wpdb->prepare(
 					'SELECT COLUMN_NAME FROM information_schema.COLUMNS 
@@ -404,7 +404,7 @@ class OMS_Database_Scanner {
 			$offset     = 0;
 
 			while ( true ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database security scan requires direct query.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, content scanning needs current data not cached.
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column name is validated.
@@ -511,7 +511,7 @@ class OMS_Database_Scanner {
 
 		try {
 			foreach ( $suspicious_option_names as $pattern ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database security scan requires direct query.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, needs current data for security checks.
 				$options = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated.
@@ -560,7 +560,7 @@ class OMS_Database_Scanner {
 			);
 
 			foreach ( $suspicious_keys as $pattern ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database security scan requires direct query.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, needs current data for security checks.
 				$meta = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated.
@@ -576,6 +576,7 @@ class OMS_Database_Scanner {
 						'table'    => $usermeta_table,
 						'umeta_id' => $meta_row['umeta_id'],
 						'user_id'  => $meta_row['user_id'],
+						// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Security scan requires checking meta_key for suspicious patterns.
 						'meta_key' => $meta_row['meta_key'],
 						'severity' => 'HIGH',
 						'message'  => sprintf( 'Suspicious user meta key detected: %s (user: %d)', esc_html( $meta_row['meta_key'] ), $meta_row['user_id'] ),
@@ -768,7 +769,7 @@ class OMS_Database_Scanner {
 			$id_column = $this->get_id_column_name( $table_name );
 
 			// Clean the malicious content by setting to empty or safe value.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database cleanup requires direct query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database cleanup requires direct query, cleanup operations need immediate effect.
 			$result = $wpdb->query(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column names are validated.
@@ -814,7 +815,7 @@ class OMS_Database_Scanner {
 		);
 
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database query required to get column names.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database query required to get column names, information_schema queries don't benefit from caching.
 		$columns = $wpdb->get_col(
 			$wpdb->prepare(
 				'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',

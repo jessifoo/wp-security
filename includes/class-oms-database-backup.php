@@ -105,7 +105,7 @@ class OMS_Database_Backup {
 				$full_table_name = $prefix . $table_name;
 
 				// Check if table exists.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Database backup requires direct query.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database backup requires direct query, information_schema queries don't benefit from caching.
 				$table_exists = $wpdb->get_var(
 					$wpdb->prepare(
 						'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s',
@@ -175,8 +175,8 @@ class OMS_Database_Backup {
 		try {
 			// Get table data.
 			// Table name is validated and comes from WordPress core table list (critical_tables whitelist).
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			// Database backup requires direct query, table name is validated from WordPress core tables whitelist.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// Database backup requires direct query, table name is validated from WordPress core tables whitelist. Backup needs current data not cached.
 			$rows = $wpdb->get_results(
 				"SELECT * FROM `{$table_name}`",
 				ARRAY_A
@@ -246,6 +246,7 @@ class OMS_Database_Backup {
 				);
 			}
 
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local backup manifest file, not remote URL.
 			$manifest_json = file_get_contents( $manifest_file );
 			$manifest      = json_decode( $manifest_json, true );
 
@@ -303,6 +304,7 @@ class OMS_Database_Backup {
 
 		try {
 			// Load backup data.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local backup file, not remote URL.
 			$backup_json = file_get_contents( $backup_file );
 			$backup_data = json_decode( $backup_json, true );
 
