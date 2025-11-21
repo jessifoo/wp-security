@@ -35,7 +35,7 @@ class OMS_Database_Scanner {
 	 *
 	 * @var OMS_Database_Backup
 	 */
-	public $backup;
+	private $backup;
 
 	/**
 	 * Critical WordPress tables that must be checked
@@ -62,6 +62,15 @@ class OMS_Database_Scanner {
 		$this->logger = $logger;
 		$this->cache  = $cache;
 		$this->backup = new OMS_Database_Backup( $this->logger );
+	}
+
+	/**
+	 * Get database backup instance
+	 *
+	 * @return OMS_Database_Backup Backup instance.
+	 */
+	public function get_backup() {
+		return $this->backup;
 	}
 
 	/**
