@@ -298,7 +298,7 @@ class OMS_Database_Scanner {
 
 			// Check for missing critical indexes.
 			foreach ( $expected_indexes as $expected_index ) {
-				if ( true !== in_array( $expected_index, $actual_index_names, true ) ) {
+				if ( ! in_array( $expected_index, $actual_index_names, true ) ) {
 					$issues[] = array(
 						'type'     => 'missing_index',
 						'table'    => $table_name,
