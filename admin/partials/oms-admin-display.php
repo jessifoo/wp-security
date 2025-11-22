@@ -17,14 +17,16 @@
 			<h3><?php esc_html_e( 'Scanner Status', 'obfuscated-malware-scanner' ); ?></h3>
 			<div class="oms-status">
 				<?php
-				$scanner        = new Obfuscated_Malware_Scanner();
-				$scanner_status = $scanner->get_status();
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables use abbreviated prefix 'oms_' for readability.
+				$oms_scanner = new Obfuscated_Malware_Scanner();
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables use abbreviated prefix 'oms_' for readability.
+				$oms_scanner_status = $oms_scanner->get_status();
 				echo '<p><strong>' . esc_html__( 'Last Scan:', 'obfuscated-malware-scanner' ) . '</strong> ' .
-					esc_html( $scanner_status['last_scan'] ) . '</p>';
+					esc_html( $oms_scanner_status['last_scan'] ) . '</p>';
 				echo '<p><strong>' . esc_html__( 'Files Scanned:', 'obfuscated-malware-scanner' ) . '</strong> ' .
-					esc_html( $scanner_status['files_scanned'] ) . '</p>';
+					esc_html( $oms_scanner_status['files_scanned'] ) . '</p>';
 				echo '<p><strong>' . esc_html__( 'Issues Found:', 'obfuscated-malware-scanner' ) . '</strong> ' .
-					esc_html( $scanner_status['issues_found'] ) . '</p>';
+					esc_html( $oms_scanner_status['issues_found'] ) . '</p>';
 				?>
 			</div>
 		</div>
@@ -46,8 +48,9 @@
 
 			<?php
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter used for display only, not form processing.
-			$scan_param = isset( $_GET['scan'] ) && is_string( $_GET['scan'] ) ? sanitize_text_field( wp_unslash( $_GET['scan'] ) ) : '';
-			if ( 'complete' === $scan_param ) :
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables use abbreviated prefix 'oms_' for readability.
+			$oms_scan_param = isset( $_GET['scan'] ) && is_string( $_GET['scan'] ) ? sanitize_text_field( wp_unslash( $_GET['scan'] ) ) : '';
+			if ( 'complete' === $oms_scan_param ) :
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Scan completed successfully!', 'obfuscated-malware-scanner' ); ?></p>
@@ -55,7 +58,7 @@
 			<?php endif; ?>
 		</div>
 
-		<?php if ( ! empty( $scanner_status['issues'] ) ) : ?>
+		<?php if ( ! empty( $oms_scanner_status['issues'] ) ) : ?>
 		<div class="oms-issues">
 			<h3><?php esc_html_e( 'Detected Issues', 'obfuscated-malware-scanner' ); ?></h3>
 			<table class="widefat">
@@ -67,12 +70,15 @@
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $scanner_status['issues'] as $issue ) : ?>
+					<?php
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template loop variable uses abbreviated prefix 'oms_' for readability.
+					foreach ( $oms_scanner_status['issues'] as $oms_issue ) :
+						?>
 					<tr>
-						<td><?php echo esc_html( $issue['file'] ); ?></td>
-						<td><?php echo esc_html( $issue['description'] ); ?></td>
+						<td><?php echo esc_html( $oms_issue['file'] ); ?></td>
+						<td><?php echo esc_html( $oms_issue['description'] ); ?></td>
 						<td>
-							<button class="button" data-file="<?php echo esc_attr( $issue['file'] ); ?>">
+							<button class="button" data-file="<?php echo esc_attr( $oms_issue['file'] ); ?>">
 								<?php esc_html_e( 'Review', 'obfuscated-malware-scanner' ); ?>
 							</button>
 						</td>
