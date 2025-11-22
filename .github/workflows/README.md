@@ -8,9 +8,11 @@ This directory contains all GitHub Actions workflow files for the Obfuscated Mal
    - Runs Codacy Analysis CLI for security scanning
    - Uploads SARIF results to GitHub Security
 
-2. **codeql.yml** - CodeQL Analysis
-   - Performs CodeQL security analysis for PHP
-   - Runs on push, PR, schedule (weekly), and manual dispatch
+2. **codeql.yml** - CodeQL Analysis (Disabled)
+   - ⚠️ CodeQL does not support PHP
+   - CodeQL supports: JavaScript/TypeScript, Python, Java/Kotlin, C/C++, C#, Go, Ruby, Swift
+   - Workflow is disabled (manual dispatch only) with informational message
+   - For PHP security analysis, use: psalm.yml, phpmd.yml, codacy.yml, or plugin-check.yml
 
 3. **phpcs.yml** - PHPCS WordPress Coding Standards
    - Runs WordPress Coding Standards checks

@@ -1,13 +1,11 @@
 name: CodeQL Analysis
 
+# NOTE: CodeQL does not support PHP. This workflow is disabled.
+# CodeQL supports: JavaScript/TypeScript, Python, Java/Kotlin, C/C++, C#, Go, Ruby, Swift
+# For PHP security analysis, use: psalm.yml, phpmd.yml, codacy.yml, or plugin-check.yml
+
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 0 * * 0'
-  workflow_dispatch:
+  workflow_dispatch: # Only manual dispatch, not automatic
 
 permissions:
   contents: read
@@ -21,53 +19,25 @@ concurrency:
 
 jobs:
   analyze:
-    name: CodeQL PHP Analysis
+    name: CodeQL Analysis (Disabled - PHP Not Supported)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     permissions:
       contents: read
       security-events: write
       actions: read
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'php' ]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          queries: security-extended,security-and-quality
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
-        with:
-          php-version: '8.1'
-          extensions: mbstring, xml, curl, json
-          coverage: none
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
+      - name: CodeQL Not Available for PHP
         run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php8.1-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php8.1-composer-
-
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist --ansi
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: codeql-php
+          echo "⚠️ CodeQL does not support PHP."
+          echo "📋 CodeQL supports: JavaScript/TypeScript, Python, Java/Kotlin, C/C++, C#, Go, Ruby, Swift"
+          echo "✅ For PHP security analysis, use these workflows instead:"
+          echo "   - psalm.yml (Psalm static analysis)"
+          echo "   - phpmd.yml (PHP Mess Detector)"
+          echo "   - codacy.yml (Codacy security scan)"
+          echo "   - plugin-check.yml (WordPress Plugin Check)"
+          exit 0
