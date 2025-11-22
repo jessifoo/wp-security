@@ -16,7 +16,6 @@
         <ignoreFiles>
             <directory name="vendor" />
             <directory name="tests" />
-            <directory name="wordpress" />
             <directory name="src" />
         </ignoreFiles>
     </projectFiles>

@@ -245,6 +245,62 @@ class OMS_Config {
 	);
 
 	/**
+	 * Database malware patterns for content scanning.
+	 */
+	const DATABASE_MALWARE_PATTERNS = array(
+		array(
+			'pattern'     => '/eval\s*\(/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'Eval() function detected in database',
+		),
+		array(
+			'pattern'     => '/base64_decode\s*\(/i',
+			'severity'    => 'HIGH',
+			'description' => 'Base64 decode detected in database',
+		),
+		array(
+			'pattern'     => '/exec\s*\(|shell_exec\s*\(|system\s*\(|passthru\s*\(/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'System command execution detected in database',
+		),
+		array(
+			'pattern'     => '/<script[^>]*>.*eval/i',
+			'severity'    => 'HIGH',
+			'description' => 'JavaScript eval detected in database',
+		),
+		array(
+			'pattern'     => '/<iframe[^>]*src=["\'](?:javascript|data):/i',
+			'severity'    => 'HIGH',
+			'description' => 'Malicious iframe detected in database',
+		),
+		array(
+			'pattern'     => '/\$_GET\[|\$_POST\[|\$_REQUEST\[|\$_COOKIE\[.*\)\s*\(/i',
+			'severity'    => 'HIGH',
+			'description' => 'User input execution detected in database',
+		),
+		array(
+			'pattern'     => '/gzinflate\s*\(|gzuncompress\s*\(|str_rot13\s*\(/i',
+			'severity'    => 'MEDIUM',
+			'description' => 'Obfuscation function detected in database',
+		),
+		array(
+			'pattern'     => '/wp_remote_get\s*\(.*\$_(?:GET|POST|REQUEST)/i',
+			'severity'    => 'HIGH',
+			'description' => 'Remote request with user input detected in database',
+		),
+		array(
+			'pattern'     => '/file_get_contents\s*\(.*\$_(?:GET|POST|REQUEST)/i',
+			'severity'    => 'HIGH',
+			'description' => 'File operation with user input detected in database',
+		),
+		array(
+			'pattern'     => '/\?php.*eval|\?php.*base64_decode|\?php.*exec/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'PHP code execution detected in database',
+		),
+	);
+
+	/**
 	 * Suspicious patterns that need context checking.
 	 */
 	const SUSPICIOUS_PATTERNS = array(
