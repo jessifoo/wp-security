@@ -188,54 +188,50 @@ class OMS_Scanner {
 	 * @throws OMS_Exception If file cannot be read.
 	 */
 	private function scan_file_chunks( $path, $chunk_size ) {
-		$fp = fopen( $path, 'rb' );
-		if ( ! $fp ) {
-			$this->logger->error( sprintf( 'Unable to open file: %s', esc_html( $path ) ) );
+		global $wp_filesystem;
+
+		// Initialize WP_Filesystem if not already initialized.
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . '/wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+
+		// Use WP_Filesystem to read file.
+		$file_content = $wp_filesystem->get_contents( $path );
+		if ( false === $file_content ) {
+			$this->logger->error( sprintf( 'Unable to read file: %s', esc_html( $path ) ) );
 			return false;
 		}
 
-		try {
-			$content = '';
-			while ( ! feof( $fp ) ) {
-				$chunk = fread( $fp, $chunk_size );
-				if ( false === $chunk ) {
-					$this->logger->error( sprintf( 'Failed to read file chunk: %s', esc_html( $path ) ) );
-					return false;
-				}
+		$file_length = strlen( $file_content );
+		$position    = 0;
+		$content     = '';
 
-				// Keep previous overlap and append new chunk.
-				$content = substr( $content, -OMS_Config::SCAN_CONFIG['overlap_size'] ) . $chunk;
-
-				if ( $this->match_patterns( $content, $path, ftell( $fp ) ) ) {
-					return true;
-				}
-
-				// Trim content for memory optimization.
-				if ( strlen( $content ) > $chunk_size * 2 ) {
-					$content = substr( $content, -$chunk_size );
-				}
+		while ( $position < $file_length ) {
+			$chunk = substr( $file_content, $position, $chunk_size );
+			if ( false === $chunk ) {
+				$this->logger->error( sprintf( 'Failed to read file chunk: %s', esc_html( $path ) ) );
+				return false;
 			}
-			return false;
-		} finally {
-			fclose( $fp );
+
+			// Keep previous overlap and append new chunk.
+			$content = substr( $content, -OMS_Config::SCAN_CONFIG['overlap_size'] ) . $chunk;
+
+			if ( $this->match_patterns( $content, $path, $position + strlen( $chunk ) ) ) {
+				return true;
+			}
+
+			// Trim content for memory optimization.
+			if ( strlen( $content ) > $chunk_size * 2 ) {
+				$content = substr( $content, -$chunk_size );
+			}
+
+			$position += $chunk_size;
 		}
+
+		return false;
 	}
 
-	/**
-	 * Read a chunk from file with error handling
-	 *
-	 * @param resource $fp File pointer.
-	 * @param int      $chunk_size Size of chunk to read.
-	 * @return array Array containing [chunk content, bytes read].
-	 * @throws OMS_Exception If read fails.
-	 */
-	private function read_chunk( $fp, $chunk_size ) {
-		$chunk = fread( $fp, $chunk_size );
-		if ( false === $chunk ) {
-			throw new OMS_Exception( 'Failed to read file chunk' );
-		}
-		return array( $chunk, strlen( $chunk ) );
-	}
 
 	/**
 	 * Maintain overlap buffer for pattern matching

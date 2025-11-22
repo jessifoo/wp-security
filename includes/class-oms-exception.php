@@ -35,7 +35,12 @@ class OMS_Exception extends Exception {
 	 * @throws Exception Always throws the exception.
 	 */
 	public function handleException( Exception $e, string $context = '' ): never {
-		error_log( sprintf( 'OMS Exception in %s: %s', esc_html( $context ), esc_html( $e->getMessage() ) ) );
+		// Log exception using WordPress debug log if WP_DEBUG is enabled.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Exception logging is necessary for debugging and only runs when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && function_exists( 'error_log' ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( sprintf( 'OMS Exception in %s: %s', esc_html( $context ), esc_html( $e->getMessage() ) ) );
+		}
 		throw $e;
 	}
 
