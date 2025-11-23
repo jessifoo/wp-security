@@ -438,24 +438,32 @@ class OMS_Database_Scanner {
 		$issues = array();
 
 		try {
+			// Validate table and column names.
+			$validated_table  = $this->validate_db_identifier( $table_name );
+			$validated_column = $this->validate_db_identifier( $column );
+			if ( false === $validated_table || false === $validated_column ) {
+				$this->logger->error( sprintf( 'Invalid database identifier: table=%s, column=%s', esc_html( $table_name ), esc_html( $column ) ) );
+				return $issues;
+			}
+
+			// Get the correct primary key column name for this table.
+			$id_column           = $this->get_id_column_name( $validated_table );
+			$validated_id_column = $this->validate_db_identifier( $id_column );
+			if ( false === $validated_id_column ) {
+				$this->logger->error( sprintf( 'Invalid ID column name for table %s: %s', esc_html( $table_name ), esc_html( $id_column ) ) );
+				return $issues;
+			}
+
 			// Process in batches to avoid memory issues.
 			$batch_size = 100;
 			$offset     = 0;
 
 			while ( true ) {
-				// Validate table and column names.
-				$validated_table  = $this->validate_db_identifier( $table_name );
-				$validated_column = $this->validate_db_identifier( $column );
-				if ( false === $validated_table || false === $validated_column ) {
-					$this->logger->error( sprintf( 'Invalid database identifier: table=%s, column=%s', esc_html( $table_name ), esc_html( $column ) ) );
-					break;
-				}
-
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, content scanning needs current data not cached.
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
-						"SELECT ID, `{$validated_column}` FROM `{$validated_table}` WHERE `{$validated_column}` IS NOT NULL AND `{$validated_column}` != '' LIMIT %d OFFSET %d",
+						"SELECT `{$validated_id_column}`, `{$validated_column}` FROM `{$validated_table}` WHERE `{$validated_column}` IS NOT NULL AND `{$validated_column}` != '' LIMIT %d OFFSET %d",
 						$batch_size,
 						$offset
 					),
@@ -472,6 +480,9 @@ class OMS_Database_Scanner {
 						continue;
 					}
 
+					// Get row ID using the detected ID column name.
+					$row_id = isset( $row[ $id_column ] ) ? $row[ $id_column ] : null;
+
 					// Check against patterns.
 					foreach ( $patterns as $pattern_data ) {
 						$pattern  = is_array( $pattern_data ) && isset( $pattern_data['pattern'] ) ? $pattern_data['pattern'] : $pattern_data;
@@ -482,10 +493,10 @@ class OMS_Database_Scanner {
 								'type'     => 'malicious_content',
 								'table'    => $table_name,
 								'column'   => $column,
-								'row_id'   => isset( $row['ID'] ) ? $row['ID'] : null,
+								'row_id'   => $row_id,
 								'pattern'  => $pattern,
 								'severity' => $severity,
-								'message'  => sprintf( 'Malicious content detected in %s.%s (row: %s)', esc_html( $table_name ), esc_html( $column ), isset( $row['ID'] ) ? esc_html( (string) $row['ID'] ) : 'unknown' ),
+								'message'  => sprintf( 'Malicious content detected in %s.%s (row: %s)', esc_html( $table_name ), esc_html( $column ), null !== $row_id ? esc_html( (string) $row_id ) : 'unknown' ),
 								'match'    => isset( $matches[0] ) ? substr( $matches[0], 0, 100 ) : '',
 							);
 						}
@@ -883,16 +894,42 @@ class OMS_Database_Scanner {
 	 * @return string ID column name.
 	 */
 	private function get_id_column_name( $table_name ) {
-		// Common ID column names.
-		$id_columns = array(
-			'ID',
-			'option_id',
-			'comment_id',
-			'umeta_id',
-			'meta_id',
+		global $wpdb;
+
+		// Map table names to their primary key column names.
+		$table_base    = str_replace( $wpdb->prefix, '', $table_name );
+		$id_column_map = array(
+			'options'     => 'option_id',
+			'postmeta'    => 'meta_id',
+			'usermeta'    => 'umeta_id',
+			'commentmeta' => 'meta_id',
+			'comments'    => 'comment_ID',
+			'posts'       => 'ID',
+			'users'       => 'ID',
 		);
 
-		global $wpdb;
+		// Check if we have a known mapping.
+		if ( isset( $id_column_map[ $table_base ] ) ) {
+			return $id_column_map[ $table_base ];
+		}
+
+		// Fallback: Query information_schema to find primary key column.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database query required to get column names, information_schema queries don't benefit from caching.
+		$primary_key = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE 
+				WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND CONSTRAINT_NAME = 'PRIMARY' 
+				LIMIT 1",
+				DB_NAME,
+				$table_name
+			)
+		);
+
+		if ( ! empty( $primary_key ) ) {
+			return $primary_key;
+		}
+
+		// Fallback: Try common ID column names.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database query required to get column names, information_schema queries don't benefit from caching.
 		$columns = $wpdb->get_col(
 			$wpdb->prepare(
@@ -902,13 +939,14 @@ class OMS_Database_Scanner {
 			)
 		);
 
-		foreach ( $id_columns as $id_col ) {
+		$common_id_columns = array( 'ID', 'option_id', 'comment_ID', 'umeta_id', 'meta_id' );
+		foreach ( $common_id_columns as $id_col ) {
 			if ( in_array( $id_col, $columns, true ) ) {
 				return $id_col;
 			}
 		}
 
-		// Fallback to first column.
+		// Last resort: return first column or 'ID'.
 		return ! empty( $columns ) ? $columns[0] : 'ID';
 	}
 }
