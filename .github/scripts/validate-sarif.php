@@ -6,6 +6,7 @@
  */
 
 if ( $argc < 2 ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output.
 	echo "Usage: php validate-sarif.php <sarif-file>\n";
 	exit( 1 );
 }
@@ -13,14 +14,16 @@ if ( $argc < 2 ) {
 $sarif_file = $argv[1];
 
 if ( ! file_exists( $sarif_file ) ) {
-	echo "Error: SARIF file not found: $sarif_file\n";
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, file path is from command line argument.
+	echo "Error: SARIF file not found: " . escapeshellarg( $sarif_file ) . "\n";
 	exit( 1 );
 }
 
 $json = json_decode( file_get_contents( $sarif_file ), true );
 
 if ( json_last_error() !== JSON_ERROR_NONE ) {
-	echo "Error: Invalid JSON in SARIF file: " . json_last_error_msg() . "\n";
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, error message is from PHP function.
+	echo "Error: Invalid JSON in SARIF file: " . escapeshellarg( json_last_error_msg() ) . "\n";
 	exit( 1 );
 }
 
@@ -89,15 +92,19 @@ if ( isset( $json['runs'] ) ) {
 file_put_contents( $sarif_file, json_encode( $json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
 
 if ( $fixed_count > 0 || $removed_count > 0 ) {
-	echo "Sanitized SARIF file: $sarif_file\n";
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, file path is from command line argument.
+	echo "Sanitized SARIF file: " . escapeshellarg( $sarif_file ) . "\n";
 	if ( $fixed_count > 0 ) {
-		echo "  Fixed $fixed_count invalid startLine values\n";
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, count is integer.
+		echo "  Fixed " . (int) $fixed_count . " invalid startLine values\n";
 	}
 	if ( $removed_count > 0 ) {
-		echo "  Removed $removed_count results with invalid locations\n";
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, count is integer.
+		echo "  Removed " . (int) $removed_count . " results with invalid locations\n";
 	}
 } else {
-	echo "SARIF file is valid: $sarif_file\n";
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, file path is from command line argument.
+	echo "SARIF file is valid: " . escapeshellarg( $sarif_file ) . "\n";
 }
 
 exit( 0 );

@@ -460,6 +460,7 @@ class OMS_Database_Scanner {
 
 			while ( true ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, content scanning needs current data not cached.
+				// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table and column names are validated and sanitized via validate_db_identifier() which ensures they are safe for use in SQL queries.
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
@@ -577,6 +578,7 @@ class OMS_Database_Scanner {
 
 			foreach ( $suspicious_option_names as $pattern ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, needs current data for security checks.
+				// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is validated and sanitized via validate_db_identifier() which ensures it is safe for use in SQL queries.
 				$options = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
@@ -633,6 +635,7 @@ class OMS_Database_Scanner {
 
 			foreach ( $suspicious_keys as $pattern ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, needs current data for security checks.
+				// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is validated and sanitized via validate_db_identifier() which ensures it is safe for use in SQL queries.
 				$meta = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
@@ -859,6 +862,7 @@ class OMS_Database_Scanner {
 
 			// Clean the malicious content by setting to empty or safe value.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database cleanup requires direct query, cleanup operations need immediate effect.
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table and column names are validated and sanitized via validate_db_identifier() which ensures they are safe for use in SQL queries.
 			$result = $wpdb->query(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
