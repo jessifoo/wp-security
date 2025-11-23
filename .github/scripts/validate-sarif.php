@@ -89,7 +89,21 @@ if ( isset( $json['runs'] ) ) {
 }
 
 // Write sanitized SARIF back to file
-file_put_contents( $sarif_file, json_encode( $json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+$json_output = json_encode( $json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+if ( false === $json_output ) {
+	fwrite( STDERR, "Error: Failed to encode SARIF JSON: " . json_last_error_msg() . "\n" );
+	exit( 1 );
+}
+
+$expected_bytes = strlen( $json_output );
+$bytes_written  = file_put_contents( $sarif_file, $json_output );
+if ( false === $bytes_written || $bytes_written < $expected_bytes ) {
+	$error_msg = false === $bytes_written
+		? "Failed to write SARIF file (permission or disk error)"
+		: sprintf( "Incomplete write: expected %d bytes, wrote %d bytes", $expected_bytes, $bytes_written );
+	fwrite( STDERR, "Error: {$error_msg}: " . escapeshellarg( $sarif_file ) . "\n" );
+	exit( 1 );
+}
 
 if ( $fixed_count > 0 || $removed_count > 0 ) {
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, file path is from command line argument.
