@@ -59,6 +59,13 @@ jobs:
           gh-code-scanning-compat: true
           max-allowed-issues: 2147483647
 
+      - name: Validate and sanitize SARIF file
+        if: always()
+        run: |
+          if [ -f results.sarif ]; then
+            php .github/scripts/validate-sarif.php results.sarif
+          fi
+
       - name: Upload SARIF results file
         uses: github/codeql-action/upload-sarif@v3
         if: always()

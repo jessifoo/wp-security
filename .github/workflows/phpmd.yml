@@ -67,6 +67,13 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Validate and sanitize SARIF file
+        if: always()
+        run: |
+          if [ -f phpmd-results.sarif ]; then
+            php .github/scripts/validate-sarif.php phpmd-results.sarif
+          fi
+
       - name: Upload analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3
         if: always()
