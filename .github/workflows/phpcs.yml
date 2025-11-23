@@ -55,6 +55,32 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --ansi
 
+      - name: Check PHP syntax
+        run: |
+          echo "Checking PHP syntax..."
+          find . -type f -name "*.php" \
+            -not -path "./vendor/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./wordpress/*" \
+            -not -path "./tests/_output/*" \
+            -not -path "./tests/_support/_generated/*" \
+            -exec php -l {} \; | grep -v "No syntax errors" || true
+          
+          ERRORS=$(find . -type f -name "*.php" \
+            -not -path "./vendor/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./wordpress/*" \
+            -not -path "./tests/_output/*" \
+            -not -path "./tests/_support/_generated/*" \
+            -exec php -l {} \; 2>&1 | grep -c "Parse error" || echo "0")
+          
+          if [ "$ERRORS" -gt "0" ]; then
+            echo "❌ Found $ERRORS PHP syntax error(s)"
+            exit 1
+          else
+            echo "✅ All PHP files have valid syntax"
+          fi
+
       - name: Run PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml
 
