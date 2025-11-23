@@ -47,8 +47,7 @@
 			</form>
 
 			<?php
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter used for display only, not form processing.
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables use abbreviated prefix 'oms_' for readability.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- GET parameter used for display only, not form processing. Template variables use abbreviated prefix 'oms_' for readability.
 			$oms_scan_param = isset( $_GET['scan'] ) && is_string( $_GET['scan'] ) ? sanitize_text_field( wp_unslash( $_GET['scan'] ) ) : '';
 			if ( 'complete' === $oms_scan_param ) :
 				?>
