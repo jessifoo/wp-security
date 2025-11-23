@@ -205,9 +205,8 @@ class OMS_Database_Backup {
 			}
 
 			// Get table data.
-			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is validated and sanitized via validate_db_table_name() which ensures it is safe for use in SQL queries.
-			// Database backup requires direct query, table name is validated via validate_db_table_name(). Backup needs current data not cached.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			// Database backup requires direct query, table name is validated via validate_db_table_name(). Backup needs current data not cached. Table name is validated and sanitized via validate_db_table_name() which ensures it is safe for use in SQL queries.
 			$rows = $wpdb->get_results(
 				"SELECT * FROM `{$validated_table}`",
 				ARRAY_A
@@ -356,8 +355,7 @@ class OMS_Database_Backup {
 			}
 
 			// Truncate table first.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Database restore requires direct query, table name is validated via validate_db_table_name().
-			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is validated and sanitized via validate_db_table_name() which ensures it is safe for use in SQL queries.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Database restore requires direct query, table name is validated via validate_db_table_name(). TRUNCATE TABLE does not support placeholders for table names.
 			$wpdb->query( "TRUNCATE TABLE `{$validated_table}`" );
 
 			// Restore data in batches.
