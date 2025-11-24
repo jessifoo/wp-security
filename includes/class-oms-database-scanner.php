@@ -466,34 +466,22 @@ class OMS_Database_Scanner {
 						"SELECT `{$validated_id_column}`, `{$validated_column}` FROM `{$validated_table}` WHERE `{$validated_column}` IS NOT NULL AND `{$validated_column}` != '' LIMIT %d OFFSET %d",
 						$batch_size,
 						$offset
-					foreach ( $rows as $row ) {
-						$content = isset( $row['_oms_content'] ) ? $row['_oms_content'] : '';
-						if ( '' === $content ) {
-							continue;
-						}
+					),
+					ARRAY_A
+				);
 
-						$row_id = isset( $row['_oms_row_id'] ) ? $row['_oms_row_id'] : null;
+				foreach ( $rows as $row ) {
+					$content = isset( $row[ $validated_column ] ) ? $row[ $validated_column ] : '';
+					if ( '' === $content ) {
+						continue;
+					}
 
-						// Check against patterns.
-						foreach ( $patterns as $pattern_data ) {
-							$pattern  = is_array( $pattern_data ) && isset( $pattern_data['pattern'] ) ? $pattern_data['pattern'] : $pattern_data;
-							$severity = is_array( $pattern_data ) && isset( $pattern_data['severity'] ) ? $pattern_data['severity'] : 'MEDIUM';
+					$row_id = isset( $row[ $validated_id_column ] ) ? $row[ $validated_id_column ] : null;
 
-							if ( preg_match( $pattern, $content, $matches ) ) {
-								$issues[] = array(
-									'type'     => 'malicious_content',
-									'table'    => $table_name,
-									'column'   => $column,
-									'row_id'   => $row_id,
-									'pattern'  => $pattern,
-									'severity' => $severity,
-									'message'  => sprintf(
-										'Malicious content detected in %s.%s (row: %s)',
-										esc_html( $table_name ),
-										esc_html( $column ),
-										null !== $row_id ? esc_html( (string) $row_id ) : 'unknown'
-									),
-									'match'    => isset( $matches[0] ) ? substr( $matches[0], 0, 100 ) : '',
+					// Check against patterns.
+					foreach ( $patterns as $pattern_data ) {
+						$pattern  = is_array( $pattern_data ) && isset( $pattern_data['pattern'] ) ? $pattern_data['pattern'] : $pattern_data;
+						$severity = is_array( $pattern_data ) && isset( $pattern_data['severity'] ) ? $pattern_data['severity'] : 'MEDIUM';
 
 						if ( preg_match( $pattern, $content, $matches ) ) {
 							$issues[] = array(
@@ -503,7 +491,12 @@ class OMS_Database_Scanner {
 								'row_id'   => $row_id,
 								'pattern'  => $pattern,
 								'severity' => $severity,
-								'message'  => sprintf( 'Malicious content detected in %s.%s (row: %s)', esc_html( $table_name ), esc_html( $column ), null !== $row_id ? esc_html( (string) $row_id ) : 'unknown' ),
+								'message'  => sprintf(
+									'Malicious content detected in %s.%s (row: %s)',
+									esc_html( $table_name ),
+									esc_html( $column ),
+									null !== $row_id ? esc_html( (string) $row_id ) : 'unknown'
+								),
 								'match'    => isset( $matches[0] ) ? substr( $matches[0], 0, 100 ) : '',
 							);
 						}
