@@ -400,7 +400,7 @@ class OMS_Database_Backup {
 			foreach ( $files as $file ) {
 				$basename = basename( $file );
 
-				// Only allow deletion of files this component creates:
+				// Only allow deletion of files this component creates.
 				$is_manifest = (bool) preg_match( '/^backup_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_manifest\.json$/', $basename );
 				$is_table    = (bool) preg_match( '/^backup_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_[a-zA-Z0-9_]+\.[jJ][sS][oO][nN]$/', $basename );
 
