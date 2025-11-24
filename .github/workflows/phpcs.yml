@@ -58,22 +58,17 @@ jobs:
       - name: Check PHP syntax
         run: |
           echo "Checking PHP syntax..."
-          find . -type f -name "*.php" \
+          OUTPUT=$(find . -type f -name "*.php" \
             -not -path "./vendor/*" \
             -not -path "./node_modules/*" \
             -not -path "./wordpress/*" \
             -not -path "./tests/_output/*" \
             -not -path "./tests/_support/_generated/*" \
-            -exec php -l {} \; | grep -v "No syntax errors" || true
-          
-          ERRORS=$(find . -type f -name "*.php" \
-            -not -path "./vendor/*" \
-            -not -path "./node_modules/*" \
-            -not -path "./wordpress/*" \
-            -not -path "./tests/_output/*" \
-            -not -path "./tests/_support/_generated/*" \
-            -exec php -l {} \; 2>&1 | grep -c "Parse error" || echo "0")
-          
+            -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          echo "$OUTPUT"
+    
+          ERRORS=$(printf "%s" "$OUTPUT" | grep -c . || echo "0")
+    
           if [ "$ERRORS" -gt "0" ]; then
             echo "❌ Found $ERRORS PHP syntax error(s)"
             exit 1
