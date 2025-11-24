@@ -398,8 +398,18 @@ class OMS_Database_Backup {
 		try {
 			$files = glob( $this->backup_dir . '/backup_*' );
 			foreach ( $files as $file ) {
+				$basename = basename( $file );
+
+				// Only allow deletion of files this component creates:
+				$is_manifest = (bool) preg_match( '/^backup_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_manifest\.json$/', $basename );
+				$is_table    = (bool) preg_match( '/^backup_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_[a-zA-Z0-9_]+\.[jJ][sS][oO][nN]$/', $basename );
+
+				if ( ! $is_manifest && ! $is_table ) {
+					continue; // Skip unknown files.
+				}
+
 				if ( filemtime( $file ) < $cutoff_time ) {
-					if ( unlink( $file ) ) {
+					if ( @unlink( $file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 						++$deleted;
 					} else {
 						++$errors;
