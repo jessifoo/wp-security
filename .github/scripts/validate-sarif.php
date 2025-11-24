@@ -19,8 +19,15 @@ if ( ! file_exists( $sarif_file ) ) {
 	exit( 1 );
 }
 
-$json = json_decode( file_get_contents( $sarif_file ), true );
+// Read file safely and validate read success.
+$raw = file_get_contents( $sarif_file );
+if ( false === $raw ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output.
+	fwrite( STDERR, "Error: Failed to read SARIF file: " . escapeshellarg( $sarif_file ) . "\n" );
+	exit( 1 );
+}
 
+$json = json_decode( $raw, true );
 if ( json_last_error() !== JSON_ERROR_NONE ) {
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script output, error message is from PHP function.
 	echo "Error: Invalid JSON in SARIF file: " . escapeshellarg( json_last_error_msg() ) . "\n";
