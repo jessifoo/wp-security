@@ -188,3 +188,72 @@ if (!function_exists('get_plugins')) {
         return isset($get_plugins_mock) ? $get_plugins_mock : array();
     }
 }
+
+if (!function_exists('register_rest_route')) {
+    function register_rest_route($namespace, $route, $args = array(), $override = false) {
+        return true;
+    }
+}
+
+if (!function_exists('wp_generate_password')) {
+    function wp_generate_password($length = 12, $special_chars = true, $extra_special_chars = false) {
+        global $wp_generate_password_return;
+        return isset($wp_generate_password_return) ? $wp_generate_password_return : 'mock_password';
+    }
+}
+
+if (!function_exists('get_site_url')) {
+    function get_site_url($blog_id = null, $path = '', $scheme = null) {
+        global $site_url_return;
+        return isset($site_url_return) ? $site_url_return : 'http://example.com';
+    }
+}
+
+if (!function_exists('get_option')) {
+    function get_option($option, $default = false) {
+        global $wp_options;
+        return isset($wp_options[$option]) ? $wp_options[$option] : $default;
+    }
+}
+
+if (!function_exists('update_option')) {
+    function update_option($option, $value, $autoload = null) {
+        global $wp_options;
+        $wp_options[$option] = $value;
+        return true;
+    }
+}
+
+if (!class_exists('WP_REST_Request')) {
+    class WP_REST_Request {
+        public function get_json_params() { return []; }
+        public function get_header($header) { return ''; }
+    }
+}
+
+if (!class_exists('WP_REST_Response')) {
+    class WP_REST_Response {
+        private $data;
+        private $status;
+        public function __construct($data = null, $status = 200) {
+            $this->data = $data;
+            $this->status = $status;
+        }
+        public function get_data() { return $this->data; }
+        public function get_status() { return $this->status; }
+    }
+}
+
+if (!class_exists('WP_Error')) {
+    class WP_Error {
+        private $code;
+        private $message;
+        private $data;
+        public function __construct($code = '', $message = '', $data = '') {
+            $this->code = $code;
+            $this->message = $message;
+            $this->data = $data;
+        }
+        public function get_error_data($code = '') { return $this->data; }
+    }
+}

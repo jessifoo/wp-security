@@ -58,5 +58,7 @@ require_once __DIR__ . '/../includes/class-oms-rate-limiter.php';
 require_once __DIR__ . '/../includes/class-oms-database-backup.php';
 require_once __DIR__ . '/../includes/class-oms-database-scanner.php';
 require_once __DIR__ . '/../includes/class-oms-core-integrity-checker.php';
+require_once __DIR__ . '/../includes/class-oms-quarantine-manager.php';
+require_once __DIR__ . '/../includes/class-oms-api.php';
 require_once __DIR__ . '/../includes/class-file-security-policy.php';
 require_once __DIR__ . '/../includes/class-obfuscated-malware-scanner.php';
