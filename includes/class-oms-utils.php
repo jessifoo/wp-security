@@ -81,14 +81,15 @@ class OMS_Utils {
 			return false;
 		}
 
-		// Check for directory traversal.
-		if ( false !== strpos( $path, '../' ) || false !== strpos( $path, '..\\' ) ) {
+		// Normalize and decode before traversal checks.
+		$decoded    = rawurldecode( (string) $path );
+		$normalized = wp_normalize_path( $decoded );
+
+		// Disallow traversal by checking path segments strictly.
+		$parts = array_values( array_filter( explode( '/', $normalized ), 'strlen' ) );
+		if ( in_array( '..', $parts, true ) ) {
 			return false;
 		}
-
-		// Check for path traversal.
-		$normalized = wp_normalize_path( $path );
-		$parts      = explode( '/', $normalized );
 		$stack      = array();
 
 		foreach ( $parts as $part ) {
