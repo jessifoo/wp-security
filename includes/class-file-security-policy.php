@@ -15,6 +15,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OMS_File_Security_Policy {
 	/**
+	 * Filesystem instance.
+	 *
+	 * @var OMS_Filesystem
+	 */
+	private $filesystem;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param OMS_Filesystem $filesystem Filesystem instance.
+	 */
+	public function __construct( OMS_Filesystem $filesystem ) {
+		$this->filesystem = $filesystem;
+	}
+	/**
 	 * Allowed MIME types and their corresponding extensions
 	 *
 	 * @var array
@@ -183,9 +198,21 @@ class OMS_File_Security_Policy {
 
 			// Check file size.
 			if ( 0 === filesize( $path ) ) {
+				// Check if this file is allowed to be empty.
+				$filename = basename( $path );
+				if ( ! in_array( $filename, OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
+					return array(
+						'valid'  => false,
+						'reason' => 'Zero byte file not in allowlist',
+					);
+				}
+			}
+
+			// Check for random filenames.
+			if ( $this->is_random_filename( basename( $path ) ) ) {
 				return array(
 					'valid'  => false,
-					'reason' => 'Zero byte file',
+					'reason' => 'Suspicious random filename detected',
 				);
 			}
 
@@ -230,7 +257,7 @@ class OMS_File_Security_Policy {
 			}
 
 			// Perform content checks.
-			$content_check = OMS_Utils::check_file_content( $path );
+			$content_check = $this->filesystem->check_file_content( $path );
 			if ( ! is_array( $content_check ) || ! isset( $content_check['safe'] ) || ! $content_check['safe'] ) {
 				// If it's a theme file, we need to be more careful.
 				if ( $is_theme_file ) {
@@ -340,6 +367,58 @@ class OMS_File_Security_Policy {
 				return true;
 			}
 		}
+		return false;
+	}
+
+	/**
+	 * Check if a filename appears to be random (high entropy)
+	 *
+	 * @param string $filename Filename to check.
+	 * @return bool True if filename appears random.
+	 */
+	private function is_random_filename( $filename ) {
+		// Remove extension.
+		$name = pathinfo( $filename, PATHINFO_FILENAME );
+
+		// Skip short filenames.
+		if ( strlen( $name ) < 5 ) {
+			return false;
+		}
+
+		// Calculate entropy.
+		$entropy = 0;
+		$size    = strlen( $name );
+		$data    = count_chars( $name, 1 );
+
+		foreach ( $data as $count ) {
+			$p        = $count / $size;
+			$entropy -= $p * log( $p, 2 );
+		}
+
+		// High entropy threshold (very random).
+		if ( $entropy > 4.5 ) {
+			return true;
+		}
+
+		// Medium entropy check with heuristics.
+		if ( $entropy > 2.5 ) {
+			// Check for dictionary words.
+			foreach ( OMS_Config::FILENAME_DICTIONARY as $word ) {
+				if ( false !== stripos( $name, $word ) ) {
+					return false; // Contains a known word, likely safe.
+				}
+			}
+
+			// Check digit ratio.
+			$digits = preg_match_all( '/[0-9]/', $name );
+			$ratio  = $digits / $size;
+
+			// If it has significant entropy AND significant digits AND no known words -> Flag.
+			if ( $ratio > 0.2 ) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 

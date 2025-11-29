@@ -58,10 +58,10 @@ class OMS_Database_Scanner {
 	 * @param OMS_Logger $logger Logger instance.
 	 * @param OMS_Cache  $cache Cache instance.
 	 */
-	public function __construct( OMS_Logger $logger, OMS_Cache $cache ) {
+	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Backup $backup = null ) {
 		$this->logger = $logger;
 		$this->cache  = $cache;
-		$this->backup = new OMS_Database_Backup( $this->logger );
+		$this->backup = $backup ? $backup : new OMS_Database_Backup( $this->logger );
 	}
 
 	/**
@@ -250,8 +250,8 @@ class OMS_Database_Scanner {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
 			$actual_columns = $wpdb->get_results(
 				$wpdb->prepare(
-					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT 
-					FROM information_schema.COLUMNS 
+					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+					FROM information_schema.COLUMNS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
 					DB_NAME,
 					$table_name
@@ -315,8 +315,8 @@ class OMS_Database_Scanner {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
 			$actual_indexes = $wpdb->get_results(
 				$wpdb->prepare(
-					'SELECT INDEX_NAME FROM information_schema.STATISTICS 
-					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s 
+					'SELECT INDEX_NAME FROM information_schema.STATISTICS
+					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 					GROUP BY INDEX_NAME',
 					DB_NAME,
 					$table_name
@@ -398,8 +398,8 @@ class OMS_Database_Scanner {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, information_schema queries don't benefit from caching.
 			$columns = $wpdb->get_col(
 				$wpdb->prepare(
-					'SELECT COLUMN_NAME FROM information_schema.COLUMNS 
-					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s 
+					'SELECT COLUMN_NAME FROM information_schema.COLUMNS
+					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 					AND DATA_TYPE IN ("varchar", "text", "longtext", "mediumtext", "tinytext", "char")',
 					DB_NAME,
 					$table_name
@@ -857,13 +857,12 @@ class OMS_Database_Scanner {
 				);
 			}
 
-			// Clean the malicious content by setting to empty or safe value.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database cleanup requires direct query, cleanup operations need immediate effect. Table and column names are validated and sanitized via validate_db_identifier().
+			// Delete the row.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database cleanup requires direct query. Table and column names are validated via validate_db_identifier().
 			$result = $wpdb->query(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
-					"UPDATE `{$validated_table}` SET `{$validated_column}` = %s WHERE `{$validated_id_column}` = %d",
-					'',
+					"DELETE FROM `{$validated_table}` WHERE `{$validated_id_column}` = %s",
 					$row_id
 				)
 			);
@@ -871,13 +870,13 @@ class OMS_Database_Scanner {
 			if ( false === $result ) {
 				return array(
 					'success' => false,
-					'message' => 'Database update failed',
+					'message' => 'Database error during deletion',
 				);
 			}
 
 			return array(
 				'success' => true,
-				'message' => 'Row cleaned successfully',
+				'message' => 'Row deleted successfully',
 			);
 		} catch ( Exception $e ) {
 			return array(
@@ -888,7 +887,7 @@ class OMS_Database_Scanner {
 	}
 
 	/**
-	 * Get ID column name for a table
+	 * Get the primary key column name for a table
 	 *
 	 * @param string $table_name Full table name.
 	 * @return string ID column name.
@@ -896,57 +895,36 @@ class OMS_Database_Scanner {
 	private function get_id_column_name( $table_name ) {
 		global $wpdb;
 
-		// Map table names to their primary key column names.
-		$table_base    = str_replace( $wpdb->prefix, '', $table_name );
-		$id_column_map = array(
-			'options'     => 'option_id',
-			'postmeta'    => 'meta_id',
-			'usermeta'    => 'umeta_id',
-			'commentmeta' => 'meta_id',
-			'comments'    => 'comment_ID',
-			'posts'       => 'ID',
-			'users'       => 'ID',
-		);
+		// Strip prefix to identify table type.
+		$table_base = str_replace( $wpdb->prefix, '', $table_name );
 
-		// Check if we have a known mapping.
-		if ( isset( $id_column_map[ $table_base ] ) ) {
-			return $id_column_map[ $table_base ];
+		switch ( $table_base ) {
+			case 'posts':
+				return 'ID';
+			case 'users':
+				return 'ID';
+			case 'comments':
+				return 'comment_ID';
+			case 'options':
+				return 'option_id';
+			case 'postmeta':
+				return 'meta_id';
+			case 'usermeta':
+				return 'umeta_id';
+			case 'commentmeta':
+				return 'meta_id';
+			case 'terms':
+				return 'term_id';
+			case 'term_taxonomy':
+				return 'term_taxonomy_id';
+			case 'links':
+				return 'link_id';
+			default:
+				// Fallback: try to guess or query schema.
+				// For now, default to 'ID' or 'id'.
+				return 'ID';
 		}
-
-		// Fallback: Query information_schema to find primary key column.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database query required to get column names, information_schema queries don't benefit from caching.
-		$primary_key = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE 
-				WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND CONSTRAINT_NAME = 'PRIMARY' 
-				LIMIT 1",
-				DB_NAME,
-				$table_name
-			)
-		);
-
-		if ( ! empty( $primary_key ) ) {
-			return $primary_key;
-		}
-
-		// Fallback: Try common ID column names.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database query required to get column names, information_schema queries don't benefit from caching.
-		$columns = $wpdb->get_col(
-			$wpdb->prepare(
-				'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
-				DB_NAME,
-				$table_name
-			)
-		);
-
-		$common_id_columns = array( 'ID', 'option_id', 'comment_ID', 'umeta_id', 'meta_id' );
-		foreach ( $common_id_columns as $id_col ) {
-			if ( in_array( $id_col, $columns, true ) ) {
-				return $id_col;
-			}
-		}
-
-		// Last resort: return first column or 'ID'.
-		return ! empty( $columns ) ? $columns[0] : 'ID';
 	}
+
+
 }

@@ -20,7 +20,7 @@ jobs:
     name: WordPress Coding Standards
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           extensions: mbstring, xml, curl, json
           coverage: none
           tools: composer, phpcs
@@ -66,9 +66,9 @@ jobs:
             -not -path "./tests/_support/_generated/*" \
             -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
           echo "$OUTPUT"
-    
+
           ERRORS=$(printf "%s" "$OUTPUT" | grep -c . || echo "0")
-    
+
           if [ "$ERRORS" -gt "0" ]; then
             echo "❌ Found $ERRORS PHP syntax error(s)"
             exit 1

@@ -20,15 +20,15 @@ jobs:
     name: WordPress Plugin Check
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup PHP
         uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           extensions: mbstring, xml, curl, json
           coverage: none
 
@@ -44,10 +44,10 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
-      
+
       - name: Install PHP dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --no-dev --ansi
-      
+
       - name: WordPress Plugin Check
         uses: WordPress/plugin-check-action@v1.1.4
         with:

@@ -62,6 +62,11 @@ if (!function_exists('current_time')) {
 
 if (!function_exists('wp_upload_dir')) {
     function wp_upload_dir() {
+        global $wp_upload_dir_mock;
+        if (isset($wp_upload_dir_mock)) {
+            return $wp_upload_dir_mock;
+        }
+
         $upload_dir = sys_get_temp_dir() . '/wordpress/wp-content/uploads';
         if (!file_exists($upload_dir)) {
             mkdir($upload_dir, 0777, true);
@@ -135,8 +140,51 @@ if (!function_exists('wp_remote_retrieve_response_code')) {
     }
 }
 
+if (!function_exists('wp_remote_retrieve_body')) {
+    function wp_remote_retrieve_body($response) {
+        return isset($response['body']) ? $response['body'] : '';
+    }
+}
+
 if (!function_exists('is_wp_error')) {
     function is_wp_error($thing) {
+        global $is_wp_error_mock;
+        if (isset($is_wp_error_mock)) {
+            return $is_wp_error_mock;
+        }
         return false;
+    }
+}
+
+if (!function_exists('wp_remote_get')) {
+    function wp_remote_get($url, $args = array()) {
+        global $wp_remote_get_mock;
+        if (isset($wp_remote_get_mock)) {
+            return $wp_remote_get_mock;
+        }
+        return array(
+            'response' => array('code' => 200),
+            'body' => ''
+        );
+    }
+}
+
+if (!function_exists('get_locale')) {
+    function get_locale() {
+        return 'en_US';
+    }
+}
+
+if (!function_exists('add_query_arg')) {
+    function add_query_arg($args, $url) {
+        $query = http_build_query($args);
+        return $url . '?' . $query;
+    }
+}
+
+if (!function_exists('get_plugins')) {
+    function get_plugins($plugin_folder = '') {
+        global $get_plugins_mock;
+        return isset($get_plugins_mock) ? $get_plugins_mock : array();
     }
 }

@@ -43,7 +43,7 @@ class OMS_Utils {
 		// Check file permissions if file exists.
 		if ( file_exists( $path ) ) {
 			$perms = fileperms( $path );
-			if ( ( $perms & 0x0100 ) || ( $perms & 0x0010 ) || ( $perms & 0x0001 ) ) { // Check for executable bits.
+			if ( ( $perms & 0100 ) || ( $perms & 0010 ) || ( $perms & 0001 ) ) { // Check for executable bits.
 				throw new InvalidArgumentException( 'File has unsafe permissions' );
 			}
 		}
@@ -78,6 +78,11 @@ class OMS_Utils {
 	public static function is_path_safe( $path ) {
 		// Check for null bytes.
 		if ( false !== strpos( $path, "\0" ) ) {
+			return false;
+		}
+
+		// Check for directory traversal.
+		if ( false !== strpos( $path, '../' ) || false !== strpos( $path, '..\\' ) ) {
 			return false;
 		}
 

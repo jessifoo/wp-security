@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * TestHelperTrait provides common setup and teardown functionality for OMS tests.
- * 
+ *
  * This trait encapsulates shared test infrastructure including:
  * - Temporary directory management
  * - Mock creation for common dependencies
@@ -27,7 +27,7 @@ trait TestHelperTrait
     protected function createTemporaryDirectory(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/oms_test_' . uniqid();
-        
+
         if (!mkdir($this->tempDir) && !is_dir($this->tempDir)) {
             throw new RuntimeException(
                 sprintf('Failed to create temporary directory: %s', $this->tempDir)
@@ -147,6 +147,7 @@ trait TestHelperTrait
     protected function createMockSecurityPolicy(bool $isValid, string $reason): OMS_File_Security_Policy
     {
         $policy = $this->getMockBuilder(OMS_File_Security_Policy::class)
+            ->disableOriginalConstructor()
             ->onlyMethods(['validate_file'])
             ->getMock();
 
@@ -164,7 +165,7 @@ trait TestHelperTrait
      */
     protected function mockWordPressEnvironment(): void
     {
-        $this->setUpWordPressMocks();
+        $this->setup_wordpress_mocks();
         $this->mockWPUploadDir($this->tempDir);
     }
 
@@ -181,10 +182,10 @@ trait TestHelperTrait
         }
 
         $files = array_diff(scandir($dir), ['.', '..']);
-        
+
         foreach ($files as $file) {
             $path = "$dir/$file";
-            
+
             try {
                 if (is_link($path)) {
                     unlink($path);
@@ -239,7 +240,7 @@ trait TestHelperTrait
 
     /**
      * Invokes a private or protected method on an object.
-     * 
+     *
      * @param object $object Object instance
      * @param string $methodName Method to call
      * @param array $parameters Parameters to pass
