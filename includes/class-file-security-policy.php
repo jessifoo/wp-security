@@ -29,18 +29,7 @@ class OMS_File_Security_Policy {
 	public function __construct( OMS_Filesystem $filesystem ) {
 		$this->filesystem = $filesystem;
 	}
-	/**
-	 * Allowed MIME types and their corresponding extensions
-	 *
-	 * @var array
-	 */
-	private $allowed_types = array(
-		'image/jpeg'      => array( 'jpg', 'jpeg' ),
-		'image/png'       => array( 'png' ),
-		'image/gif'       => array( 'gif' ),
-		'application/pdf' => array( 'pdf' ),
-		'text/plain'      => array( 'txt' ),
-	);
+
 
 	/**
 	 * List of forbidden file extensions
@@ -147,16 +136,7 @@ class OMS_File_Security_Policy {
 		'wp-admin',
 	);
 
-	/**
-	 * Paths that require extra scrutiny
-	 *
-	 * @var array
-	 */
-	private $sensitive_paths = array(
-		'wp-content/uploads',
-		'wp-content/cache',
-		'wp-content/upgrade',
-	);
+
 
 	/**
 	 * Known good file patterns (e.g., minified files)
@@ -184,135 +164,34 @@ class OMS_File_Security_Policy {
 				throw new OMS_Security_Exception( 'Invalid security token' );
 			}
 
-			// Basic file checks.
-			if ( ! file_exists( $path ) ) {
-				throw new OMS_Security_Exception( 'File does not exist' );
+			// 1. Basic file checks.
+			$basic_check = $this->validate_file_basics( $path );
+			if ( ! $basic_check['valid'] ) {
+				return $basic_check;
 			}
 
-			if ( ! is_file( $path ) ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Not a regular file',
-				);
+			// 2. Metadata checks (size, name, type, ext).
+			$metadata_check = $this->validate_file_metadata( $path );
+			if ( ! $metadata_check['valid'] ) {
+				return $metadata_check;
 			}
 
-			// Check file size.
-			if ( 0 === filesize( $path ) ) {
-				// Check if this file is allowed to be empty.
-				$filename = basename( $path );
-				if ( ! in_array( $filename, OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
-					return array(
-						'valid'  => false,
-						'reason' => 'Zero byte file not in allowlist',
-					);
-				}
+			// 3. Path security checks.
+			$path_check = $this->validate_file_path_security( $path );
+			if ( ! $path_check['valid'] ) {
+				return $path_check;
 			}
 
-			// Check for random filenames.
-			if ( $this->is_random_filename( basename( $path ) ) ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Suspicious random filename detected',
-				);
+			// 4. Content security checks.
+			$content_check = $this->validate_file_content_security( $path );
+			if ( ! $content_check['valid'] ) {
+				return $content_check;
 			}
 
-			// Use WordPress file type verification.
-			$file_type = wp_check_filetype( basename( $path ) );
-			if ( ! is_array( $file_type ) || ! isset( $file_type['type'] ) || ! $file_type['type'] ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Invalid file type',
-				);
-			}
-
-			// Check file extension.
-			$ext = isset( $file_type['ext'] ) && is_string( $file_type['ext'] ) ? strtolower( $file_type['ext'] ) : '';
-			if ( ! empty( $ext ) && in_array( $ext, $this->forbidden_extensions, true ) ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Forbidden file extension',
-				);
-			}
-
-			// Get relative path from WordPress root.
-			$relative_path = OMS_Utils::get_relative_path( $path );
-
-			// Check if file is in a restricted path.
-			foreach ( $this->restricted_paths as $restricted_path ) {
-				if ( 0 === strpos( $relative_path, $restricted_path ) ) {
-					return array(
-						'valid'  => false,
-						'reason' => 'File in restricted path',
-					);
-				}
-			}
-
-			// Check if file is in a protected theme path.
-			$is_theme_file = false;
-			foreach ( $this->protected_theme_paths as $theme_path ) {
-				if ( 0 === strpos( $relative_path, $theme_path ) ) {
-					$is_theme_file = true;
-					break;
-				}
-			}
-
-			// Perform content checks.
-			$content_check = $this->filesystem->check_file_content( $path );
-			if ( ! is_array( $content_check ) || ! isset( $content_check['safe'] ) || ! $content_check['safe'] ) {
-				// If it's a theme file, we need to be more careful.
-				if ( $is_theme_file ) {
-					return $this->handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path );
-				}
-				$reason = isset( $content_check['reason'] ) ? $content_check['reason'] : 'File content validation failed';
-				return array(
-					'valid'  => false,
-					'reason' => $reason,
-				);
-			}
-
-			// Check permissions using WordPress functions.
-			$stat = stat( $path );
-			if ( false === $stat ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Unable to check file permissions',
-				);
-			}
-
-			if ( ! isset( $stat['mode'] ) ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Unable to check file permissions',
-				);
-			}
-
-			$perms = $stat['mode'] & 0777;
-			if ( $perms & $this->suspicious_perms['executable'] ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'File has executable permissions',
-				);
-			}
-
-			// Check modification time.
-			if ( ! isset( $stat['mtime'] ) ) {
-				return array(
-					'valid'  => false,
-					'reason' => 'Unable to check file modification time',
-				);
-			}
-
-			$mod_hour = (int) get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $stat['mtime'] ), 'G' );
-			if ( $mod_hour >= $this->suspicious_times['night_hours'][0] &&
-			$mod_hour <= $this->suspicious_times['night_hours'][1] ) {
-				if ( ! $is_theme_file ) {
-					return array(
-						'valid'  => false,
-						'reason' => 'File modified during suspicious hours',
-					);
-				}
-				// For theme files, just log the suspicious modification.
-				error_log( 'Theme file modified during suspicious hours: ' . esc_html( $path ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			// 5. System security checks (permissions, time).
+			$system_check = $this->validate_file_system_security( $path );
+			if ( ! $system_check['valid'] ) {
+				return $system_check;
 			}
 
 			// All checks passed.
@@ -327,32 +206,182 @@ class OMS_File_Security_Policy {
 	}
 
 	/**
-	 * Check if a path is safe (no directory traversal, etc)
+	 * Validate basic file attributes.
 	 *
-	 * @param string $path Path to check.
-	 * @return bool True if path is safe.
+	 * @param string $path File path.
+	 * @return array Validation result.
 	 */
-	private function is_path_safe( $path ) {
-		// Normalize path.
-		$path = str_replace( '\\', '/', $path );
-
-		// Check for directory traversal.
-		if ( false !== strpos( $path, '../' ) || false !== strpos( $path, '..\\' ) ) {
-			return false;
+	private function validate_file_basics( $path ) {
+		if ( ! file_exists( $path ) ) {
+			throw new OMS_Security_Exception( 'File does not exist' );
 		}
 
-		// Check for null bytes.
-		if ( false !== strpos( $path, "\0" ) ) {
-			return false;
+		if ( ! is_file( $path ) ) {
+			return array(
+				'valid'  => false,
+				'reason' => 'Not a regular file',
+			);
 		}
 
-		// Check for control characters.
-		if ( preg_match( '/[\x00-\x1F\x7F]/', $path ) ) {
-			return false;
-		}
-
-		return true;
+		return array( 'valid' => true );
 	}
+
+	/**
+	 * Validate file metadata (size, name, type).
+	 *
+	 * @param string $path File path.
+	 * @return array Validation result.
+	 */
+	private function validate_file_metadata( $path ) {
+		// Check file size.
+		if ( 0 === filesize( $path ) ) {
+			$filename = basename( $path );
+			if ( ! in_array( $filename, OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
+				return array(
+					'valid'  => false,
+					'reason' => 'Zero byte file not in allowlist',
+				);
+			}
+		}
+
+		// Check for random filenames.
+		if ( $this->is_random_filename( basename( $path ) ) ) {
+			return array(
+				'valid'  => false,
+				'reason' => 'Suspicious random filename detected',
+			);
+		}
+
+		// Use WordPress file type verification.
+		$file_type = wp_check_filetype( basename( $path ) );
+		// phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- wp_check_filetype returns false or string for type.
+		if ( ! $file_type['type'] ) {
+			return array(
+				'valid'  => false,
+				'reason' => 'Invalid file type',
+			);
+		}
+
+		// Check file extension.
+		$ext = ( is_string( $file_type['ext'] ) ) ? strtolower( $file_type['ext'] ) : '';
+		if ( ! empty( $ext ) && in_array( $ext, $this->forbidden_extensions, true ) ) {
+			return array(
+				'valid'  => false,
+				'reason' => 'Forbidden file extension',
+			);
+		}
+
+		return array( 'valid' => true );
+	}
+
+	/**
+	 * Validate file path security.
+	 *
+	 * @param string $path File path.
+	 * @return array Validation result.
+	 */
+	private function validate_file_path_security( $path ) {
+		$relative_path = OMS_Utils::get_relative_path( $path );
+
+		// Check if file is in a restricted path.
+		foreach ( $this->restricted_paths as $restricted_path ) {
+			if ( 0 === strpos( $relative_path, $restricted_path ) ) {
+				return array(
+					'valid'  => false,
+					'reason' => 'File in restricted path',
+				);
+			}
+		}
+
+		return array( 'valid' => true );
+	}
+
+	/**
+	 * Validate file content security.
+	 *
+	 * @param string $path File path.
+	 * @return array Validation result.
+	 */
+	private function validate_file_content_security( $path ) {
+		$relative_path = OMS_Utils::get_relative_path( $path );
+
+		// Check if file is in a protected theme path.
+		$is_theme_file = false;
+		foreach ( $this->protected_theme_paths as $theme_path ) {
+			if ( 0 === strpos( $relative_path, $theme_path ) ) {
+				$is_theme_file = true;
+				break;
+			}
+		}
+
+		// Perform content checks.
+		$content_check = $this->filesystem->check_file_content( $path );
+		if ( ! is_array( $content_check ) || ! isset( $content_check['safe'] ) || ! $content_check['safe'] ) {
+			// If it's a theme file, we need to be more careful.
+			if ( $is_theme_file ) {
+				return $this->handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path );
+			}
+			$reason = isset( $content_check['reason'] ) ? $content_check['reason'] : 'File content validation failed';
+			return array(
+				'valid'  => false,
+				'reason' => $reason,
+			);
+		}
+
+		return array( 'valid' => true );
+	}
+
+	/**
+	 * Validate file system security (permissions, time).
+	 *
+	 * @param string $path File path.
+	 * @return array Validation result.
+	 */
+	private function validate_file_system_security( $path ) {
+		// Check permissions using WordPress functions.
+		$stat = stat( $path );
+		if ( false === $stat ) {
+			return array(
+				'valid'  => false,
+				'reason' => 'Unable to check file permissions',
+			);
+		}
+
+		$perms = $stat['mode'] & 0777;
+		if ( $perms & $this->suspicious_perms['executable'] ) {
+			return array(
+				'valid'  => false,
+				'reason' => 'File has executable permissions',
+			);
+		}
+
+		// Check modification time.
+		$mod_hour = (int) get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $stat['mtime'] ), 'G' );
+		if ( $mod_hour >= $this->suspicious_times['night_hours'][0] &&
+		$mod_hour <= $this->suspicious_times['night_hours'][1] ) {
+			$relative_path = OMS_Utils::get_relative_path( $path );
+			$is_theme_file = false;
+			foreach ( $this->protected_theme_paths as $theme_path ) {
+				if ( 0 === strpos( $relative_path, $theme_path ) ) {
+					$is_theme_file = true;
+					break;
+				}
+			}
+
+			if ( ! $is_theme_file ) {
+				return array(
+					'valid'  => false,
+					'reason' => 'File modified during suspicious hours',
+				);
+			}
+			// For theme files, just log the suspicious modification.
+			error_log( 'Theme file modified during suspicious hours: ' . esc_html( $path ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+		}
+
+		return array( 'valid' => true );
+	}
+
+
 
 	/**
 	 * Check if a file is in a protected path
@@ -447,15 +476,7 @@ class OMS_File_Security_Policy {
 		return str_replace( ABSPATH, '', $file_path );
 	}
 
-	/**
-	 * Add an allowed MIME type
-	 *
-	 * @param string       $mime_type MIME type.
-	 * @param string|array $extensions File extensions.
-	 */
-	public function add_allowed_type( $mime_type, $extensions ) {
-		$this->allowed_types[ $mime_type ] = (array) $extensions;
-	}
+
 
 	/**
 	 * Add a restricted path

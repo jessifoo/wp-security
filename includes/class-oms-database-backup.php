@@ -133,7 +133,7 @@ class OMS_Database_Backup {
 				$table_exists = $wpdb->get_var(
 					$wpdb->prepare(
 						'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s',
-						DB_NAME,
+						defined( 'DB_NAME' ) ? DB_NAME : '',
 						$full_table_name
 					)
 				);
@@ -155,7 +155,7 @@ class OMS_Database_Backup {
 				'backup_id'  => $backup_id,
 				'timestamp'  => $timestamp,
 				'tables'     => $backup_files,
-				'db_name'    => DB_NAME,
+				'db_name'    => defined( 'DB_NAME' ) ? DB_NAME : '',
 				'wp_version' => get_bloginfo( 'version' ),
 			);
 

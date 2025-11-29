@@ -75,23 +75,20 @@ class OMS_Scanner {
 		foreach ( OMS_Config::MALWARE_PATTERNS as $index => $pattern_data ) {
 			try {
 				// Validate and compile each pattern without suppressing errors.
-				// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- Pattern validation required.
-				if ( ! isset( $pattern_data['pattern'] ) ) {
-					continue;
-				}
+
 				$pattern_str   = $pattern_data['pattern'];
 				$last_error    = error_get_last();
 				$test_result   = preg_match( $pattern_str, '' );
 				$current_error = error_get_last();
 				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
-					$error_msg    = ( $current_error !== $last_error && isset( $current_error['message'] ) ) ? $current_error['message'] : 'Invalid regex pattern';
-					$pattern_name = isset( $pattern_data['description'] ) ? $pattern_data['description'] : (string) $index;
+					$error_msg    = ( $current_error !== $last_error && $current_error ) ? $current_error['message'] : 'Invalid regex pattern';
+					$pattern_name = $pattern_data['description'];
 					$this->logger->error( sprintf( 'Invalid malware pattern - Name: %s, Pattern: %s, Error: %s', esc_html( $pattern_name ), esc_html( $pattern_str ), esc_html( $error_msg ) ) );
 					continue;
 				}
 				$patterns[ $index ] = $pattern_data;
 			} catch ( Exception $e ) {
-				$pattern_name = isset( $pattern_data['description'] ) ? $pattern_data['description'] : (string) $index;
+				$pattern_name = $pattern_data['description'];
 				$this->logger->error( sprintf( 'Failed to compile pattern - Name: %s, Error: %s', esc_html( $pattern_name ), esc_html( $e->getMessage() ) ) );
 			}
 		}
@@ -179,24 +176,7 @@ class OMS_Scanner {
 		}
 	}
 
-	/**
-	 * Initialize WordPress Filesystem API
-	 *
-	 * @return bool True if initialization successful, false otherwise.
-	 */
-	private function initialize_wp_filesystem() {
-		require_once ABSPATH . 'wp-admin/includes/file.php';
 
-		$initialized = WP_Filesystem();
-
-		global $wp_filesystem;
-		if ( false === $initialized || ! $wp_filesystem ) {
-			$this->logger->error( 'Failed to initialize WordPress Filesystem API' );
-			return false;
-		}
-
-		return true;
-	}
 
 	/**
 	 * Scan file in chunks for malware patterns
@@ -233,6 +213,8 @@ class OMS_Scanner {
 				if ( strlen( $content ) > $chunk_size * 2 ) {
 					$content = substr( $content, -$chunk_size );
 				}
+
+				$this->apply_rate_limiting();
 			}
 			return false;
 		} finally {
@@ -240,43 +222,15 @@ class OMS_Scanner {
 		}
 	}
 
-	/**
-	 * Read a chunk from file with error handling
-	 *
-	 * @param resource $fp File pointer.
-	 * @param int      $chunk_size Size of chunk to read.
-	 * @return array Array containing [chunk content, bytes read].
-	 * @throws OMS_Exception If read fails.
-	 */
-	private function read_chunk( $fp, $chunk_size ) {
-		$chunk = fread( $fp, $chunk_size );
-		if ( false === $chunk ) {
-			throw new OMS_Exception( 'Failed to read file chunk' );
-		}
-		return array( $chunk, strlen( $chunk ) );
-	}
 
-	/**
-	 * Maintain overlap buffer for pattern matching
-	 *
-	 * @param string $content Current content buffer.
-	 * @return string Trimmed content maintaining overlap.
-	 */
-	private function maintain_overlap_buffer( $content ) {
-		$overlap_size = OMS_Config::SCAN_CONFIG['overlap_size'];
-		if ( strlen( $content ) > $overlap_size ) {
-			return substr( $content, -$overlap_size );
-		}
-		return $content;
-	}
+
+
 
 	/**
 	 * Apply rate limiting with configurable threshold
 	 */
 	private function apply_rate_limiting() {
-		if ( $this->rate_limiter->should_throttle( 'file_scan' ) ) {
-			usleep( OMS_Config::SCAN_CONFIG['batch_pause'] * 1000 );
-		}
+		$this->rate_limiter->throttle( 'file_scan' );
 	}
 
 	/**
@@ -289,6 +243,7 @@ class OMS_Scanner {
 	 */
 	private function match_patterns( $content, $path, $position ) {
 		foreach ( $this->compiled_patterns as $pattern_name => $pattern ) {
+			$matches = null;
 			if ( preg_match( $pattern, $content, $matches, PREG_OFFSET_CAPTURE ) ) {
 				$this->log_pattern_match( $matches, $path, $pattern_name, $position, $content );
 				return true;
@@ -358,7 +313,7 @@ class OMS_Scanner {
 	 * @return bool True if size is suspicious.
 	 */
 	private function check_size( $path, SplFileInfo $file ) {
-		if ( $file->getSize() > OMS_Config::MAX_FILE_SIZE ) {
+		if ( $file->getSize() > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
 			$this->logger->warning( sprintf( 'File exceeds maximum size: %s (%d bytes)', esc_html( $path ), $file->getSize() ) );
 			return true;
 		}

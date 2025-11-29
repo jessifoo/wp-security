@@ -46,7 +46,7 @@ class OMS_Quarantine_Manager {
 				$mkdir_result = wp_mkdir_p( $quarantine_dir );
 				if ( ! $mkdir_result ) {
 					$error     = error_get_last();
-					$error_msg = ( $error && isset( $error['message'] ) ) ? $error['message'] : 'Unknown error';
+					$error_msg = ( $error ) ? $error['message'] : 'Unknown error';
 					$this->logger->error(
 						sprintf( 'Failed to create quarantine directory: %s - Error: %s', esc_html( $quarantine_dir ), esc_html( $error_msg ) )
 					);
@@ -80,7 +80,7 @@ class OMS_Quarantine_Manager {
 				return true;
 			} else {
 				$error     = error_get_last();
-				$error_msg = ( $error && isset( $error['message'] ) ) ? esc_html( $error['message'] ) : 'Unknown error';
+				$error_msg = ( $error ) ? esc_html( $error['message'] ) : 'Unknown error';
 				$this->logger->warning(
 					sprintf( 'Failed to rename file for quarantine: %s - Error: %s', esc_html( $path ), $error_msg )
 				);
@@ -98,7 +98,7 @@ class OMS_Quarantine_Manager {
 					return true;
 				} else {
 					$error     = error_get_last();
-					$error_msg = ( $error && isset( $error['message'] ) ) ? esc_html( $error['message'] ) : 'Unknown error';
+					$error_msg = ( $error ) ? esc_html( $error['message'] ) : 'Unknown error';
 					$this->logger->warning(
 						sprintf( 'Failed to delete original file after copy: %s - Error: %s', esc_html( $path ), $error_msg )
 					);
@@ -107,7 +107,7 @@ class OMS_Quarantine_Manager {
 					$unlink_quarantine = unlink( $quarantine_path );
 					if ( ! $unlink_quarantine ) {
 						$error     = error_get_last();
-						$error_msg = ( $error && isset( $error['message'] ) ) ? esc_html( $error['message'] ) : 'Unknown error';
+						$error_msg = ( $error ) ? esc_html( $error['message'] ) : 'Unknown error';
 						$this->logger->error(
 							sprintf( 'Failed to remove quarantine copy after failed delete: %s - Error: %s', esc_html( $quarantine_path ), $error_msg )
 						);
@@ -115,7 +115,7 @@ class OMS_Quarantine_Manager {
 				}
 			} else {
 				$error     = error_get_last();
-				$error_msg = ( $error && isset( $error['message'] ) ) ? esc_html( $error['message'] ) : 'Unknown error';
+				$error_msg = ( $error ) ? esc_html( $error['message'] ) : 'Unknown error';
 				$this->logger->warning(
 					sprintf( 'Failed to copy file for quarantine: %s - Error: %s', esc_html( $path ), $error_msg )
 				);
@@ -152,7 +152,7 @@ class OMS_Quarantine_Manager {
 			return true;
 		} else {
 			$error     = error_get_last();
-			$error_msg = ( $error && isset( $error['message'] ) ) ? esc_html( $error['message'] ) : 'Unknown error';
+			$error_msg = ( $error ) ? esc_html( $error['message'] ) : 'Unknown error';
 			$this->logger->warning(
 				sprintf( 'Failed to chmod file to 0000: %s - Error: %s', esc_html( $path ), $error_msg )
 			);
@@ -165,7 +165,7 @@ class OMS_Quarantine_Manager {
 			return true;
 		} else {
 			$error     = error_get_last();
-			$error_msg = ( $error && isset( $error['message'] ) ) ? esc_html( $error['message'] ) : 'Unknown error';
+			$error_msg = ( $error ) ? esc_html( $error['message'] ) : 'Unknown error';
 			$this->logger->warning(
 				sprintf( 'Failed to chmod file to 0333: %s - Error: %s', esc_html( $path ), $error_msg )
 			);

@@ -357,7 +357,7 @@ class OMS_Config {
 		'hebrev',
 	);
 	const QUARANTINE_CONFIG   = array(
-		'path'               => WP_CONTENT_DIR . '/oms-quarantine',
+		'path'               => WP_CONTENT_DIR . '/uploads/oms-scanner/quarantine',
 		'retention_days'     => 30,
 		'max_size'           => 500 * 1024 * 1024,  // 500MB max quarantine size.
 		'cleanup_batch_size' => 50,                // Files to process per cleanup batch.
@@ -373,10 +373,13 @@ class OMS_Config {
 
 	const SCAN_CONFIG = array(
 		'chunk_size'          => 1024 * 1024,     // 1MB default chunk size.
+		'min_chunk_size'      => 1024 * 1024,     // 1MB min chunk size.
+		'max_chunk_size'      => 10 * 1024 * 1024, // 10MB max chunk size.
 		'overlap_size'        => 1024,            // 1KB overlap between chunks.
 		'batch_size'          => 100,             // Files per batch.
 		'batch_pause'         => 100,             // Milliseconds between batches.
 		'max_file_size'       => 100 * 1024 * 1024, // 100MB max file size.
+		'memory_limit'        => '80%',           // Max memory usage percent.
 		'allowed_permissions' => array(
 			'file' => 0644,
 			'dir'  => 0755,
@@ -399,8 +402,13 @@ class OMS_Config {
 	);
 
 	const LOG_CONFIG = array(
-		'path'   => WP_CONTENT_DIR . '/logs',
+		'path'   => WP_CONTENT_DIR . '/uploads/oms-scanner/logs',
 		'levels' => array( 'debug', 'info', 'warning', 'error', 'critical' ),
+	);
+
+	const CACHE_CONFIG = array(
+		'ttl'      => 3600, // 1 hour default TTL.
+		'max_size' => 1000, // Max number of items in cache.
 	);
 
 	const NOTIFICATION_THRESHOLD = 'MEDIUM';

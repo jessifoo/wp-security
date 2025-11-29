@@ -35,7 +35,7 @@ class OMS_Logger {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->log_file = WP_CONTENT_DIR . '/oms-logs/malware-scanner.log';
+		$this->log_file = OMS_Config::LOG_CONFIG['path'] . '/malware-scanner.log';
 		$this->init_log_dir();
 	}
 
@@ -96,47 +96,7 @@ class OMS_Logger {
 		}
 	}
 
-	/**
-	 * Rotate log file if it's too large
-	 */
-	private function maybe_rotate_log() {
-		if ( ! file_exists( $this->log_file ) ) {
-			return;
-		}
 
-		$max_size = 10 * 1024 * 1024; // 10MB.
-		if ( filesize( $this->log_file ) < $max_size ) {
-			return;
-		}
-
-		$backup = $this->log_file . '.' . gmdate( 'Y-m-d-H-i-s' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-		$rename_result = rename( $this->log_file, $backup );
-		if ( false === $rename_result ) {
-			error_log( 'OMS Logger: Failed to rename log file for rotation: ' . esc_html( $this->log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-			return;
-		}
-
-		// Keep only last 5 backups.
-		$backups = glob( $this->log_file . '.*' );
-		if ( count( $backups ) > 5 ) {
-			usort(
-				$backups,
-				function ( $a, $b ) {
-					return filemtime( $b ) - filemtime( $a );
-				}
-			);
-
-			$old_backups = array_slice( $backups, 5 );
-			foreach ( $old_backups as $old_backup ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log cleanup requires direct file deletion.
-				$unlink_result = unlink( $old_backup );
-				if ( false === $unlink_result ) {
-					error_log( 'OMS Logger: Failed to delete old backup log file: ' . esc_html( $old_backup ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-				}
-			}
-		}
-	}
 
 	/**
 	 * Log message.
@@ -173,32 +133,9 @@ class OMS_Logger {
 			error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
 		}
 
-		// Store in database.
-		if ( function_exists( 'update_option' ) ) {
-			$log_key   = 'oms_security_log_' . gmdate( 'Y-m-d' );
-			$daily_log = get_option( $log_key, array() );
-
-			$daily_log[] = array(
-				'timestamp' => $timestamp,
-				'level'     => $level,
-				'message'   => $message,
-				'caller'    => $caller,
-			);
-
-			// Keep only last 1000 entries per day.
-			if ( count( $daily_log ) > 1000 ) {
-				$daily_log = array_slice( $daily_log, -1000 );
-			}
-
-			update_option( $log_key, $daily_log, false );
-
-			// Clean up old logs (keep last 7 days).
-			$this->cleanup_old_logs();
-		}
-
 		// Write to file if configured.
-		if ( defined( 'OMS_LOG_FILE' ) && OMS_Config::LOG_CONFIG ) {
-			$log_file = WP_CONTENT_DIR . '/oms-logs/security.log';
+		if ( defined( 'OMS_LOG_FILE' ) ) {
+			$log_file = OMS_Config::LOG_CONFIG['path'] . '/security.log';
 			$log_dir  = dirname( $log_file );
 
 			if ( ! is_dir( $log_dir ) ) {
@@ -221,43 +158,6 @@ class OMS_Logger {
 					$this->rotate_log_file( $log_file );
 				}
 			}
-		}
-	}
-
-	/**
-	 * Clean up old logs
-	 */
-	private function cleanup_old_logs() {
-		global $wpdb;
-
-		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
-			error_log( 'OMS Logger: WordPress database object not available for log cleanup' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-			return;
-		}
-
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-7 days' ) );
-		$cache_key   = 'oms_old_logs_' . $cutoff_date;
-
-		// Check cache first.
-		$old_logs = wp_cache_get( $cache_key, 'oms_logs' );
-		if ( false === $old_logs ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Log cleanup requires direct query, caching added.
-			$old_logs = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT option_name FROM $wpdb->options 
-					WHERE option_name LIKE %s 
-					AND option_name < %s",
-					'oms_security_log_%',
-					'oms_security_log_' . $cutoff_date
-				)
-			);
-
-			// Cache for 1 hour.
-			wp_cache_set( $cache_key, $old_logs, 'oms_logs', HOUR_IN_SECONDS );
-		}
-
-		foreach ( $old_logs as $log ) {
-			delete_option( $log->option_name );
 		}
 	}
 

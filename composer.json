@@ -75,7 +75,7 @@
         "phpcs": "phpcs includes/ admin/ obfuscated-malware-scanner.php",
         "phpcs:report": "phpcs --standard=WordPress --report=summary",
         "phpcbf": "phpcbf includes/ admin/ obfuscated-malware-scanner.php",
-        "phpstan": "phpstan analyse --memory-limit=1G",
+        "phpstan": "phpstan analyse --memory-limit=1G includes/ admin/ obfuscated-malware-scanner.php",
         "phpstan:baseline": "phpstan analyse --generate-baseline",
         "lint": [
             "@phpcs",

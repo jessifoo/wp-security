@@ -99,6 +99,7 @@ class OMS_Core_Integrity_Checker {
 		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
 
 		if ( is_wp_error( $response ) ) {
+			// @phpstan-ignore-next-line
 			$this->logger->error( 'Error fetching checksums: ' . $response->get_error_message() );
 			return false;
 		}

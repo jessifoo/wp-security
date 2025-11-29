@@ -189,7 +189,7 @@ class OMS_Database_Scanner {
 				$table_exists = $wpdb->get_var(
 					$wpdb->prepare(
 						'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s',
-						DB_NAME,
+						defined( 'DB_NAME' ) ? DB_NAME : '',
 						$full_table_name
 					)
 				);
@@ -253,7 +253,7 @@ class OMS_Database_Scanner {
 					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
 					FROM information_schema.COLUMNS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
-					DB_NAME,
+					defined( 'DB_NAME' ) ? DB_NAME : '',
 					$table_name
 				),
 				ARRAY_A
@@ -318,7 +318,7 @@ class OMS_Database_Scanner {
 					'SELECT INDEX_NAME FROM information_schema.STATISTICS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 					GROUP BY INDEX_NAME',
-					DB_NAME,
+					defined( 'DB_NAME' ) ? DB_NAME : '',
 					$table_name
 				),
 				ARRAY_A
@@ -401,7 +401,7 @@ class OMS_Database_Scanner {
 					'SELECT COLUMN_NAME FROM information_schema.COLUMNS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 					AND DATA_TYPE IN ("varchar", "text", "longtext", "mediumtext", "tinytext", "char")',
-					DB_NAME,
+					defined( 'DB_NAME' ) ? DB_NAME : '',
 					$table_name
 				)
 			);
