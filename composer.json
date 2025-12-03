@@ -22,6 +22,7 @@
         "dealerdirect/phpcodesniffer-composer-installer": "1.0.0",
         "ergebnis/composer-normalize": "^2.6",
         "lucatume/wp-browser": "^3.6",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
         "php-stubs/wordpress-stubs": "^6.2",
         "php-stubs/wordpress-tests-stubs": "^6.2",
         "php-stubs/wp-cli-stubs": "^2.0",
