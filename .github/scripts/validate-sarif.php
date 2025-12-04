@@ -93,6 +93,23 @@ if ( isset( $json['runs'] ) ) {
 
 		$run['results'] = $valid_results;
 	}
+
+
+	// Merge multiple runs into a single run if necessary
+	if ( count( $json['runs'] ) > 1 ) {
+		$merged_run = $json['runs'][0];
+		for ( $i = 1; $i < count( $json['runs'] ); $i++ ) {
+			if ( isset( $json['runs'][ $i ]['results'] ) ) {
+				if ( ! isset( $merged_run['results'] ) ) {
+					$merged_run['results'] = array();
+				}
+				$merged_run['results'] = array_merge( $merged_run['results'], $json['runs'][ $i ]['results'] );
+			}
+		}
+		$json['runs'] = array( $merged_run );
+		$fixed_count++; // Count this as a fix
+		echo "Merged " . ( $i - 1 ) . " additional runs into the first run.\n";
+	}
 }
 
 if ( $fixed_count > 0 || $removed_count > 0 ) {
