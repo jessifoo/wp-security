@@ -500,47 +500,55 @@ class OMS_File_Security_Policy {
 	/**
 	 * Handle theme file with suspicious content using content preservation logic.
 	 *
-	 * This method implements theme content preservation by:
-	 * 1. Checking if the suspicious pattern matches known-good patterns (e.g., minified files)
-	 * 2. Creating a backup of the theme file before any action
-	 * 3. Checking if the content is actually malicious or a false positive
-	 * 4. Quarantining only if truly malicious, preserving theme functionality otherwise
-	 *
 	 * @param string $path Full path to the theme file.
 	 * @param array  $content_check Content check result from OMS_Utils::check_file_content().
 	 * @param string $relative_path Relative path from WordPress root.
 	 * @return array Validation result with 'valid' boolean and 'reason' string.
 	 */
-	private function handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path ) {
-		// Check if file matches known-good patterns (minified files, etc.).
+	private function handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter reserved for future path-based logic.
+		// Check if file matches known-good patterns.
 		if ( $this->is_known_good_file( $path ) ) {
-			// Known-good pattern match - likely a false positive.
 			return array(
 				'valid'  => true,
 				'reason' => 'Theme file matches known-good pattern - safe',
 			);
 		}
 
-		// Check if the suspicious content is in a protected theme path.
-		$is_protected_theme = false;
-		foreach ( $this->protected_theme_paths as $protected_path ) {
-			if ( 0 === strpos( $relative_path, $protected_path ) ) {
-				$is_protected_theme = true;
-				break;
-			}
-		}
-
 		// Read file content for detailed analysis.
 		$file_content = file_get_contents( $path );
 		if ( false === $file_content ) {
-			// Can't read file - treat as invalid.
 			return array(
 				'valid'  => false,
 				'reason' => 'Cannot read theme file for analysis',
 			);
 		}
 
-		// Check if content contains high-severity malware patterns.
+		// Create backup and check severity.
+		$backup_path       = $this->create_theme_file_backup( $path );
+		$backup_created    = ( false !== $backup_path );
+		$has_high_severity = $this->has_high_severity_patterns( $file_content );
+
+		// Handle based on severity.
+		if ( $has_high_severity ) {
+			return $this->handle_high_severity_theme_file( $path, $backup_path, $backup_created, $content_check );
+		}
+
+		// Low-severity - monitor and allow.
+		$this->log_suspicious_theme_file( $path, $backup_path, $backup_created, $content_check, 'low' );
+
+		return array(
+			'valid'  => true,
+			'reason' => 'Theme file with suspicious content - monitoring (backup created)',
+		);
+	}
+
+	/**
+	 * Check if file content contains high-severity malware patterns.
+	 *
+	 * @param string $file_content File content to check.
+	 * @return bool True if high-severity patterns found.
+	 */
+	private function has_high_severity_patterns( $file_content ) {
 		$high_severity_patterns = array(
 			'eval\s*\(',
 			'base64_decode\s*\(',
@@ -550,92 +558,112 @@ class OMS_File_Security_Policy {
 			'passthru\s*\(',
 		);
 
-		$has_high_severity = false;
 		foreach ( $high_severity_patterns as $pattern ) {
 			if ( preg_match( '/' . $pattern . '/i', $file_content ) ) {
-				$has_high_severity = true;
-				break;
+				return true;
 			}
 		}
 
-		// Create backup directory if it doesn't exist.
+		return false;
+	}
+
+	/**
+	 * Create backup of theme file.
+	 *
+	 * @param string $path Path to the file to backup.
+	 * @return string|false Backup path on success, false on failure.
+	 */
+	private function create_theme_file_backup( $path ) {
 		$backup_dir = WP_CONTENT_DIR . '/oms-theme-backups';
+
+		// Ensure backup directory exists.
 		if ( ! file_exists( $backup_dir ) ) {
 			wp_mkdir_p( $backup_dir );
-			// Create .htaccess to protect backups.
-			$htaccess_file = $backup_dir . '/.htaccess';
-			if ( ! file_exists( $htaccess_file ) ) {
-				$result = file_put_contents( $htaccess_file, "deny from all\n" );
-				if ( false === $result ) {
-					error_log( 'OMS File Security Policy: Failed to create .htaccess file for backup directory: ' . esc_html( $htaccess_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-				}
-			}
+			$this->create_htaccess_protection( $backup_dir );
 		}
 
-		// Create backup of theme file.
+		// Create backup.
 		$backup_filename = sanitize_file_name( basename( $path ) . '.' . gmdate( 'Y-m-d-H-i-s' ) . '.backup' );
 		$backup_path     = $backup_dir . '/' . $backup_filename;
-		$backup_created  = copy( $path, $backup_path );
 
-		if ( ! $backup_created ) {
-			// Backup failed - log but continue with caution.
-			error_log( 'OMS: Failed to create backup of theme file: ' . esc_html( $path ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+		if ( copy( $path, $backup_path ) ) {
+			return $backup_path;
 		}
 
-		// If high-severity malware detected, quarantine the file.
-		if ( $has_high_severity ) {
-			// Use WordPress logger if available, otherwise use error_log.
-			if ( class_exists( 'OMS_Logger' ) ) {
-				$logger  = new OMS_Logger();
-				$reason  = isset( $content_check['reason'] ) ? $content_check['reason'] : 'High-severity malware detected';
-				$context = array(
-					'path'        => $path,
-					'backup_path' => $backup_created ? $backup_path : null,
-					'reason'      => $reason,
-				);
-				$logger->warning(
-					sprintf( 'High-severity malware detected in theme file - quarantining - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( $reason ) )
-				);
-			} else {
-				error_log( 'OMS: High-severity malware detected in theme file: ' . esc_html( $path ) . ' (backup: ' . esc_html( $backup_created ? $backup_path : 'failed' ) . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-			}
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+		error_log( 'OMS: Failed to create backup of theme file: ' . esc_html( $path ) );
+		return false;
+	}
 
-			// Attempt to quarantine using scanner if available.
-			if ( class_exists( 'Obfuscated_Malware_Scanner' ) ) {
-				try {
-					$scanner = new Obfuscated_Malware_Scanner();
-					// Use reflection to access private method, or create a backup and log.
-					// For now, we'll create a backup and mark as invalid.
-					// The scanner will handle quarantine during its regular scan.
-					return array(
-						'valid'  => false,
-						'reason' => 'High-severity malware detected - requires quarantine',
-					);
-				} catch ( Exception $e ) {
-					error_log( 'OMS: Failed to quarantine theme file: ' . esc_html( $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-				}
+	/**
+	 * Create .htaccess protection for a directory.
+	 *
+	 * @param string $dir_path Directory path.
+	 */
+	private function create_htaccess_protection( $dir_path ) {
+		$htaccess_file = $dir_path . '/.htaccess';
+		if ( ! file_exists( $htaccess_file ) ) {
+			$result = file_put_contents( $htaccess_file, "deny from all\n" );
+			if ( false === $result ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				error_log( 'OMS: Failed to create .htaccess file: ' . esc_html( $htaccess_file ) );
 			}
-
-			return array(
-				'valid'  => false,
-				'reason' => 'High-severity malware detected in theme file',
-			);
 		}
+	}
 
-		// Low-severity suspicious content - monitor but preserve theme functionality.
-		if ( class_exists( 'OMS_Logger' ) ) {
-			$logger = new OMS_Logger();
-			$logger->warning(
-				sprintf( 'Low-severity suspicious content in theme file - monitoring - Path: %s, Backup: %s, Reason: %s', esc_html( $path ), esc_html( $backup_created ? $backup_path : 'none' ), esc_html( isset( $content_check['reason'] ) ? $content_check['reason'] : 'Suspicious content detected' ) )
+	/**
+	 * Handle high-severity malware in theme file.
+	 *
+	 * @param string       $path Path to the file.
+	 * @param string|false $backup_path Backup path or false.
+	 * @param bool         $backup_created Whether backup was created.
+	 * @param array        $content_check Content check result.
+	 * @return array Validation result.
+	 */
+	private function handle_high_severity_theme_file( $path, $backup_path, $backup_created, $content_check ) {
+		$this->log_suspicious_theme_file( $path, $backup_path, $backup_created, $content_check, 'high' );
+
+		return array(
+			'valid'  => false,
+			'reason' => 'High-severity malware detected in theme file',
+		);
+	}
+
+	/**
+	 * Log suspicious theme file detection.
+	 *
+	 * @param string       $path Path to the file.
+	 * @param string|false $backup_path Backup path or false.
+	 * @param bool         $backup_created Whether backup was created.
+	 * @param array        $content_check Content check result.
+	 * @param string       $severity 'high' or 'low'.
+	 */
+	private function log_suspicious_theme_file( $path, $backup_path, $backup_created, $content_check, $severity ) {
+		$reason      = isset( $content_check['reason'] ) ? $content_check['reason'] : 'Suspicious content detected';
+		$backup_info = ( $backup_created && is_string( $backup_path ) ) ? $backup_path : 'none';
+
+		if ( 'high' === $severity ) {
+			$message = sprintf(
+				'High-severity malware detected in theme file - Path: %s, Backup: %s, Reason: %s',
+				esc_html( $path ),
+				esc_html( $backup_info ),
+				esc_html( $reason )
 			);
 		} else {
-			error_log( 'OMS: Potentially malicious content in theme file: ' . esc_html( $path ) . ' (backup: ' . esc_html( $backup_created ? $backup_path : 'failed' ) . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			$message = sprintf(
+				'Low-severity suspicious content in theme file - monitoring - Path: %s, Backup: %s, Reason: %s',
+				esc_html( $path ),
+				esc_html( $backup_info ),
+				esc_html( $reason )
+			);
 		}
 
-		// Return valid but flagged for monitoring.
-		return array(
-			'valid'  => true,
-			'reason' => 'Theme file with suspicious content - monitoring (backup created)',
-		);
+		if ( class_exists( 'OMS_Logger' ) ) {
+			$logger = new OMS_Logger();
+			$logger->warning( $message );
+		} else {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			error_log( 'OMS: ' . $message );
+		}
 	}
 }

@@ -105,59 +105,124 @@ class OMS_Logger {
 	 * @param string $level Log level.
 	 */
 	public function log( $message, $level = 'info' ) {
+		$level       = $this->validate_log_level( $level );
+		$log_message = $this->format_log_message( $message, $level );
+
+		$this->log_to_wp_error_log( $log_message, $level );
+		$this->log_to_file( $log_message );
+	}
+
+	/**
+	 * Validate and normalize log level.
+	 *
+	 * @param string $level Log level to validate.
+	 * @return string Validated log level.
+	 */
+	private function validate_log_level( $level ) {
 		$valid_levels = array( 'debug', 'info', 'warning', 'error', 'critical' );
 		$level        = strtolower( $level );
 
-		if ( ! in_array( $level, $valid_levels, true ) ) {
-			$level = 'info';
-		}
+		return in_array( $level, $valid_levels, true ) ? $level : 'info';
+	}
 
+	/**
+	 * Format log message with timestamp, level, and caller.
+	 *
+	 * @param string $message Raw message.
+	 * @param string $level Log level.
+	 * @return string Formatted log message.
+	 */
+	private function format_log_message( $message, $level ) {
 		$timestamp = current_time( 'mysql' );
-		$caller    = 'unknown';
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Debug only when WP_DEBUG is enabled.
-			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 2 );
-			$caller    = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-		}
+		$caller    = $this->get_caller_function();
 
-		$log_message = sprintf(
+		return sprintf(
 			'[%s] [%s] [%s] %s',
 			$timestamp,
 			strtoupper( $level ),
 			$caller,
 			$message
 		);
+	}
 
-		// Log to WordPress error log for warning and above (only when WP_DEBUG is enabled).
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && in_array( $level, array( 'warning', 'error', 'critical' ), true ) ) {
-			error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
+	/**
+	 * Get the calling function name.
+	 *
+	 * @return string Caller function name.
+	 */
+	private function get_caller_function() {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return 'unknown';
 		}
 
-		// Write to file if configured.
-		if ( defined( 'OMS_LOG_FILE' ) ) {
-			$log_file = OMS_Config::LOG_CONFIG['path'] . '/security.log';
-			$log_dir  = dirname( $log_file );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Debug only when WP_DEBUG is enabled.
+		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
+		return isset( $backtrace[2] ) ? $backtrace[2]['function'] : 'unknown';
+	}
 
-			if ( ! is_dir( $log_dir ) ) {
-				wp_mkdir_p( $log_dir );
-			}
+	/**
+	 * Log to WordPress error log for warning and above.
+	 *
+	 * @param string $log_message Formatted log message.
+	 * @param string $level Log level.
+	 */
+	private function log_to_wp_error_log( $log_message, $level ) {
+		$should_log   = defined( 'WP_DEBUG' ) && WP_DEBUG;
+		$is_important = in_array( $level, array( 'warning', 'error', 'critical' ), true );
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Logging requires checking directory writability.
-			if ( is_writable( $log_dir ) ) {
-				$result = file_put_contents(
-					$log_file,
-					$log_message . PHP_EOL,
-					FILE_APPEND | LOCK_EX
-				);
-				if ( false === $result ) {
-					error_log( 'OMS Logger: Failed to write to log file: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
-				}
+		if ( $should_log && $is_important ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
+			error_log( $log_message );
+		}
+	}
 
-				// Rotate log file if it exceeds 5MB.
-				if ( file_exists( $log_file ) && filesize( $log_file ) > 5 * 1024 * 1024 ) {
-					$this->rotate_log_file( $log_file );
-				}
-			}
+	/**
+	 * Write log message to file.
+	 *
+	 * @param string $log_message Formatted log message.
+	 */
+	private function log_to_file( $log_message ) {
+		if ( ! defined( 'OMS_LOG_FILE' ) ) {
+			return;
+		}
+
+		$log_file = OMS_Config::LOG_CONFIG['path'] . '/security.log';
+		$log_dir  = dirname( $log_file );
+
+		if ( ! is_dir( $log_dir ) ) {
+			wp_mkdir_p( $log_dir );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Logging requires checking directory writability.
+		if ( ! is_writable( $log_dir ) ) {
+			return;
+		}
+
+		$result = file_put_contents(
+			$log_file,
+			$log_message . PHP_EOL,
+			FILE_APPEND | LOCK_EX
+		);
+
+		if ( false === $result ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			error_log( 'OMS Logger: Failed to write to log file: ' . esc_html( $log_file ) );
+		}
+
+		// Rotate log file if it exceeds 5MB.
+		$this->maybe_rotate_log_file( $log_file );
+	}
+
+	/**
+	 * Check if log file needs rotation and rotate if needed.
+	 *
+	 * @param string $log_file Log file path.
+	 */
+	private function maybe_rotate_log_file( $log_file ) {
+		$max_size = 5 * 1024 * 1024; // 5MB.
+
+		if ( file_exists( $log_file ) && filesize( $log_file ) > $max_size ) {
+			$this->rotate_log_file( $log_file );
 		}
 	}
 
