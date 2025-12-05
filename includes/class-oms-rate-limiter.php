@@ -80,7 +80,7 @@ class OMS_Rate_Limiter {
 	 * @param string $context Context for throttling (unused for now but good for future).
 	 * @return bool True if should throttle.
 	 */
-	public function should_throttle( $context = 'default' ) {
+	public function should_throttle( $context = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Context reserved for future use.
 		try {
 			// Check if rate limiting is enabled.
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- OMS_ is the plugin prefix.

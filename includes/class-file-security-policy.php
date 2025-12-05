@@ -210,6 +210,7 @@ class OMS_File_Security_Policy {
 	 *
 	 * @param string $path File path.
 	 * @return array Validation result.
+	 * @throws OMS_Security_Exception If file does not exist.
 	 */
 	private function validate_file_basics( $path ) {
 		if ( ! file_exists( $path ) ) {

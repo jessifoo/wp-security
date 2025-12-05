@@ -128,8 +128,14 @@ class OMS_API {
 
 		// In a real scenario, we might want a temporary token or manual approval.
 		// For now, we'll accept a 'master_key' to establish trust.
+		// Validate master key against shared secret.
 		if ( empty( $params['master_key'] ) || empty( $params['dashboard_url'] ) ) {
 			return new WP_REST_Response( array( 'error' => 'Missing parameters' ), 400 );
+		}
+
+		if ( ! hash_equals( OMS_Config::OMS_LINKING_KEY, $params['master_key'] ) ) {
+			$this->logger->warning( 'Invalid master key provided for registration from: ' . esc_html( $params['dashboard_url'] ) );
+			return new WP_REST_Response( array( 'error' => 'Invalid master key' ), 403 );
 		}
 
 		// Generate a new API key for this site
@@ -141,8 +147,8 @@ class OMS_API {
 
 		return new WP_REST_Response(
 			array(
-				'success' => true,
-				'api_key' => $new_api_key,
+				'success'  => true,
+				'api_key'  => $new_api_key,
 				'site_url' => get_site_url(),
 			),
 			200
@@ -158,10 +164,10 @@ class OMS_API {
 		// This would retrieve real status from the scanner
 		$last_scan = get_option( 'oms_last_scan_time' );
 		$status = array(
-			'version' => '1.0.0',
-			'last_scan' => $last_scan ? date( 'c', $last_scan ) : null,
+			'version'     => '1.0.0',
+			'last_scan'   => $last_scan ? gmdate( 'c', $last_scan ) : null,
 			'php_version' => phpversion(),
-			'wp_version' => get_bloginfo( 'version' ),
+			'wp_version'  => get_bloginfo( 'version' ),
 		);
 
 		return new WP_REST_Response( $status, 200 );
@@ -190,10 +196,13 @@ class OMS_API {
 	public function get_report() {
 		// Retrieve logs or report data
 		$log_path = $this->scanner->get_log_path();
+		// Append log filename to directory path.
+		$log_file = $log_path . '/security.log';
+
 		$logs = array();
-		if ( file_exists( $log_path ) ) {
+		if ( file_exists( $log_file ) ) {
 			// Read last 100 lines or similar
-			$logs = array_slice( file( $log_path ), -50 );
+			$logs = array_slice( file( $log_file ), -50 );
 		}
 
 		return new WP_REST_Response( array( 'logs' => $logs ), 200 );

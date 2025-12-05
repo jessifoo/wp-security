@@ -466,4 +466,11 @@ class OMS_Config {
 		'image',
 		'upload',
 	);
+
+	/**
+	 * Linking key for centralized management handshake.
+	 *
+	 * @var string
+	 */
+	const OMS_LINKING_KEY = 'oms_secret_key_change_me';
 }

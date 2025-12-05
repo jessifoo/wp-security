@@ -55,8 +55,9 @@ class OMS_Database_Scanner {
 	/**
 	 * Constructor
 	 *
-	 * @param OMS_Logger $logger Logger instance.
-	 * @param OMS_Cache  $cache Cache instance.
+	 * @param OMS_Logger          $logger Logger instance.
+	 * @param OMS_Cache           $cache  Cache instance.
+	 * @param OMS_Database_Backup $backup Backup instance.
 	 */
 	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Backup $backup = null ) {
 		$this->logger = $logger;
@@ -925,6 +926,4 @@ class OMS_Database_Scanner {
 				return 'ID';
 		}
 	}
-
-
 }

@@ -90,7 +90,7 @@ class OMS_Utils {
 		if ( in_array( '..', $parts, true ) ) {
 			return false;
 		}
-		$stack      = array();
+		$stack = array();
 
 		foreach ( $parts as $part ) {
 			if ( '.' === $part || '' === $part ) {
