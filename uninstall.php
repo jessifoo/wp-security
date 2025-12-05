@@ -7,7 +7,7 @@
 
 // If uninstall not called from WordPress, then exit.
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-    exit;
+	exit;
 }
 
 // Delete plugin options.
@@ -22,7 +22,7 @@ wp_clear_scheduled_hook( 'oms_scheduled_scan' );
 // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
 $upload_dir = wp_upload_dir();
 // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
-$oms_dir    = trailingslashit( $upload_dir['basedir'] ) . 'oms-temp';
+$oms_dir = trailingslashit( $upload_dir['basedir'] ) . 'oms-temp';
 if ( is_dir( $oms_dir ) ) {
 	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Uninstall script variables are acceptable.
 	$files = glob( $oms_dir . '/*' );

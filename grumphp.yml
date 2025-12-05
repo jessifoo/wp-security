@@ -7,6 +7,7 @@ grumphp:
                 - wordpress/*
                 - tests/_output/*
                 - tests/_support/_generated/*
+                - src/*
         phplint:
             short_open_tag: false
             ignore_patterns:
@@ -14,3 +15,4 @@ grumphp:
                 - wordpress/*
                 - tests/_output/*
                 - tests/_support/_generated/*
+                - src/*
