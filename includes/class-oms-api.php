@@ -52,7 +52,7 @@ class OMS_API {
 	public function register_routes() {
 		$namespace = 'oms/v1';
 
-		// Register site (Handshake)
+		// Register site (Handshake).
 		register_rest_route(
 			$namespace,
 			'/register',
@@ -63,7 +63,7 @@ class OMS_API {
 			)
 		);
 
-		// Get Status
+		// Get Status.
 		register_rest_route(
 			$namespace,
 			'/status',
@@ -74,7 +74,7 @@ class OMS_API {
 			)
 		);
 
-		// Trigger Scan
+		// Trigger Scan.
 		register_rest_route(
 			$namespace,
 			'/scan',
@@ -85,7 +85,7 @@ class OMS_API {
 			)
 		);
 
-		// Get Report
+		// Get Report.
 		register_rest_route(
 			$namespace,
 			'/report',
@@ -138,7 +138,7 @@ class OMS_API {
 			return new WP_REST_Response( array( 'error' => 'Invalid master key' ), 403 );
 		}
 
-		// Generate a new API key for this site
+		// Generate a new API key for this site.
 		$new_api_key = wp_generate_password( 64, false );
 		update_option( 'oms_api_key', $new_api_key );
 		update_option( 'oms_master_dashboard_url', esc_url_raw( $params['dashboard_url'] ) );
@@ -161,9 +161,9 @@ class OMS_API {
 	 * @return WP_REST_Response Response object.
 	 */
 	public function get_status() {
-		// This would retrieve real status from the scanner
+		// This would retrieve real status from the scanner.
 		$last_scan = get_option( 'oms_last_scan_time' );
-		$status = array(
+		$status    = array(
 			'version'     => '1.0.0',
 			'last_scan'   => $last_scan ? gmdate( 'c', $last_scan ) : null,
 			'php_version' => phpversion(),
@@ -179,12 +179,24 @@ class OMS_API {
 	 * @return WP_REST_Response Response object.
 	 */
 	public function trigger_scan() {
-		// Trigger the scan asynchronously if possible, or synchronously for now
+		// Trigger the scan asynchronously if possible, or synchronously for now.
 		try {
 			$this->scanner->run_full_cleanup();
-			return new WP_REST_Response( array( 'success' => true, 'message' => 'Scan completed' ), 200 );
+			return new WP_REST_Response(
+				array(
+					'success' => true,
+					'message' => 'Scan completed',
+				),
+				200
+			);
 		} catch ( Exception $e ) {
-			return new WP_REST_Response( array( 'success' => false, 'error' => $e->getMessage() ), 500 );
+			return new WP_REST_Response(
+				array(
+					'success' => false,
+					'error'   => $e->getMessage(),
+				),
+				500
+			);
 		}
 	}
 
@@ -194,14 +206,14 @@ class OMS_API {
 	 * @return WP_REST_Response Response object.
 	 */
 	public function get_report() {
-		// Retrieve logs or report data
+		// Retrieve logs or report data.
 		$log_path = $this->scanner->get_log_path();
 		// Append log filename to directory path.
 		$log_file = $log_path . '/security.log';
 
 		$logs = array();
 		if ( file_exists( $log_file ) ) {
-			// Read last 100 lines or similar
+			// Read last 100 lines or similar.
 			$logs = array_slice( file( $log_file ), -50 );
 		}
 
