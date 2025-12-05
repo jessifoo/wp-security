@@ -2,7 +2,7 @@ name: CodeQL Analysis
 
 # NOTE: CodeQL does not support PHP. This workflow is disabled.
 # CodeQL supports: JavaScript/TypeScript, Python, Java/Kotlin, C/C++, C#, Go, Ruby, Swift
-# For PHP security analysis, use: psalm.yml, phpmd.yml, codacy.yml, or plugin-check.yml
+# For PHP security analysis, use: psalm.yml, phpmd.yml, or plugin-check.yml
 
 on:
   workflow_dispatch: # Only manual dispatch, not automatic
@@ -38,6 +38,5 @@ jobs:
           echo "✅ For PHP security analysis, use these workflows instead:"
           echo "   - psalm.yml (Psalm static analysis)"
           echo "   - phpmd.yml (PHP Mess Detector)"
-          echo "   - codacy.yml (Codacy security scan)"
           echo "   - plugin-check.yml (WordPress Plugin Check)"
           exit 0
