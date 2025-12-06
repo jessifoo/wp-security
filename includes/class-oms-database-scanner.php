@@ -738,17 +738,35 @@ class OMS_Database_Scanner {
 			return $cached;
 		}
 
+		// TODO: Optionally fetch authoritative index definitions from WordPress core
+		// schema (e.g., via wp-admin/includes/schema.php or SHOW INDEX queries) in a
+		// future enhancement to reduce false positives on standard installs.
+
 		// Basic expected indexes for common tables.
 		global $wpdb;
 		$table_base = str_replace( $wpdb->prefix, '', $table_name );
 
-		$indexes = array(
+		$default_indexes = array(
 			'options' => array( 'PRIMARY', 'option_name' ),
 			'posts'   => array( 'PRIMARY', 'post_name', 'type_status_date', 'post_author', 'post_parent' ),
 			'users'   => array( 'PRIMARY', 'user_login', 'user_nicename', 'user_email' ),
 		);
 
-		$expected = isset( $indexes[ $table_base ] ) ? $indexes[ $table_base ] : array();
+		$expected = isset( $default_indexes[ $table_base ] ) ? $default_indexes[ $table_base ] : array();
+
+		/**
+		 * Filter the expected indexes for a WordPress table.
+		 *
+		 * Allows themes and plugins to override or extend the expected indexes
+		 * to prevent false positives on customized installs.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $expected   Expected index names for this table.
+		 * @param string $table_name Full table name (with prefix).
+		 * @param string $table_base Table name without prefix.
+		 */
+		$expected = apply_filters( 'oms_expected_indexes', $expected, $table_name, $table_base );
 
 		// Cache for 1 hour.
 		if ( ! empty( $expected ) ) {
