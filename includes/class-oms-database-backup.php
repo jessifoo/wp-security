@@ -146,7 +146,7 @@ class OMS_Database_Backup {
 				// Backup table data.
 				$backup_file = $this->backup_table( $full_table_name, $backup_id );
 				if ( $backup_file ) {
-					$backup_files[ $table_name ] = $backup_file;
+					$backup_files[ $full_table_name ] = $backup_file;
 				}
 			}
 
