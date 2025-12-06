@@ -51,7 +51,7 @@ class OMS_Logger {
 		// Secure the log directory.
 		$htaccess = $log_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
-			$result = file_put_contents( $htaccess, "Order deny,allow\nDeny from all" );
+			$result = file_put_contents( $htaccess, "Order deny,allow\nDeny from all\nRequire all denied\n" );
 			if ( false === $result ) {
 				error_log( 'OMS Logger: Failed to create .htaccess file for log directory: ' . esc_html( $htaccess ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 			}

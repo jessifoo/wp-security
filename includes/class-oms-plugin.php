@@ -123,7 +123,7 @@ class OMS_Plugin {
 		$htaccess_file = $dir_path . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Required for .htaccess creation.
-			$result = file_put_contents( $htaccess_file, "deny from all\n" );
+			$result = file_put_contents( $htaccess_file, "Order deny,allow\nDeny from all\nRequire all denied\n" );
 			if ( false === $result ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 				error_log( 'OMS Plugin: Failed to create .htaccess file for ' . $dir_type . ' directory: ' . esc_html( $htaccess_file ) );

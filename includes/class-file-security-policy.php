@@ -603,7 +603,7 @@ class OMS_File_Security_Policy {
 	private function create_htaccess_protection( $dir_path ) {
 		$htaccess_file = $dir_path . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
-			$result = file_put_contents( $htaccess_file, "deny from all\n" );
+			$result = file_put_contents( $htaccess_file, "Order deny,allow\nDeny from all\nRequire all denied\n" );
 			if ( false === $result ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
 				error_log( 'OMS: Failed to create .htaccess file: ' . esc_html( $htaccess_file ) );

@@ -69,7 +69,7 @@ class OMS_Database_Backup {
 		// Create .htaccess to protect backups.
 		$htaccess_file = $this->backup_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
-			$result = file_put_contents( $htaccess_file, "deny from all\n" );
+			$result = file_put_contents( $htaccess_file, "Order deny,allow\nDeny from all\nRequire all denied\n" );
 			if ( false === $result ) {
 				$this->logger->error( sprintf( 'Failed to create .htaccess file for database backup directory: %s', esc_html( $htaccess_file ) ) );
 			}
