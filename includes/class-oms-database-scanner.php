@@ -459,7 +459,11 @@ class OMS_Database_Scanner {
 			}
 
 			// Get the correct primary key column name for this table.
-			$id_column           = $this->get_id_column_name( $validated_table );
+			$id_column = $this->get_id_column_name( $validated_table );
+			if ( false === $id_column ) {
+				$this->logger->error( sprintf( 'Could not determine ID column for table %s', esc_html( $table_name ) ) );
+				return $issues;
+			}
 			$validated_id_column = $this->validate_db_identifier( $id_column );
 			if ( false === $validated_id_column ) {
 				$this->logger->error( sprintf( 'Invalid ID column name for table %s: %s', esc_html( $table_name ), esc_html( $id_column ) ) );
@@ -878,7 +882,13 @@ class OMS_Database_Scanner {
 			}
 
 			// Determine ID column name.
-			$id_column           = $this->get_id_column_name( $validated_table );
+			$id_column = $this->get_id_column_name( $validated_table );
+			if ( false === $id_column ) {
+				return array(
+					'success' => false,
+					'message' => sprintf( 'Could not determine ID column for table %s', $table_name ),
+				);
+			}
 			$validated_id_column = $this->validate_db_identifier( $id_column );
 			if ( false === $validated_id_column ) {
 				return array(
@@ -920,7 +930,7 @@ class OMS_Database_Scanner {
 	 * Get the primary key column name for a table
 	 *
 	 * @param string $table_name Full table name.
-	 * @return string ID column name.
+	 * @return string|false ID column name, or false if unable to determine.
 	 */
 	private function get_id_column_name( $table_name ) {
 		global $wpdb;
@@ -928,6 +938,7 @@ class OMS_Database_Scanner {
 		// Strip prefix to identify table type.
 		$table_base = str_replace( $wpdb->prefix, '', $table_name );
 
+		// Known WordPress core table mappings.
 		switch ( $table_base ) {
 			case 'posts':
 				return 'ID';
@@ -949,10 +960,56 @@ class OMS_Database_Scanner {
 				return 'term_taxonomy_id';
 			case 'links':
 				return 'link_id';
-			default:
-				// Fallback: try to guess or query schema.
-				// For now, default to 'ID' or 'id'.
-				return 'ID';
 		}
+
+		// Fallback: query information_schema to discover columns.
+		$db_name = defined( 'DB_NAME' ) ? DB_NAME : '';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ID column discovery requires direct query, schema queries don't benefit from caching.
+		$columns = $wpdb->get_col(
+			$wpdb->prepare(
+				'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION',
+				$db_name,
+				$table_name
+			)
+		);
+
+		// Check if query failed or returned empty results.
+		if ( ! is_array( $columns ) || empty( $columns ) ) {
+			$this->logger->error(
+				sprintf(
+					'ID column resolver failed for table %s (DB: %s): information_schema query returned no columns',
+					esc_html( $table_name ),
+					esc_html( $db_name )
+				)
+			);
+			return false;
+		}
+
+		// Check for common ID column names.
+		$common_id_names = array( 'ID', 'id', 'Id', $table_base . '_id', $table_base . '_ID' );
+		foreach ( $common_id_names as $id_name ) {
+			if ( in_array( $id_name, $columns, true ) ) {
+				$this->logger->debug(
+					sprintf(
+						'ID column resolver for table %s: found common ID column "%s"',
+						esc_html( $table_name ),
+						esc_html( $id_name )
+					)
+				);
+				return $id_name;
+			}
+		}
+
+		// Fall back to first column (typically the primary key).
+		$first_column = $columns[0];
+		$this->logger->debug(
+			sprintf(
+				'ID column resolver for table %s: using first column "%s" as fallback (no common ID column found)',
+				esc_html( $table_name ),
+				esc_html( $first_column )
+			)
+		);
+		return $first_column;
 	}
 }
