@@ -1,6 +1,6 @@
 <?php
 
-use Codeception\Test\Unit;
+use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../WordPressMocksTrait.php';
 require_once dirname(__DIR__, 2) . '/includes/class-oms-utils.php';
@@ -9,7 +9,7 @@ require_once dirname(__DIR__, 2) . '/includes/class-oms-utils.php';
  * Class OMS_UtilsTest
  * Tests for the utility functions
  */
-class OMS_UtilsTest extends Unit
+class OMS_UtilsTest extends TestCase
 {
     use WordPressMocksTrait;
 

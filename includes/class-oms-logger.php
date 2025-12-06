@@ -35,7 +35,7 @@ class OMS_Logger {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->log_file = WP_CONTENT_DIR . '/oms-logs/malware-scanner.log';
+		$this->log_file = OMS_Config::LOG_CONFIG['path'] . '/malware-scanner.log';
 		$this->init_log_dir();
 	}
 
@@ -51,7 +51,10 @@ class OMS_Logger {
 		// Secure the log directory.
 		$htaccess = $log_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
-			file_put_contents( $htaccess, "Order deny,allow\nDeny from all" );
+			$result = file_put_contents( $htaccess, "Order deny,allow\nDeny from all\nRequire all denied\n" );
+			if ( false === $result ) {
+				error_log( 'OMS Logger: Failed to create .htaccess file for log directory: ' . esc_html( $htaccess ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			}
 		}
 	}
 
@@ -93,40 +96,7 @@ class OMS_Logger {
 		}
 	}
 
-	/**
-	 * Rotate log file if it's too large
-	 */
-	private function maybe_rotate_log() {
-		if ( ! file_exists( $this->log_file ) ) {
-			return;
-		}
 
-		$max_size = 10 * 1024 * 1024; // 10MB.
-		if ( filesize( $this->log_file ) < $max_size ) {
-			return;
-		}
-
-		$backup = $this->log_file . '.' . gmdate( 'Y-m-d-H-i-s' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-		rename( $this->log_file, $backup );
-
-		// Keep only last 5 backups.
-		$backups = glob( $this->log_file . '.*' );
-		if ( count( $backups ) > 5 ) {
-			usort(
-				$backups,
-				function ( $a, $b ) {
-					return filemtime( $b ) - filemtime( $a );
-				}
-			);
-
-			$old_backups = array_slice( $backups, 5 );
-			foreach ( $old_backups as $old_backup ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log cleanup requires direct file deletion.
-				unlink( $old_backup );
-			}
-		}
-	}
 
 	/**
 	 * Log message.
@@ -135,111 +105,124 @@ class OMS_Logger {
 	 * @param string $level Log level.
 	 */
 	public function log( $message, $level = 'info' ) {
+		$level       = $this->validate_log_level( $level );
+		$log_message = $this->format_log_message( $message, $level );
+
+		$this->log_to_wp_error_log( $log_message, $level );
+		$this->log_to_file( $log_message );
+	}
+
+	/**
+	 * Validate and normalize log level.
+	 *
+	 * @param string $level Log level to validate.
+	 * @return string Validated log level.
+	 */
+	private function validate_log_level( $level ) {
 		$valid_levels = array( 'debug', 'info', 'warning', 'error', 'critical' );
 		$level        = strtolower( $level );
 
-		if ( ! in_array( $level, $valid_levels, true ) ) {
-			$level = 'info';
-		}
+		return in_array( $level, $valid_levels, true ) ? $level : 'info';
+	}
 
+	/**
+	 * Format log message with timestamp, level, and caller.
+	 *
+	 * @param string $message Raw message.
+	 * @param string $level Log level.
+	 * @return string Formatted log message.
+	 */
+	private function format_log_message( $message, $level ) {
 		$timestamp = current_time( 'mysql' );
-		$caller    = 'unknown';
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Debug only when WP_DEBUG is enabled.
-			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 2 );
-			$caller    = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-		}
+		$caller    = $this->get_caller_function();
 
-		$log_message = sprintf(
+		return sprintf(
 			'[%s] [%s] [%s] %s',
 			$timestamp,
 			strtoupper( $level ),
 			$caller,
 			$message
 		);
+	}
 
-		// Log to WordPress error log for warning and above (only when WP_DEBUG is enabled).
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && in_array( $level, array( 'warning', 'error', 'critical' ), true ) ) {
-			error_log( $log_message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
+	/**
+	 * Get the calling function name.
+	 *
+	 * @return string Caller function name.
+	 */
+	private function get_caller_function() {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return 'unknown';
 		}
 
-		// Store in database.
-		if ( function_exists( 'update_option' ) ) {
-			$log_key   = 'oms_security_log_' . gmdate( 'Y-m-d' );
-			$daily_log = get_option( $log_key, array() );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Debug only when WP_DEBUG is enabled.
+		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
+		return isset( $backtrace[2] ) ? $backtrace[2]['function'] : 'unknown';
+	}
 
-			$daily_log[] = array(
-				'timestamp' => $timestamp,
-				'level'     => $level,
-				'message'   => $message,
-				'caller'    => $caller,
-			);
+	/**
+	 * Log to WordPress error log for warning and above.
+	 *
+	 * @param string $log_message Formatted log message.
+	 * @param string $level Log level.
+	 */
+	private function log_to_wp_error_log( $log_message, $level ) {
+		$should_log   = defined( 'WP_DEBUG' ) && WP_DEBUG;
+		$is_important = in_array( $level, array( 'warning', 'error', 'critical' ), true );
 
-			// Keep only last 1000 entries per day.
-			if ( count( $daily_log ) > 1000 ) {
-				$daily_log = array_slice( $daily_log, -1000 );
-			}
-
-			update_option( $log_key, $daily_log, false );
-
-			// Clean up old logs (keep last 7 days).
-			$this->cleanup_old_logs();
-		}
-
-		// Write to file if configured.
-		if ( defined( 'OMS_LOG_FILE' ) && OMS_Config::LOG_CONFIG ) {
-			$log_file = WP_CONTENT_DIR . '/oms-logs/security.log';
-			$log_dir  = dirname( $log_file );
-
-			if ( ! is_dir( $log_dir ) ) {
-				wp_mkdir_p( $log_dir );
-			}
-
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Logging requires checking directory writability.
-			if ( is_writable( $log_dir ) ) {
-				file_put_contents(
-					$log_file,
-					$log_message . PHP_EOL,
-					FILE_APPEND | LOCK_EX
-				);
-
-				// Rotate log file if it exceeds 5MB.
-				if ( filesize( $log_file ) > 5 * 1024 * 1024 ) {
-					$this->rotate_log_file( $log_file );
-				}
-			}
+		if ( $should_log && $is_important ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
+			error_log( $log_message );
 		}
 	}
 
 	/**
-	 * Clean up old logs
+	 * Write log message to file.
+	 *
+	 * @param string $log_message Formatted log message.
 	 */
-	private function cleanup_old_logs() {
-		global $wpdb;
-
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-7 days' ) );
-		$cache_key   = 'oms_old_logs_' . $cutoff_date;
-
-		// Check cache first.
-		$old_logs = wp_cache_get( $cache_key, 'oms_logs' );
-		if ( false === $old_logs ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Log cleanup requires direct query, caching added.
-			$old_logs = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT option_name FROM $wpdb->options 
-					WHERE option_name LIKE %s 
-					AND option_name < %s",
-					'oms_security_log_%',
-					'oms_security_log_' . $cutoff_date
-				)
-			);
-
-			// Cache for 1 hour.
-			wp_cache_set( $cache_key, $old_logs, 'oms_logs', HOUR_IN_SECONDS );
+	private function log_to_file( $log_message ) {
+		if ( ! defined( 'OMS_LOG_FILE' ) ) {
+			return;
 		}
 
-		foreach ( $old_logs as $log ) {
-			delete_option( $log->option_name );
+		$log_file = OMS_Config::LOG_CONFIG['path'] . '/security.log';
+		$log_dir  = dirname( $log_file );
+
+		if ( ! is_dir( $log_dir ) ) {
+			wp_mkdir_p( $log_dir );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Logging requires checking directory writability.
+		if ( ! is_writable( $log_dir ) ) {
+			return;
+		}
+
+		$result = file_put_contents(
+			$log_file,
+			$log_message . PHP_EOL,
+			FILE_APPEND | LOCK_EX
+		);
+
+		if ( false === $result ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			error_log( 'OMS Logger: Failed to write to log file: ' . esc_html( $log_file ) );
+		}
+
+		// Rotate log file if it exceeds 5MB.
+		$this->maybe_rotate_log_file( $log_file );
+	}
+
+	/**
+	 * Check if log file needs rotation and rotate if needed.
+	 *
+	 * @param string $log_file Log file path.
+	 */
+	private function maybe_rotate_log_file( $log_file ) {
+		$max_size = 5 * 1024 * 1024; // 5MB.
+
+		if ( file_exists( $log_file ) && filesize( $log_file ) > $max_size ) {
+			$this->rotate_log_file( $log_file );
 		}
 	}
 
@@ -254,7 +237,10 @@ class OMS_Logger {
 		// Remove oldest backup if exists.
 		if ( file_exists( $log_file . '.' . $max_backups ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Log rotation requires direct file deletion.
-			unlink( $log_file . '.' . $max_backups );
+			$unlink_result = unlink( $log_file . '.' . $max_backups );
+			if ( false === $unlink_result ) {
+				error_log( 'OMS Logger: Failed to delete oldest backup log file: ' . esc_html( $log_file . '.' . $max_backups ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			}
 		}
 
 		// Rotate existing backups.
@@ -263,18 +249,32 @@ class OMS_Logger {
 			$new_file = $log_file . '.' . ( $i + 1 );
 			if ( file_exists( $old_file ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-				rename( $old_file, $new_file );
+				$rename_result = rename( $old_file, $new_file );
+				if ( false === $rename_result ) {
+					error_log( 'OMS Logger: Failed to rotate backup log file: ' . esc_html( $old_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				}
 			}
 		}
 
 		// Rotate current log file.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Log rotation requires atomic rename operation.
-		rename( $log_file, $log_file . '.1' );
+		$rename_result = rename( $log_file, $log_file . '.1' );
+		if ( false === $rename_result ) {
+			error_log( 'OMS Logger: Failed to rename current log file for rotation: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			return;
+		}
 
 		// Create new empty log file.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_touch -- Log rotation requires creating new log file.
-		touch( $log_file );
+		$touch_result = touch( $log_file );
+		if ( false === $touch_result ) {
+			error_log( 'OMS Logger: Failed to create new log file: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+			return;
+		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Log rotation requires setting file permissions.
-		chmod( $log_file, 0644 );
+		$chmod_result = chmod( $log_file, 0644 );
+		if ( false === $chmod_result ) {
+			error_log( 'OMS Logger: Failed to set permissions on log file: ' . esc_html( $log_file ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+		}
 	}
 }

@@ -1,2 +1,18 @@
 grumphp:
-    tasks: {}
+    tasks:
+        phpcs:
+            standard: phpcs.xml
+            ignore_patterns:
+                - vendor/*
+                - wordpress/*
+                - tests/_output/*
+                - tests/_support/_generated/*
+                - src/*
+        phplint:
+            short_open_tag: false
+            ignore_patterns:
+                - vendor/*
+                - wordpress/*
+                - tests/_output/*
+                - tests/_support/_generated/*
+                - src/*

@@ -49,7 +49,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           extensions: mbstring, xml, curl, json
           coverage: none
           tools: phpmd
@@ -66,6 +66,13 @@ jobs:
             echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"PHPMD","version":"2.15.0"}},"results":[]}]}' > phpmd-results.sarif
           fi
         continue-on-error: true
+
+      - name: Validate and sanitize SARIF file
+        if: always()
+        run: |
+          if [ -f phpmd-results.sarif ]; then
+            php .github/scripts/validate-sarif.php phpmd-results.sarif
+          fi
 
       - name: Upload analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3

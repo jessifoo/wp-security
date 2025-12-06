@@ -43,7 +43,7 @@ class OMS_Utils {
 		// Check file permissions if file exists.
 		if ( file_exists( $path ) ) {
 			$perms = fileperms( $path );
-			if ( ( $perms & 0x0100 ) || ( $perms & 0x0010 ) || ( $perms & 0x0001 ) ) { // Check for executable bits.
+			if ( ( $perms & 0100 ) || ( $perms & 0010 ) || ( $perms & 0001 ) ) { // Check for executable bits.
 				throw new InvalidArgumentException( 'File has unsafe permissions' );
 			}
 		}
@@ -81,10 +81,16 @@ class OMS_Utils {
 			return false;
 		}
 
-		// Check for path traversal.
-		$normalized = wp_normalize_path( $path );
-		$parts      = explode( '/', $normalized );
-		$stack      = array();
+		// Normalize and decode before traversal checks.
+		$decoded    = rawurldecode( (string) $path );
+		$normalized = wp_normalize_path( $decoded );
+
+		// Disallow traversal by checking path segments strictly.
+		$parts = array_values( array_filter( explode( '/', $normalized ), 'strlen' ) );
+		if ( in_array( '..', $parts, true ) ) {
+			return false;
+		}
+		$stack = array();
 
 		foreach ( $parts as $part ) {
 			if ( '.' === $part || '' === $part ) {

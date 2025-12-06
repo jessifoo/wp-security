@@ -1,0 +1,39 @@
+PHP Deprecated:  Amp\ParallelFunctions\parallel(): Implicitly marking parameter $pool as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 23
+
+Deprecated: Amp\ParallelFunctions\parallel(): Implicitly marking parameter $pool as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 23
+PHP Deprecated:  Amp\ParallelFunctions\parallelMap(): Implicitly marking parameter $pool as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 51
+
+Deprecated: Amp\ParallelFunctions\parallelMap(): Implicitly marking parameter $pool as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 51
+PHP Deprecated:  Amp\ParallelFunctions\parallelFilter(): Implicitly marking parameter $callable as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 77
+
+Deprecated: Amp\ParallelFunctions\parallelFilter(): Implicitly marking parameter $callable as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 77
+PHP Deprecated:  Amp\ParallelFunctions\parallelFilter(): Implicitly marking parameter $pool as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 77
+
+Deprecated: Amp\ParallelFunctions\parallelFilter(): Implicitly marking parameter $pool as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/amphp/parallel-functions/src/functions.php on line 77
+PHP Deprecated:  tad\WPBrowser\dropWpTables(): Implicitly marking parameter $tables as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/lucatume/wp-browser/src/tad/WPBrowser/wp.php on line 18
+
+Deprecated: tad\WPBrowser\dropWpTables(): Implicitly marking parameter $tables as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/lucatume/wp-browser/src/tad/WPBrowser/wp.php on line 18
+PHP Deprecated:  tad\WPBrowser\emptyWpTables(): Implicitly marking parameter $tables as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/lucatume/wp-browser/src/tad/WPBrowser/wp.php on line 45
+
+Deprecated: tad\WPBrowser\emptyWpTables(): Implicitly marking parameter $tables as nullable is deprecated, the explicit nullable type must be used instead in /Users/jessicajohnson/projects/cascade/CascadeProjects/wordpress/wp-content/plugins/wp-security/vendor/lucatume/wp-browser/src/tad/WPBrowser/wp.php on line 45
+PHPUnit 9.6.29 by Sebastian Bergmann and contributors.
+
+  Warning - The configuration file did not pass validation!
+  The following problems have been detected:
+
+  Line 11:
+  - Element 'phpunit', attribute 'cacheDirectory': The attribute 'cacheDirectory' is not allowed.
+  - Element 'phpunit', attribute 'requireCoverageMetadata': The attribute 'requireCoverageMetadata' is not allowed.
+  - Element 'phpunit', attribute 'beStrictAboutCoverageMetadata': The attribute 'beStrictAboutCoverageMetadata' is not allowed.
+
+  Line 18:
+  - Element 'source': This element is not expected.
+
+  Test results may not be as expected.
+
+
+........................                                          24 / 24 (100%)
+
+Time: 00:00.046, Memory: 15.02 MB
+
+OK (24 tests, 55 assertions)

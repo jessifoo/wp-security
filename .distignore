@@ -1,0 +1,21 @@
+# Files and directories to exclude from WordPress plugin distribution
+.github/
+tests/
+vendor/
+node_modules/
+wordpress/
+*.md
+!readme.txt
+.git/
+.gitignore
+composer.json
+composer.lock
+phpcs.xml
+phpmd.xml
+psalm.xml
+psalm-baseline.xml
+grumphp.yml
+codeception.yml
+.phpunit.result.cache
+.DS_Store
+*.log

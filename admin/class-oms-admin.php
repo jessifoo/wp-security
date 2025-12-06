@@ -243,6 +243,7 @@ class OMS_Admin {
 	 * Handle manual scan action.
 	 *
 	 * @since 1.0.0
+	 * @SuppressWarnings(PHPMD.ExitExpression) Exit required after wp_safe_redirect per WordPress standards.
 	 */
 	public function handle_manual_scan() {
 		if ( ! current_user_can( 'manage_options' ) ) {
