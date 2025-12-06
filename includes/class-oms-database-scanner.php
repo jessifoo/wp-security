@@ -260,6 +260,17 @@ class OMS_Database_Scanner {
 				ARRAY_A
 			);
 
+			if ( ! is_array( $actual_columns ) ) {
+				$this->logger->error( sprintf( 'Query failed for table %s: %s', $table_name, $wpdb->last_error ) );
+				$issues[] = array(
+					'type'     => 'check_error',
+					'table'    => $table_name,
+					'severity' => 'HIGH',
+					'message'  => sprintf( 'Database query failed while checking structure of %s', $table_name ),
+				);
+				return $issues;
+			}
+
 			$actual_column_names = array_column( $actual_columns, 'COLUMN_NAME' );
 
 			// Check for missing columns.
