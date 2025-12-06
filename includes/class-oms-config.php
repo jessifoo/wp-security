@@ -69,7 +69,7 @@ class OMS_Config {
 
 		// Encoded PHP tags.
 		array(
-			'pattern'     => '\\\\x3c\\\\x3f(?:php)?|\\\\x3c\\\\x25|\\\\x25\\\\x3e|\\\\x3f\\\\x3e',
+			'pattern'     => '\\x3c\\x3f(?:php)?|\\x3c\\x25|\\x25\\x3e|\\x3f\\x3e',
 			'severity'    => 'HIGH',
 			'description' => 'Encoded PHP tags detected.',
 		),
@@ -177,7 +177,7 @@ class OMS_Config {
 		// Shell command execution.
 		'(shell_exec|system|passthru|exec|popen)\s*\([^\)]*\)',
 		// Remote file inclusion.
-		'include(_once)?\s*\(\s*[\'"]https?:\/\/ ',
+		'include(_once)?\s*\(\s*[\'"]https?://',
 		// Malicious WordPress hooks.
 		'add_(action|filter)\s*\(\s*[\'"]wp_head[\'"]\s*,.*base64',
 		// Common malware functions.
@@ -187,7 +187,7 @@ class OMS_Config {
 		// SEO spam injection.
 		'<div\s+style=[\'"]display:\s*none;?[\'"]\s*>[^<]*<a\s+href=',
 		// Malicious redirects.
-		'header\s*\(\s*[\'"]Location:\s*https?:\/\/ ',
+		'header\s*\(\s*[\'"]Location:\s*https?://',
 		// WordPress database manipulation.
 		'\$wpdb->query\s*\(\s*[\'"](?:INSERT|UPDATE|DELETE)',
 		// Malicious file operations.
