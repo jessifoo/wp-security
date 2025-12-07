@@ -6,6 +6,9 @@
     </ArgumentTypeCoercion>
     <RedundantCondition>
       <code><![CDATA[is_resource( $handle )]]></code>
+      <code><![CDATA[is_resource( $handle )]]></code>
+      <code><![CDATA[is_resource( $handle )]]></code>
+      <code><![CDATA[is_resource( $handle )]]></code>
       <code><![CDATA[self::OMS_NOTIFY_ADMIN['enabled']]]></code>
       <code><![CDATA[self::OMS_NOTIFY_ADMIN['include_context']]]></code>
     </RedundantCondition>
