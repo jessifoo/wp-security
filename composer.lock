@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3c242e7e7aa51ec1ede4359902f9594f",
+    "content-hash": "7b0dac1ef3802c78147fc2f569e44119",
     "packages": [
         {
             "name": "micropackage/internationalization",
@@ -13552,5 +13552,5 @@
     "platform-overrides": {
         "php": "8.2.0"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
