@@ -86,14 +86,23 @@ class OMS_Utils {
 		$normalized = wp_normalize_path( $decoded );
 
 		// Disallow traversal by checking path segments strictly.
-		$parts = array_values( array_filter( explode( '/', $normalized ), 'strlen' ) );
+		$parts = array_values(
+			array_filter(
+				explode( '/', $normalized ),
+				function ( $part ) {
+					return strlen( $part ) > 0;
+				}
+			)
+		);
 		if ( in_array( '..', $parts, true ) ) {
 			return false;
 		}
 		$stack = array();
 
 		foreach ( $parts as $part ) {
-			if ( '.' === $part || '' === $part ) {
+			// Skip empty parts and current directory references.
+			// Note: Empty parts are already filtered out above, but check for '.' for clarity.
+			if ( '.' === $part ) {
 				continue;
 			}
 
@@ -144,7 +153,9 @@ class OMS_Utils {
 
 		// Check for malicious patterns from OMS_Config.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
-			if ( preg_match( '/' . $pattern . '/i', $content ) ) {
+			// Patterns are regex strings, wrap with delimiters and flags.
+			// Use '#' delimiter to avoid conflicts with '/' in patterns.
+			if ( preg_match( '#' . $pattern . '#i', $content ) ) {
 				return array(
 					'safe'   => false,
 					'reason' => 'File contains malicious code pattern',

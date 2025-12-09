@@ -38,7 +38,9 @@ class OMS_Filesystem {
 
 		// Check for malicious patterns from OMS_Config.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
-			if ( preg_match( '/' . $pattern . '/i', $content ) ) {
+			// Patterns are regex strings, wrap with delimiters and flags.
+			// Use '#' delimiter to avoid conflicts with '/' in patterns.
+			if ( preg_match( '#' . $pattern . '#i', $content ) ) {
 				return array(
 					'safe'   => false,
 					'reason' => 'File contains malicious code pattern',
