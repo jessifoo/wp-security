@@ -28,6 +28,7 @@ RUN apt-get install -y \
     php8.2-zip \
     php8.2-gd \
     php8.2-mysql \
+    php8.2-mysqli \
     && rm -rf /var/lib/apt/lists/*
 
 # Set PHP as default

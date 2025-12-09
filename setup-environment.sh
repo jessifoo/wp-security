@@ -27,7 +27,8 @@ if ! command -v php8.2 &> /dev/null; then
         php8.2-curl \
         php8.2-zip \
         php8.2-gd \
-        php8.2-mysql
+        php8.2-mysql \
+        php8.2-mysqli
 fi
 
 # Set PHP in PATH
