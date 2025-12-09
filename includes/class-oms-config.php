@@ -106,7 +106,7 @@ class OMS_Config {
 	/**
 	 * File categories and how to handle them.
 	 */
-	const FILE_CATEGORIES = array(
+		const FILE_CATEGORIES = array(
 		'core'    => array(
 			'path'     => ABSPATH,
 			'patterns' => array(
@@ -114,6 +114,7 @@ class OMS_Config {
 				'wp-includes/**/*.php',
 				'*.php',
 			),
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- This is a file path exclusion array, not a WP_Query parameter.
 			'exclude'  => array(
 				'wp-content',
 			),

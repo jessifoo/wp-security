@@ -898,7 +898,7 @@ class OMS_Database_Scanner {
 			}
 
 			// Delete the row.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database cleanup requires direct query. Table and column names are validated via validate_db_identifier().
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database cleanup requires direct query. Table and column names are validated via validate_db_identifier().
 			$result = $wpdb->query(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().

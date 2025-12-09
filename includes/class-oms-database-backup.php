@@ -355,7 +355,7 @@ class OMS_Database_Backup {
 			}
 
 			// Truncate table first.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Database restore requires direct query, table name is validated via validate_db_table_name(). TRUNCATE TABLE does not support placeholders for table names.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database restore requires direct query, table name is validated via validate_db_table_name(). TRUNCATE TABLE does not support placeholders for table names.
 			$wpdb->query( "TRUNCATE TABLE `{$validated_table}`" );
 
 			// Restore data in batches.
