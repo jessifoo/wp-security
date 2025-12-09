@@ -10,12 +10,12 @@ echo "=== GitHub Actions Environment Test ==="
 echo ""
 
 # Verify PHP version matches GitHub Actions
-echo "1. Verifying PHP version (GitHub Actions: PHP 8.1)..."
+echo "1. Verifying PHP version (GitHub Actions: PHP 8.2)..."
 PHP_VERSION=$(php -r 'echo PHP_VERSION;')
-if php -r "if (version_compare(PHP_VERSION, '8.1.0', '<')) { exit(1); }"; then
-    echo "   ✅ PHP $PHP_VERSION >= 8.1.0"
+if php -r "if (version_compare(PHP_VERSION, '8.2.0', '<')) { exit(1); }"; then
+    echo "   ✅ PHP $PHP_VERSION >= 8.2.0"
 else
-    echo "   ❌ PHP $PHP_VERSION < 8.1.0 - MISMATCH!"
+    echo "   ❌ PHP $PHP_VERSION < 8.2.0 - MISMATCH!"
     exit 1
 fi
 

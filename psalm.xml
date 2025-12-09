@@ -12,10 +12,10 @@
     <projectFiles>
         <directory name="includes" />
         <directory name="admin" />
+        <directory name="tests" />
         <file name="obfuscated-malware-scanner.php" />
         <ignoreFiles>
             <directory name="vendor" />
-            <directory name="tests" />
             <directory name="wordpress" />
             <directory name="src" />
         </ignoreFiles>
@@ -30,6 +30,7 @@
             <errorLevel type="suppress">
                 <directory name="includes" />
                 <directory name="admin" />
+                <directory name="tests" />
                 <file name="obfuscated-malware-scanner.php" />
             </errorLevel>
         </UndefinedFunction>
@@ -38,6 +39,7 @@
             <errorLevel type="suppress">
                 <directory name="includes" />
                 <directory name="admin" />
+                <directory name="tests" />
                 <file name="obfuscated-malware-scanner.php" />
             </errorLevel>
         </UndefinedConstant>
@@ -59,6 +61,7 @@
             <errorLevel type="info">
                 <directory name="includes" />
                 <directory name="admin" />
+                <directory name="tests" />
                 <file name="obfuscated-malware-scanner.php" />
             </errorLevel>
         </MissingReturnType>

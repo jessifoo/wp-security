@@ -1,0 +1,9 @@
+{
+  "snapshot": "POPULATED_FROM_SETTINGS",
+  "name": "wp-security-dev",
+  "build": {
+    "dockerfile": "/Dockerfile",
+    "context": ".."
+  },
+  "terminals": []
+}
