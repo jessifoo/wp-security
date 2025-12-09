@@ -31,11 +31,18 @@ class OMS_Database_Scanner {
 	private $cache;
 
 	/**
-	 * Database backup instance
+	 * Database backup instance (for full table backups)
 	 *
 	 * @var OMS_Database_Backup
 	 */
 	private $backup;
+
+	/**
+	 * Database cleaner instance (for row-level operations)
+	 *
+	 * @var OMS_Database_Cleaner
+	 */
+	private $cleaner;
 
 	/**
 	 * Critical WordPress tables that must be checked
@@ -55,14 +62,16 @@ class OMS_Database_Scanner {
 	/**
 	 * Constructor
 	 *
-	 * @param OMS_Logger          $logger Logger instance.
-	 * @param OMS_Cache           $cache  Cache instance.
-	 * @param OMS_Database_Backup $backup Backup instance.
+	 * @param OMS_Logger           $logger  Logger instance.
+	 * @param OMS_Cache            $cache   Cache instance.
+	 * @param OMS_Database_Backup  $backup  Backup instance (optional, for full table backups).
+	 * @param OMS_Database_Cleaner $cleaner Cleaner instance (optional, for row-level operations).
 	 */
-	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Backup $backup = null ) {
-		$this->logger = $logger;
-		$this->cache  = $cache;
-		$this->backup = $backup ? $backup : new OMS_Database_Backup( $this->logger );
+	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Backup $backup = null, OMS_Database_Cleaner $cleaner = null ) {
+		$this->logger  = $logger;
+		$this->cache   = $cache;
+		$this->backup  = $backup ? $backup : new OMS_Database_Backup( $this->logger );
+		$this->cleaner = $cleaner ? $cleaner : new OMS_Database_Cleaner( $this->logger );
 	}
 
 	/**
@@ -783,147 +792,34 @@ class OMS_Database_Scanner {
 	/**
 	 * Clean malicious database content
 	 *
+	 * Uses the OMS_Database_Cleaner for row-level operations with
+	 * transaction support and automatic rollback on failure.
+	 * Only the affected rows are backed up, not entire tables.
+	 *
 	 * @param array $issues Issues to clean.
 	 * @return array Cleanup results.
 	 */
 	public function clean_database_content( $issues ) {
-		global $wpdb;
-
-		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
-			$this->logger->error( 'WordPress database object not available for database cleanup' );
-			return array(
-				'success' => false,
-				'message' => 'Database object not available',
-			);
-		}
-
-		$this->logger->info( 'Starting database content cleanup' );
-
-		// Backup critical tables before cleanup.
-		$backup_result = $this->backup->backup_critical_tables();
-		if ( ! $backup_result['success'] ) {
-			$this->logger->error( 'Failed to backup critical tables before cleanup' );
-			return array(
-				'success' => false,
-				'message' => 'Backup failed, cleanup aborted',
-			);
-		}
-
-		$cleaned = 0;
-		$errors  = 0;
-
-		try {
-			foreach ( $issues as $issue ) {
-				if ( 'malicious_content' !== $issue['type'] ) {
-					continue;
-				}
-
-				$clean_result = $this->clean_malicious_row( $issue );
-				if ( $clean_result['success'] ) {
-					++$cleaned;
-				} else {
-					++$errors;
-					$this->logger->error( sprintf( 'Failed to clean row: %s', esc_html( $clean_result['message'] ) ) );
-				}
-			}
-
-			$this->logger->info( sprintf( 'Database cleanup completed: %d cleaned, %d errors', $cleaned, $errors ) );
-
-			return array(
-				'success' => true,
-				'cleaned' => $cleaned,
-				'errors'  => $errors,
-			);
-		} catch ( Exception $e ) {
-			$this->logger->error( sprintf( 'Database cleanup failed: %s', esc_html( $e->getMessage() ) ) );
-
-			// Attempt rollback.
-			$rollback_result = $this->backup->rollback_from_backup();
-			if ( $rollback_result['success'] ) {
-				$this->logger->info( 'Rolled back database changes after cleanup failure' );
-			}
-
-			return array(
-				'success' => false,
-				'message' => $e->getMessage(),
-			);
-		}
+		return $this->cleaner->clean_issues( $issues );
 	}
 
 	/**
-	 * Clean a malicious database row
+	 * Restore cleaned rows from a backup
 	 *
-	 * @param array $issue Issue details.
-	 * @return array Cleanup result.
+	 * @param string $backup_id Backup ID to restore from.
+	 * @return array Restore results.
 	 */
-	private function clean_malicious_row( $issue ) {
-		global $wpdb;
+	public function restore_cleaned_rows( $backup_id ) {
+		return $this->cleaner->restore_from_backup( $backup_id );
+	}
 
-		try {
-			$table_name = isset( $issue['table'] ) ? $issue['table'] : '';
-			$column     = isset( $issue['column'] ) ? $issue['column'] : '';
-			$row_id     = isset( $issue['row_id'] ) ? $issue['row_id'] : null;
-
-			if ( empty( $row_id ) ) {
-				return array(
-					'success' => false,
-					'message' => 'Row ID not available',
-				);
-			}
-
-			// Validate table and column names.
-			$validated_table  = $this->validate_db_identifier( $table_name );
-			$validated_column = $this->validate_db_identifier( $column );
-			if ( false === $validated_table || false === $validated_column ) {
-				return array(
-					'success' => false,
-					'message' => 'Invalid table or column name',
-				);
-			}
-
-			// Determine ID column name.
-			$id_column = $this->get_id_column_name( $validated_table );
-			if ( false === $id_column ) {
-				return array(
-					'success' => false,
-					'message' => sprintf( 'Could not determine ID column for table %s', $table_name ),
-				);
-			}
-			$validated_id_column = $this->validate_db_identifier( $id_column );
-			if ( false === $validated_id_column ) {
-				return array(
-					'success' => false,
-					'message' => 'Invalid ID column name',
-				);
-			}
-
-			// Delete the row.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database cleanup requires direct query. Table and column names are validated via validate_db_identifier().
-			$result = $wpdb->query(
-				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
-					"DELETE FROM `{$validated_table}` WHERE `{$validated_id_column}` = %s",
-					$row_id
-				)
-			);
-
-			if ( false === $result ) {
-				return array(
-					'success' => false,
-					'message' => 'Database error during deletion',
-				);
-			}
-
-			return array(
-				'success' => true,
-				'message' => 'Row deleted successfully',
-			);
-		} catch ( Exception $e ) {
-			return array(
-				'success' => false,
-				'message' => $e->getMessage(),
-			);
-		}
+	/**
+	 * List available cleanup backups
+	 *
+	 * @return array List of available backups with metadata.
+	 */
+	public function list_cleanup_backups() {
+		return $this->cleaner->list_backups();
 	}
 
 	/**
