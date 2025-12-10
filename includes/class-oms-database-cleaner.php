@@ -208,7 +208,7 @@ class OMS_Database_Cleaner {
 		$deleted = $wpdb->delete(
 			$table_name,
 			array( $id_column => $row_id ),
-			array( '%s' )
+			array( is_int( $row_id ) ? '%d' : '%s' )
 		);
 
 		if ( false === $deleted ) {
