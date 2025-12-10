@@ -31,14 +31,7 @@ class OMS_Database_Scanner {
 	private $cache;
 
 	/**
-	 * Database backup instance (for full table backups)
-	 *
-	 * @var OMS_Database_Backup
-	 */
-	private $backup;
-
-	/**
-	 * Database cleaner instance (for row-level operations)
+	 * Database cleaner instance (for row-level operations with transactions)
 	 *
 	 * @var OMS_Database_Cleaner
 	 */
@@ -64,23 +57,12 @@ class OMS_Database_Scanner {
 	 *
 	 * @param OMS_Logger           $logger  Logger instance.
 	 * @param OMS_Cache            $cache   Cache instance.
-	 * @param OMS_Database_Backup  $backup  Backup instance (optional, for full table backups).
-	 * @param OMS_Database_Cleaner $cleaner Cleaner instance (optional, for row-level operations).
+	 * @param OMS_Database_Cleaner $cleaner Cleaner instance (optional).
 	 */
-	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Backup $backup = null, OMS_Database_Cleaner $cleaner = null ) {
+	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Cleaner $cleaner = null ) {
 		$this->logger  = $logger;
 		$this->cache   = $cache;
-		$this->backup  = $backup ? $backup : new OMS_Database_Backup( $this->logger );
 		$this->cleaner = $cleaner ? $cleaner : new OMS_Database_Cleaner( $this->logger );
-	}
-
-	/**
-	 * Get database backup instance
-	 *
-	 * @return OMS_Database_Backup Backup instance.
-	 */
-	public function get_backup() {
-		return $this->backup;
 	}
 
 	/**
