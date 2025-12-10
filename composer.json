@@ -73,19 +73,30 @@
             "@test",
             "@test:codeception"
         ],
-        "phpcs": "phpcs includes/ admin/ obfuscated-malware-scanner.php",
+        "phpcs": "phpcs includes/ admin/ tests/ obfuscated-malware-scanner.php",
         "phpcs:report": "phpcs --standard=WordPress --report=summary",
-        "phpcbf": "phpcbf includes/ admin/ obfuscated-malware-scanner.php",
-        "phpstan": "phpstan analyse --memory-limit=1G includes/ admin/ obfuscated-malware-scanner.php",
+        "phpcbf": "phpcbf includes/ admin/ tests/ obfuscated-malware-scanner.php",
+        "psalm": "psalm --output-format=compact",
+        "psalm:baseline": "psalm --set-baseline=psalm-baseline.xml",
+        "phpstan": "phpstan analyse --memory-limit=1G",
         "phpstan:baseline": "phpstan analyse --generate-baseline",
         "lint": [
             "@phpcs",
+            "@psalm",
             "@phpstan"
         ],
-        "lint:fix": "@phpcbf",
+        "lint:fix:phpcs": "@phpcbf",
+        "lint:fix": [
+            "@lint:fix:phpcs"
+        ],
         "check": [
             "@lint",
             "@test:all"
+        ],
+        "ci:check": [
+            "@lint",
+            "@test:unit",
+            "@test:codeception:unit"
         ],
         "post-install-cmd": [
             "@php -r \"echo 'Composer install completed successfully.\\n';\""

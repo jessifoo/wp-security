@@ -100,8 +100,8 @@ else
 fi
 
 check_command \
-    "Failed to install required packages (mariadb-server, mariadb-client, php8.1-mysql, php8.1-mysqli)" \
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client php8.1-mysql php8.1-mysqli
+    "Failed to install required packages (mariadb-server, mariadb-client, php8.2-mysql, php8.2-mysqli)" \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client php8.2-mysql php8.2-mysqli
 
 redirect_output sudo phpenmod mysqli pdo_mysql
 

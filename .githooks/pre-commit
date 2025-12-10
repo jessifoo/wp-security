@@ -1,0 +1,24 @@
+#!/bin/sh
+# Run project linters before committing.
+# Install once per clone: git config core.hooksPath .githooks
+
+set -e
+
+# Allow skipping when explicitly requested
+[ -n "$SKIP_LINT" ] && exit 0
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$ROOT"
+
+if [ ! -f "composer.json" ]; then
+  exit 0
+fi
+
+if [ ! -f "composer.lock" ] || [ "composer.json" -nt "composer.lock" ]; then
+  echo "Composer dependencies are out of date. Run: composer install" >&2
+  exit 1
+fi
+
+echo "Running composer lint ..."
+composer lint
+

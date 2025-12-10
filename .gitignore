@@ -41,11 +41,15 @@ wordpress/
 # Unit tests
 /tmp
 /tests/coverage/
+/tests/_output/
 .phpunit.result.cache
 
 # Build files
 /dist/
 /build/
+/zsh-autosuggestions/
+/zsh-completions/
+/zsh-syntax-highlighting/
 
 # Environment files
 .env
@@ -73,3 +77,5 @@ plugin-check-full.txt
 phpmd-results.sarif
 results.sarif
 *.sarif
+phpstan_output*.txt
+psalm_output*.txt

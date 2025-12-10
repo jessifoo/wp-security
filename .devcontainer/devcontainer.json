@@ -1,0 +1,38 @@
+{
+  "name": "wp-security-dev",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "type=volume,source=wp-core,target=/workspace/wordpress",
+    "type=volume,source=composer-cache,target=/tmp/composer-cache",
+    "type=volume,source=wp-mysql,target=/var/lib/mysql"
+  ],
+  "containerEnv": {
+    "COMPOSER_CACHE_DIR": "/tmp/composer-cache",
+    "WP_ENVIRONMENT_TYPE": "local",
+    "DB_HOST": "localhost"
+  },
+  "postCreateCommand": "composer install --no-interaction --prefer-dist && chmod +x setup-wordpress.sh setup-environment.sh test-github-actions.sh && { git config core.hooksPath .githooks || true; }",
+  "postStartCommand": "wp --allow-root --version || echo 'wp-cli not available'; [ -f /workspace/.env ] || printf 'DB_NAME=wordpress_test\\nDB_USER=wpuser\\nDB_PASS=wppass\\nDB_HOST=localhost\\nDB_PREFIX=wp_\\n' > /workspace/.env; set -a && source /workspace/.env && set +a; [ -d /workspace/wordpress/wp-admin ] || (cd /workspace && ./setup-wordpress.sh)",
+  "forwardPorts": [80, 3306],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "neilbrayfield.php-docblocker",
+        "EditorConfig.EditorConfig",
+        "xdebug.php-debug",
+        "ikappas.phpcs"
+      ],
+      "settings": {
+        "phpcs.executablePath": "/workspace/vendor/bin/phpcs",
+        "phpcs.standard": "/workspace/phpcs.xml"
+      }
+    }
+  },
+  "remoteUser": "root"
+}
+

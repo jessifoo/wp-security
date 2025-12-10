@@ -1,20 +1,9 @@
 {
-  "name": "WordPress Plugin Development",
-  "description": "PHP 8.2 environment for WordPress plugin development with PHPCS, PHPStan, and Codeception",
-  "setup": {
-    "commands": [
-      "sudo add-apt-repository -y ppa:ondrej/php",
-      "sudo apt-get update -qq",
-      "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y php8.2 php8.2-cli php8.2-common php8.2-mbstring php8.2-xml php8.2-curl php8.2-zip php8.2-gd php8.2-sqlite3 php8.2-mysql",
-      "curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/local/bin/composer && sudo chmod +x /usr/local/bin/composer",
-      "composer install --no-interaction --no-progress --prefer-dist"
-    ]
+  "snapshot": "POPULATED_FROM_SETTINGS",
+  "name": "wp-security-dev",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
   },
-  "validation": {
-    "commands": [
-      "php --version",
-      "composer --version",
-      "vendor/bin/phpcs --version"
-    ]
-  }
+  "terminals": []
 }
