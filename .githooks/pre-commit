@@ -14,8 +14,8 @@ if [ ! -f "composer.json" ]; then
   exit 0
 fi
 
-if [ ! -x "vendor/bin/phpcs" ] || [ ! -x "vendor/bin/psalm" ] || [ ! -x "vendor/bin/phpstan" ]; then
-  echo "Composer dependencies missing. Run: composer install" >&2
+if [ ! -f "composer.lock" ] || [ "composer.json" -nt "composer.lock" ]; then
+  echo "Composer dependencies are out of date. Run: composer install" >&2
   exit 1
 fi
 
