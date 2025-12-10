@@ -39,12 +39,21 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
         with:
-          php-version: '8.1'
-          extensions: mbstring, xml, curl, json
+          php-version: '8.2'
+          extensions: mbstring, xml, curl, json, zip
           coverage: none
 
       - name: Psalm Security Scan
         uses: psalm/psalm-github-security-scan@f3e6fd9432bc3e44aec078572677ce9d2ef9c287
+        env:
+          COMPOSER_IGNORE_PLATFORM_REQS: ext-zip
+
+      - name: Validate and sanitize SARIF file
+        if: always()
+        run: |
+          if [ -f results.sarif ]; then
+            php .github/scripts/validate-sarif.php results.sarif
+          fi
 
       - name: Upload Security Analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3

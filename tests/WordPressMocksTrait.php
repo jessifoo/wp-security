@@ -27,6 +27,36 @@ trait WordPressMocksTrait
             define('WP_CONTENT_DIR', $this->wp_content_dir);
         }
 
+        if (!defined('HOUR_IN_SECONDS')) {
+            define('HOUR_IN_SECONDS', 3600);
+        }
+        if (!defined('MINUTE_IN_SECONDS')) {
+            define('MINUTE_IN_SECONDS', 60);
+        }
+        if (!defined('DAY_IN_SECONDS')) {
+            define('DAY_IN_SECONDS', 24 * 3600);
+        }
+        if (!defined('WEEK_IN_SECONDS')) {
+            define('WEEK_IN_SECONDS', 7 * 24 * 3600);
+        }
+        if (!defined('YEAR_IN_SECONDS')) {
+            define('YEAR_IN_SECONDS', 365 * 24 * 3600);
+        }
+
+        if (!defined('DB_NAME')) {
+            define('DB_NAME', 'wordpress_test');
+        }
+
+        if (!defined('ARRAY_A')) {
+            define('ARRAY_A', 'ARRAY_A');
+        }
+        if (!defined('ARRAY_N')) {
+            define('ARRAY_N', 'ARRAY_N');
+        }
+        if (!defined('OBJECT')) {
+            define('OBJECT', 'OBJECT');
+        }
+
         // Define global variables for mocks
         global $wp_verify_nonce_mock, $wp_check_filetype_mock;
         $wp_verify_nonce_mock = true;
@@ -66,6 +96,24 @@ trait WordPressMocksTrait
                 return date($format, strtotime($string));
             }
         }
+
+        if (!function_exists('get_transient')) {
+            function get_transient($transient) {
+                return false;
+            }
+        }
+
+        if (!function_exists('set_transient')) {
+            function set_transient($transient, $value, $expiration = 0) {
+                return true;
+            }
+        }
+
+        if (!function_exists('delete_transient')) {
+            function delete_transient($transient) {
+                return true;
+            }
+        }
     }
 
     protected function teardown_wordpress_mocks()
@@ -95,8 +143,14 @@ trait WordPressMocksTrait
 
     protected function mockWPUploadDir($basedir)
     {
+        global $wp_upload_dir_mock;
+        $wp_upload_dir_mock = array('basedir' => $basedir);
+
         if (!function_exists('wp_upload_dir')) {
-            eval('function wp_upload_dir() { return array("basedir" => "' . addslashes($basedir) . '"); }');
+            function wp_upload_dir() {
+                global $wp_upload_dir_mock;
+                return $wp_upload_dir_mock;
+            }
         }
     }
 
@@ -128,7 +182,7 @@ trait WordPressMocksTrait
             $GLOBALS['wp_delete_attachment_calls'],
             'wp_delete_attachment was not called'
         );
-        
+
         $found = false;
         foreach ($GLOBALS['wp_delete_attachment_calls'] as $call) {
             if ($call['post_id'] === $post_id) {
@@ -136,7 +190,7 @@ trait WordPressMocksTrait
                 break;
             }
         }
-        
+
         $this->assertTrue($found, "wp_delete_attachment was not called with post_id: $post_id");
     }
 

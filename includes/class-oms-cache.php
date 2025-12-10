@@ -36,7 +36,7 @@ class OMS_Cache {
 	 */
 	public function get( $key ) {
 		if ( isset( $this->cache[ $key ] ) &&
-			( time() - $this->cache_times[ $key ] ) < OMS_Config::CACHE_EXPIRY ) {
+			( time() - $this->cache_times[ $key ] ) < OMS_Config::CACHE_CONFIG['ttl'] ) {
 			return $this->cache[ $key ];
 		}
 		return null;
@@ -52,7 +52,7 @@ class OMS_Cache {
 	 */
 	public function set( $key, $value, $ttl = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- TTL parameter for future use and API compatibility.
 		// Maintain cache size limit.
-		if ( count( $this->cache ) >= OMS_Config::MAX_CACHE_SIZE ) {
+		if ( count( $this->cache ) >= OMS_Config::CACHE_CONFIG['max_size'] ) {
 			// Remove oldest cache entry.
 			asort( $this->cache_times );
 			$oldest_key = key( $this->cache_times );

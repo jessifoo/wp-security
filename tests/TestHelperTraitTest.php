@@ -36,7 +36,7 @@ class TestHelperTraitTest extends TestCase
     {
         $targetPath = $this->createTestFile('target.txt', 'target content');
         $symlinkPath = $this->createTestSymlink('target.txt', 'link.txt');
-        
+
         $this->assertTrue(is_link($symlinkPath));
         $this->assertEquals('target content', file_get_contents($symlinkPath));
     }
@@ -52,7 +52,7 @@ class TestHelperTraitTest extends TestCase
     {
         $logger = $this->createMockLogger(['warning' => $this->once()]);
         $this->assertInstanceOf(OMS_Logger::class, $logger);
-        
+
         // Verify logger expectations
         $logger->warning('Test warning');
     }
@@ -61,7 +61,7 @@ class TestHelperTraitTest extends TestCase
     {
         $policy = $this->createMockSecurityPolicy(true, 'Test reason');
         $this->assertInstanceOf(OMS_File_Security_Policy::class, $policy);
-        
+
         $result = $policy->validate_file('test.txt');
         $this->assertTrue($result['valid']);
         $this->assertEquals('Test reason', $result['reason']);
@@ -73,10 +73,11 @@ class TestHelperTraitTest extends TestCase
         $testDir = $this->tempDir . '/nested/dir';
         mkdir($testDir, 0777, true);
         $this->createTestFile('nested/dir/test.txt', 'content');
-        
+
+        $tempDir = $this->tempDir;
         $this->cleanupTestEnvironment();
-        
-        $this->assertDirectoryDoesNotExist($this->tempDir);
+
+        $this->assertDirectoryDoesNotExist($tempDir);
     }
 
     public function testRemoveDirectoryWithReadOnlyFiles()
@@ -86,7 +87,7 @@ class TestHelperTraitTest extends TestCase
         $filePath = $testDir . '/readonly.txt';
         file_put_contents($filePath, 'content');
         chmod($filePath, 0444);
-        
+
         $this->removeDirectory($testDir);
         $this->assertDirectoryDoesNotExist($testDir);
     }

@@ -28,12 +28,7 @@ class OMS_Plugin {
 	 */
 	private $scanner = null;
 
-	/**
-	 * Cache instance.
-	 *
-	 * @var OMS_Cache
-	 */
-	private $cache = null;
+
 
 	/**
 	 * Get plugin instance.
@@ -51,7 +46,7 @@ class OMS_Plugin {
 	 * Initialize plugin.
 	 */
 	public function init() {
-		$this->cache   = new OMS_Cache();
+
 		$this->scanner = new Obfuscated_Malware_Scanner();
 
 		// Initialize scanner.
@@ -90,37 +85,16 @@ class OMS_Plugin {
 	 * @since 1.0.0
 	 */
 	public function activate() {
-		// Create log directory.
-		$log_dir = WP_CONTENT_DIR . '/oms-logs';
-		if ( ! file_exists( $log_dir ) ) {
-			wp_mkdir_p( $log_dir );
-			// Create .htaccess to protect logs.
-			$htaccess_file = $log_dir . '/.htaccess';
-			if ( ! file_exists( $htaccess_file ) ) {
-				file_put_contents( $htaccess_file, "deny from all\n" );
-			}
-		}
+		// Create protected directories.
+		$directories = array(
+			'oms-logs'          => 'log',
+			'oms-quarantine'    => 'quarantine',
+			'oms-theme-backups' => 'backup',
+			'oms-db-backups'    => 'database backup',
+		);
 
-		// Create quarantine directory.
-		$quarantine_dir = WP_CONTENT_DIR . '/oms-quarantine';
-		if ( ! file_exists( $quarantine_dir ) ) {
-			wp_mkdir_p( $quarantine_dir );
-			// Create .htaccess to protect quarantine.
-			$htaccess_file = $quarantine_dir . '/.htaccess';
-			if ( ! file_exists( $htaccess_file ) ) {
-				file_put_contents( $htaccess_file, "deny from all\n" );
-			}
-		}
-
-		// Create theme backup directory.
-		$backup_dir = WP_CONTENT_DIR . '/oms-theme-backups';
-		if ( ! file_exists( $backup_dir ) ) {
-			wp_mkdir_p( $backup_dir );
-			// Create .htaccess to protect backups.
-			$htaccess_file = $backup_dir . '/.htaccess';
-			if ( ! file_exists( $htaccess_file ) ) {
-				file_put_contents( $htaccess_file, "deny from all\n" );
-			}
+		foreach ( $directories as $dir_name => $dir_type ) {
+			$this->create_protected_directory( WP_CONTENT_DIR . '/' . $dir_name, $dir_type );
 		}
 
 		// Schedule cron job for daily cleanup.
@@ -129,26 +103,54 @@ class OMS_Plugin {
 		}
 
 		// Initialize options with default values.
-		if ( false === get_option( 'oms_last_scan' ) ) {
-			add_option( 'oms_last_scan', 'never' );
+		$this->initialize_default_options();
+	}
+
+	/**
+	 * Create a protected directory with .htaccess file.
+	 *
+	 * @since 1.0.0
+	 * @param string $dir_path Full path to the directory.
+	 * @param string $dir_type Type of directory for error logging.
+	 */
+	private function create_protected_directory( $dir_path, $dir_type ) {
+		if ( file_exists( $dir_path ) ) {
+			return;
 		}
-		if ( false === get_option( 'oms_files_scanned' ) ) {
-			add_option( 'oms_files_scanned', 0 );
+
+		wp_mkdir_p( $dir_path );
+
+		$htaccess_file = $dir_path . '/.htaccess';
+		if ( ! file_exists( $htaccess_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Required for .htaccess creation.
+			$result = file_put_contents( $htaccess_file, "Order deny,allow\nDeny from all\nRequire all denied\n" );
+			if ( false === $result ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				error_log( 'OMS Plugin: Failed to create .htaccess file for ' . $dir_type . ' directory: ' . esc_html( $htaccess_file ) );
+			}
 		}
-		if ( false === get_option( 'oms_issues_found' ) ) {
-			add_option( 'oms_issues_found', 0 );
-		}
-		if ( false === get_option( 'oms_detected_issues' ) ) {
-			add_option( 'oms_detected_issues', array() );
-		}
-		if ( false === get_option( 'oms_scan_schedule' ) ) {
-			add_option( 'oms_scan_schedule', 'daily' );
-		}
-		if ( false === get_option( 'oms_auto_quarantine' ) ) {
-			add_option( 'oms_auto_quarantine', true );
-		}
-		if ( false === get_option( 'oms_email_notifications' ) ) {
-			add_option( 'oms_email_notifications', true );
+	}
+
+	/**
+	 * Initialize default plugin options.
+	 *
+	 * @since 1.0.0
+	 */
+	private function initialize_default_options() {
+		$default_options = array(
+			'oms_last_scan'           => 'never',
+			'oms_files_scanned'       => 0,
+			'oms_issues_found'        => 0,
+			'oms_detected_issues'     => array(),
+			'oms_scan_schedule'       => 'daily',
+			'oms_auto_quarantine'     => true,
+			'oms_email_notifications' => true,
+		);
+
+		foreach ( $default_options as $option_name => $default_value ) {
+			if ( false === get_option( $option_name ) ) {
+				add_option( $option_name, $default_value );
+			}
 		}
 	}
 

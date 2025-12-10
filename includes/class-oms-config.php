@@ -97,7 +97,7 @@ class OMS_Config {
 
 		// Common upload directory exploits.
 		array(
-			'pattern'     => 'wp-content/uploads/[^\'"]+\.php',
+			'pattern'     => 'wp-content\/uploads\/[^\'"]+\.php',
 			'severity'    => 'HIGH',
 			'description' => 'PHP file in uploads directory detected.',
 		),
@@ -173,7 +173,7 @@ class OMS_Config {
 		// Base64 encoded eval.
 		'eval\s*\(\s*base64_decode\s*\([^\)]+\)\s*\)',
 		// Encoded strings with eval.
-		'eval\s*\(\s*[\'"][a-zA-Z0-9+/]+={0,2}[\'"]\s*\)',
+		'eval\s*\(\s*[\'"][a-zA-Z0-9+\/]+={0,2}[\'"]\s*\)',
 		// Shell command execution.
 		'(shell_exec|system|passthru|exec|popen)\s*\([^\)]*\)',
 		// Remote file inclusion.
@@ -183,7 +183,7 @@ class OMS_Config {
 		// Common malware functions.
 		'(assert|create_function)\s*\([^\)]+\)',
 		// Malicious iframe injection.
-		'<iframe\s+src=[\'"]https?://[^\'"]+[\'"][^>]*style=[\'"]display:\s*none;?[\'"]',
+		'<iframe\s+src=[\'"]https?:\/\/[^\'"]+[\'"][^>]*style=[\'"]display:\s*none;?[\'"]',
 		// SEO spam injection.
 		'<div\s+style=[\'"]display:\s*none;?[\'"]\s*>[^<]*<a\s+href=',
 		// Malicious redirects.
@@ -245,6 +245,62 @@ class OMS_Config {
 	);
 
 	/**
+	 * Database malware patterns for content scanning.
+	 */
+	const DATABASE_MALWARE_PATTERNS = array(
+		array(
+			'pattern'     => '/eval\s*\(/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'Eval() function detected in database',
+		),
+		array(
+			'pattern'     => '/base64_decode\s*\(/i',
+			'severity'    => 'HIGH',
+			'description' => 'Base64 decode detected in database',
+		),
+		array(
+			'pattern'     => '/exec\s*\(|shell_exec\s*\(|system\s*\(|passthru\s*\(/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'System command execution detected in database',
+		),
+		array(
+			'pattern'     => '/<script[^>]*>.*eval/i',
+			'severity'    => 'HIGH',
+			'description' => 'JavaScript eval detected in database',
+		),
+		array(
+			'pattern'     => '/<iframe[^>]*src=["\'](?:javascript|data):/i',
+			'severity'    => 'HIGH',
+			'description' => 'Malicious iframe detected in database',
+		),
+		array(
+			'pattern'     => '/\$_GET\[|\$_POST\[|\$_REQUEST\[|\$_COOKIE\[.*\)\s*\(/i',
+			'severity'    => 'HIGH',
+			'description' => 'User input execution detected in database',
+		),
+		array(
+			'pattern'     => '/gzinflate\s*\(|gzuncompress\s*\(|str_rot13\s*\(/i',
+			'severity'    => 'MEDIUM',
+			'description' => 'Obfuscation function detected in database',
+		),
+		array(
+			'pattern'     => '/wp_remote_get\s*\(.*\$_(?:GET|POST|REQUEST)/i',
+			'severity'    => 'HIGH',
+			'description' => 'Remote request with user input detected in database',
+		),
+		array(
+			'pattern'     => '/file_get_contents\s*\(.*\$_(?:GET|POST|REQUEST)/i',
+			'severity'    => 'HIGH',
+			'description' => 'File operation with user input detected in database',
+		),
+		array(
+			'pattern'     => '/\?php.*eval|\?php.*base64_decode|\?php.*exec/i',
+			'severity'    => 'CRITICAL',
+			'description' => 'PHP code execution detected in database',
+		),
+	);
+
+	/**
 	 * Suspicious patterns that need context checking.
 	 */
 	const SUSPICIOUS_PATTERNS = array(
@@ -301,7 +357,7 @@ class OMS_Config {
 		'hebrev',
 	);
 	const QUARANTINE_CONFIG   = array(
-		'path'               => WP_CONTENT_DIR . '/oms-quarantine',
+		'path'               => WP_CONTENT_DIR . '/uploads/oms-scanner/quarantine',
 		'retention_days'     => 30,
 		'max_size'           => 500 * 1024 * 1024,  // 500MB max quarantine size.
 		'cleanup_batch_size' => 50,                // Files to process per cleanup batch.
@@ -317,10 +373,13 @@ class OMS_Config {
 
 	const SCAN_CONFIG = array(
 		'chunk_size'          => 1024 * 1024,     // 1MB default chunk size.
+		'min_chunk_size'      => 1024 * 1024,     // 1MB min chunk size.
+		'max_chunk_size'      => 10 * 1024 * 1024, // 10MB max chunk size.
 		'overlap_size'        => 1024,            // 1KB overlap between chunks.
 		'batch_size'          => 100,             // Files per batch.
 		'batch_pause'         => 100,             // Milliseconds between batches.
 		'max_file_size'       => 100 * 1024 * 1024, // 100MB max file size.
+		'memory_limit'        => '80%',           // Max memory usage percent.
 		'allowed_permissions' => array(
 			'file' => 0644,
 			'dir'  => 0755,
@@ -343,9 +402,75 @@ class OMS_Config {
 	);
 
 	const LOG_CONFIG = array(
-		'path'   => WP_CONTENT_DIR . '/logs',
+		'path'   => WP_CONTENT_DIR . '/uploads/oms-scanner/logs',
 		'levels' => array( 'debug', 'info', 'warning', 'error', 'critical' ),
 	);
 
-	const NOTIFICATION_THRESHOLD = array( 'low', 'medium', 'high' );
+	const CACHE_CONFIG = array(
+		'ttl'      => 3600, // 1 hour default TTL.
+		'max_size' => 1000, // Max number of items in cache.
+	);
+
+	const NOTIFICATION_THRESHOLD = 'MEDIUM';
+
+	/**
+	 * Common WordPress terms for filename validation.
+	 */
+	const FILENAME_DICTIONARY = array(
+		'wp',
+		'wordpress',
+		'admin',
+		'content',
+		'includes',
+		'class',
+		'style',
+		'script',
+		'index',
+		'login',
+		'user',
+		'post',
+		'ajax',
+		'comment',
+		'feed',
+		'mail',
+		'cron',
+		'settings',
+		'signup',
+		'trackback',
+		'xmlrpc',
+		'theme',
+		'plugin',
+		'widget',
+		'nav',
+		'menu',
+		'header',
+		'footer',
+		'sidebar',
+		'page',
+		'template',
+		'functions',
+		'config',
+		'load',
+		'activate',
+		'links',
+		'opml',
+		'error',
+		'tinymce',
+		'jquery',
+		'json',
+		'rest',
+		'api',
+		'block',
+		'editor',
+		'media',
+		'image',
+		'upload',
+	);
+
+	/**
+	 * Linking key for centralized management handshake.
+	 *
+	 * @var string
+	 */
+	const OMS_LINKING_KEY = 'oms_secret_key_change_me';
 }

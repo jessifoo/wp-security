@@ -20,18 +20,18 @@ jobs:
     name: WordPress Coding Standards
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
+        uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           extensions: mbstring, xml, curl, json
           coverage: none
-          tools: composer
+          tools: composer, phpcs
 
       - name: Verify PHP Version
         run: |
@@ -54,6 +54,27 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --ansi
+
+      - name: Check PHP syntax
+        run: |
+          echo "Checking PHP syntax..."
+          OUTPUT=$(find . -type f -name "*.php" \
+            -not -path "./vendor/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./wordpress/*" \
+            -not -path "./tests/_output/*" \
+            -not -path "./tests/_support/_generated/*" \
+            -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          echo "$OUTPUT"
+
+          ERRORS=$(printf "%s" "$OUTPUT" | grep -c . || echo "0")
+
+          if [ "$ERRORS" -gt "0" ]; then
+            echo "❌ Found $ERRORS PHP syntax error(s)"
+            exit 1
+          else
+            echo "✅ All PHP files have valid syntax"
+          fi
 
       - name: Run PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml
