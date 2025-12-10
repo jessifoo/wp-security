@@ -39,10 +39,14 @@ RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
     chmod +x /usr/local/bin/composer
 
-# Install WP-CLI
-RUN curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
-    chmod +x /usr/local/bin/wp && \
-    wp --allow-root --version
+# Install WP-CLI (pinned version with checksum verification)
+ARG WP_CLI_VERSION=2.10.0
+RUN set -eux; \
+    curl -fSL -o /usr/local/bin/wp "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar"; \
+    curl -fSL -o /tmp/wp-cli.phar.sha512 "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar.sha512"; \
+    sha512sum -c /tmp/wp-cli.phar.sha512; \
+    chmod +x /usr/local/bin/wp; \
+    /usr/bin/wp --allow-root --version
 
 # Set working directory
 WORKDIR /workspace
