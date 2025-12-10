@@ -554,6 +554,13 @@ class OMS_Database_Cleaner {
 			'links'       => 'link_id',
 		);
 
+		/**
+		 * Filter the mapping of table names to their ID columns.
+		 *
+		 * @param array  $id_columns The array of table => id_column mappings.
+		 * @param string $table_name The full name of the table being processed.
+		 */
+		$id_columns = apply_filters( 'oms_table_id_columns', $id_columns, $table_name );
 		return isset( $id_columns[ $table_base ] ) ? $id_columns[ $table_base ] : false;
 	}
 }
