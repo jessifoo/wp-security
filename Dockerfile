@@ -17,7 +17,7 @@ RUN apt-get update && \
 RUN add-apt-repository -y ppa:ondrej/php && \
     apt-get update
 
-# Install PHP 8.2 and required extensions
+# Install PHP 8.2 and required extensions (matching composer.json requirement)
 RUN apt-get install -y \
     php8.2 \
     php8.2-cli \
@@ -28,7 +28,7 @@ RUN apt-get install -y \
     php8.2-zip \
     php8.2-gd \
     php8.2-mysql \
-    php8.2-mysqli \
+    php8.2-sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set PHP as default

@@ -18,12 +18,6 @@
       <code><![CDATA[$checksums]]></code>
     </PossiblyInvalidIterator>
   </file>
-  <file src="includes/class-oms-database-backup.php">
-    <PossiblyFalseArgument>
-      <code><![CDATA[$backup_data]]></code>
-      <code><![CDATA[$manifest_json]]></code>
-    </PossiblyFalseArgument>
-  </file>
   <file src="includes/class-oms-exception.php">
     <MethodSignatureMustProvideReturnType>
       <code><![CDATA[__toString]]></code>

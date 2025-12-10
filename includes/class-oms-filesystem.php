@@ -38,7 +38,7 @@ class OMS_Filesystem {
 
 		// Check for malicious patterns from OMS_Config.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
-			if ( preg_match( '/' . $pattern . '/i', $content ) ) {
+			if ( preg_match( '#' . $pattern . '#i', $content ) ) {
 				return array(
 					'safe'   => false,
 					'reason' => 'File contains malicious code pattern',
@@ -48,7 +48,7 @@ class OMS_Filesystem {
 
 		// Check for obfuscation patterns from OMS_Config.
 		foreach ( OMS_Config::OBFUSCATION_PATTERNS as $pattern_data ) {
-			if ( preg_match( '/' . $pattern_data['pattern'] . '/i', $content ) ) {
+			if ( preg_match( '#' . $pattern_data['pattern'] . '#i', $content ) ) {
 				return array(
 					'safe'   => false,
 					'reason' => $pattern_data['description'],

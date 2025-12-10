@@ -4,79 +4,75 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../WordPressMocksTrait.php';
 require_once __DIR__ . '/../mocks/class-wpdb-mock.php';
-require_once dirname(__DIR__, 2) . '/includes/class-oms-database-scanner.php';
-require_once dirname(__DIR__, 2) . '/includes/class-oms-logger.php';
-require_once dirname(__DIR__, 2) . '/includes/class-oms-cache.php';
-require_once dirname(__DIR__, 2) . '/includes/class-oms-database-backup.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-oms-database-scanner.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-oms-logger.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-oms-cache.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-oms-database-backup.php';
 
-class OMS_Database_ScannerTest extends TestCase
-{
-    use WordPressMocksTrait;
+class OMS_Database_ScannerTest extends TestCase {
 
-    private $scanner;
-    private $logger;
-    private $cache;
-    private $wpdb;
-    private $backup;
+	use WordPressMocksTrait;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->setup_wordpress_mocks();
+	private $scanner;
+	private $logger;
+	private $cache;
+	private $wpdb;
+	private $backup;
 
-        // Setup mock wpdb
-        global $wpdb;
-        $wpdb = new wpdb('user', 'pass', 'db', 'host');
-        $this->wpdb = $wpdb;
+	protected function setUp(): void {
+		parent::setUp();
+		$this->setup_wordpress_mocks();
 
-        // Mock Logger and Cache
-        $this->logger = $this->createMock(OMS_Logger::class);
-        $this->cache = $this->createMock(OMS_Cache::class);
-        $this->backup = $this->createMock(OMS_Database_Backup::class);
+		// Setup mock wpdb
+		global $wpdb;
+		$wpdb       = new wpdb( 'user', 'pass', 'db', 'host' );
+		$this->wpdb = $wpdb;
 
-        $this->scanner = new OMS_Database_Scanner($this->logger, $this->cache, $this->backup);
-    }
+		// Mock Logger and Cache
+		$this->logger = $this->createMock( OMS_Logger::class );
+		$this->cache  = $this->createMock( OMS_Cache::class );
+		$this->backup = $this->createMock( OMS_Database_Backup::class );
 
-    protected function tearDown(): void
-    {
-        $this->teardown_wordpress_mocks();
-        parent::tearDown();
-    }
+		$this->scanner = new OMS_Database_Scanner( $this->logger, $this->cache, $this->backup );
+	}
 
-    public function testScanDatabaseIntegrity()
-    {
-        // Mock table existence check
-        $this->wpdb->results = [1]; // Table exists
+	protected function tearDown(): void {
+		$this->teardown_wordpress_mocks();
+		parent::tearDown();
+	}
 
-        $result = $this->scanner->scan_database();
+	public function testScanDatabaseIntegrity() {
+		// Mock table existence check
+		$this->wpdb->results = array( 1 ); // Table exists
 
-        $this->assertTrue($result['success']);
-        $this->assertArrayHasKey('issues', $result);
-    }
+		$result = $this->scanner->scan_database();
 
-    public function testCleanDatabaseContent()
-    {
-        // Mock backup success
-        $this->backup->method('backup_critical_tables')
-            ->willReturn(['success' => true]);
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'issues', $result );
+	}
 
-        // Mock issues
-        $issues = [
-            [
-                'type' => 'malicious_content',
-                'table' => 'wp_options',
-                'column' => 'option_value',
-                'row_id' => 123,
-                'severity' => 'CRITICAL'
-            ]
-        ];
+	public function testCleanDatabaseContent() {
+		// Mock backup success
+		$this->backup->method( 'backup_critical_tables' )
+			->willReturn( array( 'success' => true ) );
 
-        // Mock wpdb query for deletion
-        // We expect a DELETE query
+		// Mock issues
+		$issues = array(
+			array(
+				'type'     => 'malicious_content',
+				'table'    => 'wp_options',
+				'column'   => 'option_value',
+				'row_id'   => 123,
+				'severity' => 'CRITICAL',
+			),
+		);
 
-        $result = $this->scanner->clean_database_content($issues);
+		// Mock wpdb query for deletion
+		// We expect a DELETE query
 
-        $this->assertTrue($result['success']);
-        $this->assertEquals(1, $result['cleaned']);
-    }
+		$result = $this->scanner->clean_database_content( $issues );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 1, $result['cleaned'] );
+	}
 }

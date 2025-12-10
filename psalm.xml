@@ -14,7 +14,7 @@
         <directory name="admin" />
         <directory name="tests" />
         <file name="obfuscated-malware-scanner.php" />
-        <ignoreFiles>
+        <ignoreFiles allowMissingFiles="true">
             <directory name="vendor" />
             <directory name="wordpress" />
             <directory name="src" />
