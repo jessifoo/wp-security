@@ -17,25 +17,36 @@ RUN apt-get update && \
 RUN add-apt-repository -y ppa:ondrej/php && \
     apt-get update
 
-# Install PHP 8.1 and required extensions
+# Install PHP 8.2 and required extensions
 RUN apt-get install -y \
-    php8.1 \
-    php8.1-cli \
-    php8.1-common \
-    php8.1-mbstring \
-    php8.1-xml \
-    php8.1-curl \
-    php8.1-zip \
-    php8.1-gd \
+    php8.2 \
+    php8.2-cli \
+    php8.2-common \
+    php8.2-mbstring \
+    php8.2-xml \
+    php8.2-curl \
+    php8.2-zip \
+    php8.2-gd \
+    php8.2-mysql \
+    php8.2-mysqli \
     && rm -rf /var/lib/apt/lists/*
 
 # Set PHP as default
-RUN update-alternatives --set php /usr/bin/php8.1
+RUN update-alternatives --set php /usr/bin/php8.2
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
     chmod +x /usr/local/bin/composer
+
+# Install WP-CLI (pinned version with checksum verification)
+ARG WP_CLI_VERSION=2.10.0
+RUN set -eux; \
+    curl -fSL -o /usr/local/bin/wp "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar"; \
+    curl -fSL -o /tmp/wp-cli.phar.sha512 "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar.sha512"; \
+    sha512sum -c /tmp/wp-cli.phar.sha512; \
+    chmod +x /usr/local/bin/wp; \
+    /usr/bin/wp --allow-root --version
 
 # Set working directory
 WORKDIR /workspace
