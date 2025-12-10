@@ -2,106 +2,108 @@
 use PHPUnit\Framework\TestCase;
 
 class OMS_APITest extends TestCase {
-    use TestHelperTrait;
-    use WordPressMocksTrait;
+	use TestHelperTrait;
+	use WordPressMocksTrait;
 
-    private $api;
-    private $logger;
-    private $scanner;
+	private $api;
+	private $logger;
+	private $scanner;
 
-    protected function setUp(): void {
-        $this->createTemporaryDirectory();
-        $this->mockWordPressEnvironment();
+	protected function setUp(): void {
+		$this->createTemporaryDirectory();
+		$this->mockWordPressEnvironment();
 
-        $this->logger = $this->createMock(OMS_Logger::class);
-        $this->scanner = $this->createMock(Obfuscated_Malware_Scanner::class);
+		$this->logger  = $this->createMock( OMS_Logger::class );
+		$this->scanner = $this->createMock( Obfuscated_Malware_Scanner::class );
 
-        $this->api = new OMS_API($this->logger, $this->scanner);
-    }
+		$this->api = new OMS_API( $this->logger, $this->scanner );
+	}
 
-    protected function tearDown(): void {
-        $this->cleanupTestEnvironment();
-        $this->teardown_wordpress_mocks();
-    }
+	protected function tearDown(): void {
+		$this->cleanupTestEnvironment();
+		$this->teardown_wordpress_mocks();
+	}
 
-    public function testHandleRegistrationSuccess() {
-        $request = $this->createMock(WP_REST_Request::class);
-        $request->method('get_json_params')->willReturn([
-            'master_key' => 'secret',
-            'dashboard_url' => 'https://master.example.com'
-        ]);
+	public function testHandleRegistrationSuccess() {
+		$request = $this->createMock( WP_REST_Request::class );
+		$request->method( 'get_json_params' )->willReturn(
+			array(
+				'master_key'    => 'secret',
+				'dashboard_url' => 'https://master.example.com',
+			)
+		);
 
-        // Mock wp_generate_password
-        global $wp_generate_password_return;
-        $wp_generate_password_return = 'new_api_key';
+		// Mock wp_generate_password
+		global $wp_generate_password_return;
+		$wp_generate_password_return = 'new_api_key';
 
-        // Mock get_site_url
-        global $site_url_return;
-        $site_url_return = 'https://site.example.com';
+		// Mock get_site_url
+		global $site_url_return;
+		$site_url_return = 'https://site.example.com';
 
-        $response = $this->api->handle_registration($request);
+		$response = $this->api->handle_registration( $request );
 
-        $this->assertEquals(200, $response->get_status());
-        $data = $response->get_data();
-        $this->assertTrue($data['success']);
-        $this->assertEquals('new_api_key', $data['api_key']);
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertTrue( $data['success'] );
+		$this->assertEquals( 'new_api_key', $data['api_key'] );
 
-        // Verify options updated
-        global $wp_options;
-        $this->assertEquals('new_api_key', $wp_options['oms_api_key']);
-        $this->assertEquals('https://master.example.com', $wp_options['oms_master_dashboard_url']);
-    }
+		// Verify options updated
+		global $wp_options;
+		$this->assertEquals( 'new_api_key', $wp_options['oms_api_key'] );
+		$this->assertEquals( 'https://master.example.com', $wp_options['oms_master_dashboard_url'] );
+	}
 
-    public function testHandleRegistrationMissingParams() {
-        $request = $this->createMock(WP_REST_Request::class);
-        $request->method('get_json_params')->willReturn([]);
+	public function testHandleRegistrationMissingParams() {
+		$request = $this->createMock( WP_REST_Request::class );
+		$request->method( 'get_json_params' )->willReturn( array() );
 
-        $response = $this->api->handle_registration($request);
+		$response = $this->api->handle_registration( $request );
 
-        $this->assertEquals(400, $response->get_status());
-    }
+		$this->assertEquals( 400, $response->get_status() );
+	}
 
-    public function testCheckApiPermissionSuccess() {
-        global $wp_options;
-        $wp_options['oms_api_key'] = 'valid_key';
+	public function testCheckApiPermissionSuccess() {
+		global $wp_options;
+		$wp_options['oms_api_key'] = 'valid_key';
 
-        $request = $this->createMock(WP_REST_Request::class);
-        $request->method('get_header')->with('X-OMS-API-Key')->willReturn('valid_key');
+		$request = $this->createMock( WP_REST_Request::class );
+		$request->method( 'get_header' )->with( 'X-OMS-API-Key' )->willReturn( 'valid_key' );
 
-        $result = $this->api->check_api_permission($request);
-        $this->assertTrue($result);
-    }
+		$result = $this->api->check_api_permission( $request );
+		$this->assertTrue( $result );
+	}
 
-    public function testCheckApiPermissionFailure() {
-        global $wp_options;
-        $wp_options['oms_api_key'] = 'valid_key';
+	public function testCheckApiPermissionFailure() {
+		global $wp_options;
+		$wp_options['oms_api_key'] = 'valid_key';
 
-        $request = $this->createMock(WP_REST_Request::class);
-        $request->method('get_header')->with('X-OMS-API-Key')->willReturn('invalid_key');
+		$request = $this->createMock( WP_REST_Request::class );
+		$request->method( 'get_header' )->with( 'X-OMS-API-Key' )->willReturn( 'invalid_key' );
 
-        $result = $this->api->check_api_permission($request);
-        $this->assertInstanceOf(WP_Error::class, $result);
-        $this->assertEquals(403, $result->get_error_data()['status']);
-    }
+		$result = $this->api->check_api_permission( $request );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 403, $result->get_error_data()['status'] );
+	}
 
-    public function testTriggerScanSuccess() {
-        $this->scanner->expects($this->once())->method('run_full_cleanup');
+	public function testTriggerScanSuccess() {
+		$this->scanner->expects( $this->once() )->method( 'run_full_cleanup' );
 
-        $response = $this->api->trigger_scan();
+		$response = $this->api->trigger_scan();
 
-        $this->assertEquals(200, $response->get_status());
-        $this->assertTrue($response->get_data()['success']);
-    }
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertTrue( $response->get_data()['success'] );
+	}
 
-    public function testGetReport() {
-        $log_file = $this->tempDir . '/oms.log';
-        file_put_contents($log_file, "Line 1\nLine 2");
+	public function testGetReport() {
+		$log_file = $this->tempDir . '/oms.log';
+		file_put_contents( $log_file, "Line 1\nLine 2" );
 
-        $this->scanner->method('get_log_path')->willReturn($log_file);
+		$this->scanner->method( 'get_log_path' )->willReturn( $log_file );
 
-        $response = $this->api->get_report();
+		$response = $this->api->get_report();
 
-        $this->assertEquals(200, $response->get_status());
-        $this->assertCount(2, $response->get_data()['logs']);
-    }
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertCount( 2, $response->get_data()['logs'] );
+	}
 }

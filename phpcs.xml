@@ -54,4 +54,101 @@
     <rule ref="WordPress.PHP.NoSilencedErrors">
         <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
     </rule>
+
+    <!-- Test files follow PHPUnit conventions, not WordPress conventions -->
+    <!-- Allow CamelCase filenames for PHPUnit test classes -->
+    <rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Allow camelCase method names for PHPUnit tests -->
+    <rule ref="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Test mocks may have unused parameters -->
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Test files don't need full doc comments -->
+    <rule ref="Squiz.Commenting.FileComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.VariableComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.ClassComment.Missing">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Allow direct file operations in tests for setup/teardown -->
+    <rule ref="WordPress.WP.AlternativeFunctions">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Allow date() in test mocks -->
+    <rule ref="WordPress.DateTime.RestrictedFunctions.date_date">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Inline comment punctuation not required in tests -->
+    <rule ref="Squiz.Commenting.InlineComment.InvalidEndChar">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Allow camelCase variables in tests (PHPUnit convention) -->
+    <rule ref="WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Allow reserved keywords as parameter names in mock functions -->
+    <rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Tests don't need output escaping -->
+    <rule ref="WordPress.Security.EscapeOutput">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Tests don't need strict doc comment formatting -->
+    <rule ref="Squiz.Commenting.FunctionComment.MissingParamComment">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment.ParamCommentFullStop">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment.ThrowsNoFullStop">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment.EmptyThrows">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Generic.Commenting.DocComment.MissingShort">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Allow // style class comments in Codeception support files -->
+    <rule ref="Squiz.Commenting.ClassComment.WrongStyle">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Multiple classes allowed in test files -->
+    <rule ref="Generic.Files.OneObjectStructurePerFile">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Override detection not needed in tests -->
+    <rule ref="Generic.CodeAnalysis.UselessOverridingMethod">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Mock classes may need to match external naming conventions (e.g., wpdb) -->
+    <rule ref="PEAR.NamingConventions.ValidClassName.StartWithCapital">
+        <exclude-pattern>tests/mocks/*</exclude-pattern>
+    </rule>
+    <!-- Mock files may mix functions and classes intentionally -->
+    <rule ref="Universal.Files.SeparateFunctionsFromOO">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Tests may redefine classes for mocking purposes -->
+    <rule ref="Generic.Classes.DuplicateClassName">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
 </ruleset>
