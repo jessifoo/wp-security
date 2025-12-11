@@ -57,4 +57,3 @@ jobs:
           error-severity: error
           warning-severity: warning
           strict: true
-          exclude-wp-content: true
