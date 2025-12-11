@@ -53,7 +53,4 @@ jobs:
         with:
           build-dir: ./
           categories: security,compatibility,performance
-          severity: high
-          error-severity: error
-          warning-severity: warning
           strict: true
