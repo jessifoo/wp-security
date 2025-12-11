@@ -28,7 +28,9 @@ RUN apt-get install -y \
     php8.2-zip \
     php8.2-gd \
     php8.2-mysql \
+    php8.2-mysqli \
     php8.2-sqlite3 \
+    mariadb-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Set PHP as default

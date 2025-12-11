@@ -1,4 +1,5 @@
 {
+  "snapshot": "wp-security-snapshot",
   "name": "wp-security-dev",
   "build": {
     "dockerfile": "../Dockerfile",
