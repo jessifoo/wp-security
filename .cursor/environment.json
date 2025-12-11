@@ -5,6 +5,6 @@
     "dockerfile": "../Dockerfile",
     "context": ".."
   },
-  "install": "composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader && chmod +x setup-wordpress.sh setup-environment.sh test-github-actions.sh",
+  "install": "set -euo pipefail; command -v composer >/dev/null 2>&1; composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader; for f in setup-wordpress.sh setup-environment.sh test-github-actions.sh; do [ -f \"$f\" ] && chmod +x \"$f\" || echo \"warning: $f not found\"; done",
   "terminals": []
 }
