@@ -5,6 +5,6 @@
     "dockerfile": "../Dockerfile",
     "context": ".."
   },
-  "install": "composer install --no-interaction --prefer-dist && chmod +x setup-wordpress.sh setup-environment.sh test-github-actions.sh",
+  "install": "composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader && chmod +x setup-wordpress.sh setup-environment.sh test-github-actions.sh",
   "terminals": []
 }
