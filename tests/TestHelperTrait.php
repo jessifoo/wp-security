@@ -36,6 +36,7 @@ trait TestHelperTrait {
 
 		if ( ! is_writable( $this->tempDir ) ) {
 			throw new RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 				sprintf( 'Temporary directory is not writable: %s', $this->tempDir )
 			);
 		}
@@ -62,6 +63,7 @@ trait TestHelperTrait {
 		if ( ! is_dir( $directory ) ) {
 			if ( ! mkdir( $directory, 0777, true ) && ! is_dir( $directory ) ) {
 				throw new RuntimeException(
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 					sprintf( 'Failed to create directory: %s', $directory )
 				);
 			}
@@ -69,12 +71,14 @@ trait TestHelperTrait {
 
 		if ( file_put_contents( $filepath, $content ) === false ) {
 			throw new RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 				sprintf( 'Failed to write content to file: %s', $filepath )
 			);
 		}
 
 		if ( ! chmod( $filepath, $permissions ) ) {
 			throw new RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 				sprintf( 'Failed to set permissions on file: %s', $filepath )
 			);
 		}
@@ -106,6 +110,7 @@ trait TestHelperTrait {
 
 		if ( ! symlink( $targetPath, $linkPath ) ) {
 			throw new RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 				sprintf( 'Failed to create symlink from %s to %s', $linkPath, $targetPath )
 			);
 		}
@@ -211,6 +216,7 @@ trait TestHelperTrait {
 
 		if ( ! rmdir( $dir ) ) {
 			throw new RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 				sprintf( 'Failed to remove directory: %s', $dir )
 			);
 		}
