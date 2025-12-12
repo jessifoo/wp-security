@@ -28,7 +28,9 @@ RUN apt-get install -y \
     php8.2-zip \
     php8.2-gd \
     php8.2-mysql \
+    php8.2-mysqli \
     php8.2-sqlite3 \
+    mariadb-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Set PHP as default
@@ -51,13 +53,7 @@ RUN set -eux; \
 # Set working directory
 WORKDIR /workspace
 
-# Copy composer files
-COPY composer.json composer.lock ./
-
-# Install dependencies
-RUN composer install --no-interaction --no-progress --prefer-dist
-
-# Copy project files
+# Copy project files (dependencies will be installed via environment.json install command)
 COPY . .
 
 # Set PATH to include PHP

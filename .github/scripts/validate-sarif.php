@@ -108,7 +108,8 @@ if ( isset( $json['runs'] ) ) {
 		}
 		$json['runs'] = array( $merged_run );
 		$fixed_count++; // Count this as a fix
-		echo "Merged " . ( $i - 1 ) . " additional runs into the first run.\n";
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI script, not WordPress context
+	echo "Merged " . ( $i - 1 ) . " additional runs into the first run.\n";
 	}
 }
 

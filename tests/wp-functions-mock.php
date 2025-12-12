@@ -39,6 +39,7 @@ if ( ! function_exists( '__' ) ) {
 
 if ( ! function_exists( '_e' ) ) {
 	function _e( $text, $domain = 'default' ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Test mock function
 		echo $text;
 	}
 }

@@ -114,6 +114,7 @@ class OMS_Config {
 				'wp-includes/**/*.php',
 				'*.php',
 			),
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- False positive: this is a config array for file patterns, not a WP_Query
 			'exclude'  => array(
 				'wp-content',
 			),

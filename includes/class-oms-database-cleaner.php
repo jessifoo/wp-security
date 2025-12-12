@@ -247,8 +247,9 @@ class OMS_Database_Cleaner {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				"SELECT * FROM `{$table_name}` WHERE `{$id_column}` = %s",
+				'SELECT * FROM %i WHERE %i = %s',
+				$table_name,
+				$id_column,
 				$row_id
 			),
 			ARRAY_A

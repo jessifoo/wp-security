@@ -470,7 +470,13 @@ class OMS_Database_Scanner {
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
-						"SELECT `{$validated_id_column}`, `{$validated_column}` FROM `{$validated_table}` WHERE `{$validated_column}` IS NOT NULL AND `{$validated_column}` != '' LIMIT %d OFFSET %d",
+						'SELECT %i, %i FROM %i WHERE %i IS NOT NULL AND %i != %s LIMIT %d OFFSET %d',
+						$validated_id_column,
+						$validated_column,
+						$validated_table,
+						$validated_column,
+						$validated_column,
+						'',
 						$batch_size,
 						$offset
 					),
@@ -587,7 +593,8 @@ class OMS_Database_Scanner {
 				$options = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
-						"SELECT option_id, option_name, option_value FROM `{$validated_table}` WHERE option_name LIKE %s",
+						'SELECT option_id, option_name, option_value FROM %i WHERE option_name LIKE %s',
+						$validated_table,
 						$pattern
 					),
 					ARRAY_A
@@ -643,7 +650,8 @@ class OMS_Database_Scanner {
 				$meta = $wpdb->get_results(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
-						"SELECT umeta_id, user_id, meta_key FROM `{$validated_table}` WHERE meta_key LIKE %s",
+						'SELECT umeta_id, user_id, meta_key FROM %i WHERE meta_key LIKE %s',
+						$validated_table,
 						$pattern
 					),
 					ARRAY_A
