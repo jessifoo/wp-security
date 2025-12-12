@@ -29,6 +29,7 @@ trait TestHelperTrait {
 
 		if ( ! mkdir( $this->tempDir ) && ! is_dir( $this->tempDir ) ) {
 			throw new RuntimeException(
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test code, exception message
 				sprintf( 'Failed to create temporary directory: %s', $this->tempDir )
 			);
 		}
