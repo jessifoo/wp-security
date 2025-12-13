@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/user/wp-security/.claude/session-start.sh"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/session-start.sh"
           }
         ]
       }
