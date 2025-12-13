@@ -20,42 +20,36 @@ fi
 
 echo "✅ Composer found: $(composer --version | head -1)"
 
-# Check if dependencies need updating
-    if [ -f "composer.json" ] && [ -f "composer.lock" ]; then
-        needs_update=false
-        
-        # Check if composer.json is newer than lock file
-        if [ "composer.json" -nt "composer.lock" ]; then
-            needs_update=true
-        # Check if lock file is newer than vendor directory
-        elif [ ! -d "vendor" ] || [ "composer.lock" -nt "vendor" ]; then
-            needs_update=true
-        fi
-        
-        if [ "$needs_update" = true ]; then
-            echo "   Dependencies need update, running composer install..."
-            composer install --no-interaction --no-progress --prefer-dist --quiet
-        else
-            echo "   Dependencies already up-to-date, skipping..."
-        fi
-    elif [ -f "composer.json" ] && [ ! -d "vendor" ]; then
-        # Fresh install
-        composer install --no-interaction --no-progress --prefer-dist --quiet
-    fi
+# Install/update Composer dependencies if needed
 if [ -f "composer.json" ]; then
     echo "📦 Installing Composer dependencies..."
 
-    # Check if vendor directory exists and is recent
-    if [ -d "vendor" ] && [ -f "composer.lock" ]; then
-        # Only update if composer.json is newer than vendor
-        if [ "composer.json" -nt "vendor" ]; then
-            echo "   composer.json updated, running composer install..."
-            composer install --no-interaction --no-progress --prefer-dist --quiet
+    needs_update=false
+
+    # Determine if we need to install/update dependencies
+    if [ ! -d "vendor" ]; then
+        # No vendor directory - fresh install needed
+        needs_update=true
+        echo "   No vendor directory found, performing fresh install..."
+    elif [ -f "composer.lock" ]; then
+        # Check if composer.json is newer than lock file
+        if [ "composer.json" -nt "composer.lock" ]; then
+            needs_update=true
+            echo "   composer.json newer than lock file, updating..."
+        # Check if lock file is newer than vendor directory
+        elif [ "composer.lock" -nt "vendor" ]; then
+            needs_update=true
+            echo "   composer.lock newer than vendor, updating..."
         else
-            echo "   Dependencies already installed, skipping..."
+            echo "   Dependencies already up-to-date, skipping..."
         fi
     else
-        # Fresh install
+        # No lock file - need to install
+        needs_update=true
+        echo "   No composer.lock found, installing..."
+    fi
+
+    if [ "$needs_update" = true ]; then
         composer install --no-interaction --no-progress --prefer-dist --quiet
     fi
 
