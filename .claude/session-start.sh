@@ -20,7 +20,28 @@ fi
 
 echo "✅ Composer found: $(composer --version | head -1)"
 
-# Install/update Composer dependencies if needed
+# Check if dependencies need updating
+    if [ -f "composer.json" ] && [ -f "composer.lock" ]; then
+        needs_update=false
+        
+        # Check if composer.json is newer than lock file
+        if [ "composer.json" -nt "composer.lock" ]; then
+            needs_update=true
+        # Check if lock file is newer than vendor directory
+        elif [ ! -d "vendor" ] || [ "composer.lock" -nt "vendor" ]; then
+            needs_update=true
+        fi
+        
+        if [ "$needs_update" = true ]; then
+            echo "   Dependencies need update, running composer install..."
+            composer install --no-interaction --no-progress --prefer-dist --quiet
+        else
+            echo "   Dependencies already up-to-date, skipping..."
+        fi
+    elif [ -f "composer.json" ] && [ ! -d "vendor" ]; then
+        # Fresh install
+        composer install --no-interaction --no-progress --prefer-dist --quiet
+    fi
 if [ -f "composer.json" ]; then
     echo "📦 Installing Composer dependencies..."
 
