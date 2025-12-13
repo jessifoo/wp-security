@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/user/wp-security/.claude/session-start.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
