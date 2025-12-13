@@ -1,0 +1,74 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependencies (will be installed via composer)
+vendor/
+node_modules/
+
+# Build artifacts and caches
+.cache/
+.phpunit.cache/
+.psalm/
+build/
+dist/
+coverage/
+*.cache
+
+# Logs
+*.log
+logs/
+wp-content/uploads/oms-logs/
+
+# Test files and outputs
+tests/_output/
+tests/_support/_generated/
+codeception.yml
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Cursor-specific
+.cursor/
+
+# Review and temporary files
+review/
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Documentation (optional - include if you want docs in the image)
+*.md
+!README.md
+!CLAUDE.md
+
+# Composer lock (include this if you want reproducible builds)
+# composer.lock
+
+# Keep these files
+!composer.json
+!phpunit.xml
+!phpcs.xml
+!psalm.xml
+!Dockerfile
+!setup-*.sh
+!test-*.sh
