@@ -1,7 +1,7 @@
 {
   "name": "wp-security-dev",
   "build": {
-    "dockerfile": "wp-security/Dockerfile",
+    "dockerfile": ".cursor/Dockerfile",
     "context": ".."
   },
   "install": "set -euo pipefail && command -v composer >/dev/null 2>&1 && composer install --no-interaction --prefer-dist --optimize-autoloader && for f in setup-wordpress.sh setup-environment.sh test-github-actions.sh; do [ -f \"$f\" ] && chmod +x \"$f\" || echo \"warning: $f not found\"; done",
