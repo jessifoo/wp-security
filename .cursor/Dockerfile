@@ -56,8 +56,11 @@ RUN set -eux; \
     /usr/local/bin/wp --allow-root --version
 
 # Ensure ubuntu user exists and create workspace directory
-RUN id -u ubuntu &>/dev/null || useradd -m ubuntu; mkdir -p /workspace && chown -R ubuntu:ubuntu /workspace
-USER ubuntu
+RUN set -euo pipefail; \
+    id -u ubuntu >/dev/null 2>&1 || useradd -m ubuntu; \
+    mkdir -p /workspace && \
+    chown -R ubuntu:ubuntu /workspace
+    USER ubuntu
 WORKDIR /workspace
 
 # Set PATH to include PHP (already installed)
