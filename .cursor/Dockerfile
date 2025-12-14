@@ -48,8 +48,8 @@ RUN set -eux; \
     # Download PHAR and its checksum into /tmp using the original filename the checksum references
     curl -fSL -o /tmp/${WP_PHAR} "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/${WP_PHAR}"; \
     curl -fSL -o /tmp/${WP_PHAR}.sha512 "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/${WP_PHAR}.sha512"; \
-    # Verify checksum (sha512 file references the PHAR filename, so run check from /tmp)
-    sha512sum -c /tmp/${WP_PHAR}.sha512; \
+    # # Verify checksum (GitHub releases provide raw hash only, so format it for sha512sum)
+    echo "$(cat /tmp/${WP_PHAR}.sha512)  /tmp/${WP_PHAR}" | sha512sum -c -; \
     # Move into place and make executable
     mv /tmp/${WP_PHAR} /usr/local/bin/wp; \
     chmod +x /usr/local/bin/wp; \
