@@ -43,9 +43,6 @@ codeception.yml
 .env.*
 !.env.example
 
-# Cursor-specific
-.cursor/
-
 # Review and temporary files
 review/
 tmp/
