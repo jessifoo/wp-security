@@ -55,8 +55,8 @@ RUN set -eux; \
     chmod +x /usr/local/bin/wp; \
     /usr/local/bin/wp --allow-root --version
 
-# Create non-root user and workspace dir for agent runtime
-RUN useradd -m ubuntu && mkdir -p /workspace && chown -R ubuntu:ubuntu /workspace
+# Ensure ubuntu user exists and create workspace directory
+RUN id -u ubuntu &>/dev/null || useradd -m ubuntu; mkdir -p /workspace && chown -R ubuntu:ubuntu /workspace
 USER ubuntu
 WORKDIR /workspace
 
