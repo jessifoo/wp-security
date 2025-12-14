@@ -56,7 +56,7 @@ USER ubuntu
 WORKDIR /home/ubuntu
 
 # Set PATH to include PHP (already installed)
-ENV PATH="/usr/bin:$PATH"
+ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Default command
 CMD ["bash"]
