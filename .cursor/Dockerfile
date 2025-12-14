@@ -50,14 +50,13 @@ RUN set -eux; \
     chmod +x /usr/local/bin/wp; \
     /usr/bin/wp --allow-root --version
 
-# Set working directory
+# Create non-root user and workspace dir for agent runtime
+RUN useradd -m ubuntu && mkdir -p /workspace && chown -R ubuntu:ubuntu /workspace
+USER ubuntu
 WORKDIR /workspace
 
-# Copy project files (dependencies will be installed via environment.json install command)
-COPY . .
-
-# Set PATH to include PHP
-ENV PATH="/usr/bin:$PATH"
+# Set PATH to include PHP (already installed)
+ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Default command
 CMD ["bash"]
