@@ -50,10 +50,10 @@ RUN set -eux; \
     chmod +x /usr/local/bin/wp; \
     /usr/bin/wp --allow-root --version
 
-# Create non-root user for agent runtime and set working directory
-RUN useradd -m ubuntu
+# Create non-root user and workspace dir for agent runtime
+RUN useradd -m ubuntu && mkdir -p /workspace && chown -R ubuntu:ubuntu /workspace
 USER ubuntu
-WORKDIR /home/ubuntu
+WORKDIR /workspace
 
 # Set PATH to include PHP (already installed)
 ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
