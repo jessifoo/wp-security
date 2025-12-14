@@ -17,6 +17,7 @@
     <!-- Allow direct FS operations only in scanner/logger where necessary -->
     <rule ref="WordPress.WP.AlternativeFunctions">
         <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
+        <exclude-pattern>includes/class-oms-scanner.php</exclude-pattern>
         <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
         <exclude-pattern>includes/class-file-security-policy.php</exclude-pattern>
     </rule>
@@ -24,6 +25,8 @@
     <rule ref="WordPress.PHP.DevelopmentFunctions">
         <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
         <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
+        <exclude-pattern>includes/class-oms-exception.php</exclude-pattern>
+        <exclude-pattern>tests/TestHelperTrait.php</exclude-pattern>
     </rule>
     <!-- file_get_contents used for local file reading in scanner context -->
     <rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
