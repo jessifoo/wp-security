@@ -13,6 +13,11 @@
 *.swp
 *.swo
 *~
+.cursor/*
+!.cursor/Dockerfile
+!.cursor/environment.json
+!.cursor/hooks.json
+!.cursor/session-start.sh
 .DS_Store
 
 # Dependencies (will be installed via composer)
