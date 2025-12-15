@@ -48,7 +48,7 @@ RUN set -eux; \
     # Download PHAR and its checksum into /tmp using the original filename the checksum references
     curl -fSL -o /tmp/${WP_PHAR} "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/${WP_PHAR}"; \
     curl -fSL -o /tmp/${WP_PHAR}.sha512 "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/${WP_PHAR}.sha512"; \
-    # # Verify checksum (GitHub releases provide raw hash only, so format it for sha512sum)
+    # Verify checksum (GitHub releases provide raw hash only, so format it for sha512sum)
     echo "$(cat /tmp/${WP_PHAR}.sha512)  /tmp/${WP_PHAR}" | sha512sum -c -; \
     # Move into place and make executable
     mv /tmp/${WP_PHAR} /usr/local/bin/wp; \
@@ -56,11 +56,11 @@ RUN set -eux; \
     /usr/local/bin/wp --allow-root --version
 
 # Ensure ubuntu user exists and create workspace directory
-RUN set -euo pipefail; \
-    id -u ubuntu >/dev/null 2>&1 || useradd -m ubuntu; \
+RUN if ! id -u ubuntu >/dev/null 2>&1; then useradd -m ubuntu; fi && \
     mkdir -p /workspace && \
     chown -R ubuntu:ubuntu /workspace
-    USER ubuntu
+
+USER ubuntu
 WORKDIR /workspace
 
 # Set PATH to include PHP (already installed)
