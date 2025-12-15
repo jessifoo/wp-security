@@ -1,22 +1,22 @@
 {
   "name": "wp-security-dev",
   "build": {
-    "dockerfile": "../Dockerfile",
-    "context": ".."
+    "dockerfile": "../.cursor/Dockerfile",
+    "context": "."
   },
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/workspaces/wp-security",
   "mounts": [
-    "type=volume,source=wp-core,target=/workspace/wordpress",
-    "type=volume,source=composer-cache,target=/tmp/composer-cache",
-    "type=volume,source=wp-mysql,target=/var/lib/mysql"
+    "source=wp-core,target=/workspaces/wp-security/wordpress,type=volume",
+    "source=composer-cache,target=/tmp/composer-cache,type=volume",
+    "source=wp-mysql,target=/var/lib/mysql,type=volume"
   ],
   "containerEnv": {
     "COMPOSER_CACHE_DIR": "/tmp/composer-cache",
     "WP_ENVIRONMENT_TYPE": "local",
     "DB_HOST": "localhost"
   },
-  "postCreateCommand": "composer install --no-interaction --prefer-dist && chmod +x setup-wordpress.sh setup-environment.sh test-github-actions.sh && { git config core.hooksPath .githooks || true; }",
-  "postStartCommand": "wp --allow-root --version || echo 'wp-cli not available'; [ -f /workspace/.env ] || printf 'DB_NAME=wordpress_test\\nDB_USER=wpuser\\nDB_PASS=wppass\\nDB_HOST=localhost\\nDB_PREFIX=wp_\\n' > /workspace/.env; set -a && source /workspace/.env && set +a; [ -d /workspace/wordpress/wp-admin ] || (cd /workspace && ./setup-wordpress.sh)",
+  "postCreateCommand": "rm -rf /workspace && ln -s /workspaces/wp-security /workspace && composer install --no-interaction --prefer-dist && chmod +x setup-wordpress.sh setup-environment.sh test-github-actions.sh && { git config core.hooksPath .githooks || true; }",
+  "postStartCommand": "bash -c 'wp --allow-root --version || echo \"wp-cli not available\"; [ -f /workspaces/wp-security/.env ] || printf \"DB_NAME=wordpress_test\\nDB_USER=wpuser\\nDB_PASS=wppass\\nDB_HOST=localhost\\nDB_PREFIX=wp_\\n\" > /workspaces/wp-security/.env; set -a && . /workspaces/wp-security/.env && set +a; [ -d /workspaces/wp-security/wordpress/wp-admin ] || (cd /workspaces/wp-security && sudo() { local env_vars=(); while [[ $# -gt 0 ]] && [[ \"$1\" =~ ^[A-Z_][A-Z0-9_]*= ]]; do env_vars+=(\"$1\"); shift; done; env \"${env_vars[@]}\" \"$@\"; }; export -f sudo; bash ./setup-wordpress.sh)'",
   "forwardPorts": [80, 3306],
   "customizations": {
     "vscode": {
@@ -28,11 +28,10 @@
         "ikappas.phpcs"
       ],
       "settings": {
-        "phpcs.executablePath": "/workspace/vendor/bin/phpcs",
-        "phpcs.standard": "/workspace/phpcs.xml"
+        "phpcs.executablePath": "/workspaces/wp-security/vendor/bin/phpcs",
+        "phpcs.standard": "/workspaces/wp-security/phpcs.xml"
       }
     }
   },
   "remoteUser": "root"
 }
-
