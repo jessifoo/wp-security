@@ -464,8 +464,9 @@ class OMS_Database_Scanner {
 			// Process in batches to avoid memory issues.
 			$batch_size = 100;
 			$offset     = 0;
+			$max_rows   = 10000; // Safety limit to prevent resource exhaustion.
 
-			while ( true ) {
+			while ( $offset < $max_rows ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, content scanning needs current data not cached. Table and column names are validated and sanitized via validate_db_identifier().
 				$rows = $wpdb->get_results(
 					$wpdb->prepare(
@@ -482,6 +483,11 @@ class OMS_Database_Scanner {
 					),
 					ARRAY_A
 				);
+
+				// Early exit if no more rows to process.
+				if ( empty( $rows ) || ! is_array( $rows ) ) {
+					break;
+				}
 
 				foreach ( $rows as $row ) {
 					$content = isset( $row[ $validated_column ] ) ? $row[ $validated_column ] : '';
@@ -516,12 +522,12 @@ class OMS_Database_Scanner {
 					}
 				}
 
-				$offset += $batch_size;
-
-				// Prevent infinite loops.
-				if ( $offset > 10000 ) {
+				// Break if we got fewer rows than batch size (last batch).
+				if ( count( $rows ) < $batch_size ) {
 					break;
 				}
+
+				$offset += $batch_size;
 			}
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Column content scan failed for %s.%s: %s', esc_html( $table_name ), esc_html( $column ), esc_html( $e->getMessage() ) ) );

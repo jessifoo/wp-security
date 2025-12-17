@@ -14,7 +14,7 @@ This plugin provides comprehensive security scanning for WordPress installations
 
 ## Tech Stack
 
-- **Language**: PHP 8.2+
+- **Language**: PHP 8.3+
 - **Framework**: WordPress 6.4+
 - **Testing**: PHPUnit, Codeception
 - **Code Quality**: PHPCS (WordPress Coding Standards), Psalm, PHPStan
@@ -23,7 +23,7 @@ This plugin provides comprehensive security scanning for WordPress installations
 ## Dependencies
 
 ### Runtime Requirements
-- PHP >= 8.2
+- PHP >= 8.3
 - PHP Extensions: json, pcre, mbstring, xml, curl, zip, gd, mysql
 - WordPress >= 6.4
 

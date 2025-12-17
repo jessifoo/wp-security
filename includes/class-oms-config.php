@@ -380,7 +380,7 @@ class OMS_Config {
 		'batch_size'          => 100,             // Files per batch.
 		'batch_pause'         => 100,             // Milliseconds between batches.
 		'max_file_size'       => 100 * 1024 * 1024, // 100MB max file size.
-		'memory_limit'        => '80%',           // Max memory usage percent.
+		'memory_limit'        => '70%',           // Max memory usage percent (optimized for efficiency).
 		'allowed_permissions' => array(
 			'file' => 0644,
 			'dir'  => 0755,

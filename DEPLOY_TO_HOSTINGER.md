@@ -10,7 +10,7 @@
 **This plugin provides:**
 - ✅ Real-time malware scanning
 - ✅ Automatic file quarantine
-- ✅ Hourly cleanup cron job
+- ✅ Daily cleanup cron job
 - ✅ WordPress core file repair
 - ✅ Admin dashboard showing status
 
@@ -195,7 +195,7 @@ wp cron event list
 - May quarantine suspicious files
 
 **Daily Operation:**
-- Scans hourly for new threats
+- Scans daily for new threats
 - Quarantines suspicious files immediately
 - Verifies WordPress core files
 - Repairs/replaces tampered files
@@ -214,8 +214,8 @@ wp cron event list
 **Solution:** Delete vendor/, run with `--no-dev` flag
 
 ### "Plugin deactivated itself"
-**Cause:** PHP version < 8.1
-**Solution:** Update Hostinger PHP version to 8.1+ in hosting panel
+**Cause:** PHP version < 8.3
+**Solution:** Update Hostinger PHP version to 8.3+ in hosting panel
 
 ### "Can't find micropackage/requirements"
 **Cause:** Didn't run composer install

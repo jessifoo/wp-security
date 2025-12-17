@@ -24,60 +24,20 @@ Based on analysis of the codebase, documentation, and requirements, here's what 
 
 ---
 
-### 2. Hourly Cleanup (Documentation Mismatch)
-**Priority: HIGH**
+### 2. Cleanup Schedule ✅ RESOLVED
+**Priority: N/A**
 
-**Issue:** README.md promises "Hourly cleanup process" but only daily cleanup exists.
-
-**Options:**
-- **Option A**: Implement hourly cleanup schedule
-- **Option B**: Update README.md to reflect daily cleanup
+**Status:** Daily cleanup implemented. Hourly cleanup removed per user requirements for efficiency.
 
 **Current Implementation:**
 - Daily cleanup: `wp_schedule_event( time(), 'daily', 'oms_daily_cleanup' )`
 
-**Action Required:**
-- Decide on hourly vs daily and update accordingly
-
 ---
 
-### 3. Multiple WordPress Installations Support (0% Complete)
-**Priority: MEDIUM**
+### 3. Multiple WordPress Installations Support ✅ NOT NEEDED
+**Priority: N/A**
 
-**Clarification:** This refers to multiple **separate** WordPress installations on the same server (e.g., 4 sites on Hostinger), NOT WordPress Multisite.
-
-**Required Features:**
-- Configuration to specify multiple WordPress root paths
-- WP-CLI command to scan all installations
-- Resource-aware batch processing across installations
-- Per-installation scanning with resource limits
-- Shared resource management (memory, CPU) across all scans
-
-**Files to Create:**
-- `includes/class-oms-multi-installation-scanner.php` - Multi-installation scanning
-- `src/WP_CLI/ScanAllCommand.php` - WP-CLI command for scanning all installations
-- Configuration option: `oms_wordpress_paths` array
-
-**Current Limitation:**
-- Plugin only scans the current WordPress installation (uses `ABSPATH`, `WP_CONTENT_DIR`)
-- No way to specify or scan other WordPress installations
-
-**Implementation Approach:**
-```php
-// Example configuration
-$wordpress_paths = array(
-    '/home/user/public_html/site1',
-    '/home/user/public_html/site2',
-    '/home/user/public_html/site3',
-    '/home/user/public_html/site4',
-);
-
-// For each path:
-// 1. Load wp-load.php from that path
-// 2. Initialize scanner for that installation
-// 3. Run scan with resource limits
-// 4. Aggregate results
-```
+**Status:** User will upload plugin to each site separately. Multi-installation support removed per user requirements.
 
 ---
 
@@ -155,7 +115,7 @@ $wordpress_paths = array(
 ### Phase 1: Critical Fixes (Do First)
 1. ✅ **Database Security** - Implement database scanning and integrity checks
 2. ✅ **Fix Documentation** - Update readme.txt version
-3. ✅ **Hourly Cleanup** - Implement or update docs
+3. ✅ **Cleanup Schedule** - Daily cleanup confirmed (hourly removed)
 
 ### Phase 2: Code Quality (Do Second)
 4. ✅ **Fix Test File Security Errors** - Escape output issues
@@ -176,7 +136,7 @@ $wordpress_paths = array(
 | File System Security | ✅ Complete | 100% |
 | Real-time Protection | ✅ Complete | 100% |
 | Theme Content Preservation | ✅ Complete | 100% |
-| Cleanup Operations | ⚠️ Partial | 90% (missing hourly) |
+| Cleanup Operations | ✅ Complete | 100% (daily cleanup) |
 | Database Security | ❌ Missing | 0% |
 | Multiple Installations | ❌ Missing | 0% |
 | Documentation | ⚠️ Partial | 95% (needs readme.txt update) |
@@ -194,8 +154,8 @@ $wordpress_paths = array(
    - Most critical missing functionality
 
 2. **Fix Documentation Issues**
-   - Quick win: Update readme.txt
-   - Clarify hourly vs daily cleanup
+   - Update readme.txt PHP version to 8.3
+   - Update all PHP version references to 8.3
 
 3. **Add Multiple Installations Support**
    - Important for Hostinger use case (4 installations)
