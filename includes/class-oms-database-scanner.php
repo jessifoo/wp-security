@@ -464,7 +464,14 @@ class OMS_Database_Scanner {
 			// Process in batches to avoid memory issues.
 			$batch_size = 100;
 			$offset     = 0;
-			$max_rows   = 10000; // Safety limit to prevent resource exhaustion.
+			/**
+			 * Filter the maximum number of rows to scan per column.
+			 *
+			 * @param int    $max_rows   Maximum rows to scan. Default 10000.
+			 * @param string $table_name Full table name being scanned.
+			 * @param string $column     Column name being scanned.
+			 */
+			$max_rows = apply_filters( 'oms_scan_max_rows', 10000, $table_name, $column );
 
 			while ( $offset < $max_rows ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, content scanning needs current data not cached. Table and column names are validated and sanitized via validate_db_identifier().
