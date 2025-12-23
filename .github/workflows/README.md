@@ -38,7 +38,7 @@ All workflow files are unique and serve different purposes:
 ## Common Configuration
 
 All workflows share:
-- PHP 8.2
+- PHP 8.3
 - Extensions: mbstring, xml, curl, json
 - Concurrency control to prevent simultaneous runs
 - Timeout settings (10-30 minutes)

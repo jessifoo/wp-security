@@ -4,7 +4,7 @@
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "ext-json": "*",
         "ext-pcre": "*",
         "ext-mbstring": "*",
@@ -52,7 +52,7 @@
             "ergebnis/composer-normalize": true
         },
         "platform": {
-            "php": "8.2.0"
+            "php": "8.3.0"
         },
         "platform-check": false,
         "optimize-autoloader": true,

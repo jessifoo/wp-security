@@ -16,14 +16,14 @@ A real-time WordPress security plugin designed for small sites that need immedia
 - File change monitoring using checksums
 - Immediate removal of suspicious files
 - Direct core file replacement
-- Hourly cleanup process
+- Daily automated cleanup process
 - Database content scanning
 
 ## Theme Protection
 - Preserves Elementor page builder data
 - Maintains Astra theme settings
 - Saves custom theme modifications
-- Supports theme content export/import
+- Theme content backup before cleanup
 - Restores theme content after cleanup
 
 ## Prevention Features
