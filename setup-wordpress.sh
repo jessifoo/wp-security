@@ -49,14 +49,14 @@ error_handler() {
     local exit_code=$1
     local line_no=$2
     local command=$3
-    
+
     if [ "$DEBUG" = "1" ]; then
         echo -e "${RED}❌ Error on line $line_no (exit code $exit_code):${NC}" >&2
         echo -e "${RED}   Command: $command${NC}" >&2
     else
         echo -e "${RED}❌ Error on line $line_no. Run with DEBUG=1 for details.${NC}" >&2
     fi
-    
+
     exit $exit_code
 }
 
@@ -76,7 +76,7 @@ redirect_output() {
 check_command() {
     local error_msg="$1"
     shift
-    
+
     if [ "$DEBUG" = "1" ]; then
         if ! "$@"; then
             echo -e "${RED}❌ $error_msg${NC}" >&2
@@ -100,8 +100,8 @@ else
 fi
 
 check_command \
-    "Failed to install required packages (mariadb-server, mariadb-client, php8.2-mysql, php8.2-mysqli)" \
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client php8.2-mysql php8.2-mysqli
+    "Failed to install required packages (mariadb-server, mariadb-client, php8.4-mysql, php8.4-mysqli)" \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client php8.4-mysql php8.4-mysqli
 
 redirect_output sudo phpenmod mysqli pdo_mysql
 
@@ -116,7 +116,7 @@ check_mariadb_ready() {
             return 0
         fi
     fi
-    
+
     # Fallback: check for socket file
     local socket_file="/var/run/mysqld/mysqld.sock"
     if [ -S "$socket_file" ]; then
@@ -125,7 +125,7 @@ check_mariadb_ready() {
             return 0
         fi
     fi
-    
+
     return 1
 }
 
@@ -139,14 +139,14 @@ if command -v systemctl > /dev/null 2>&1 && systemctl list-unit-files | grep -qE
     else
         SERVICE_NAME="mariadb"
     fi
-    
+
     if [ "$DEBUG" = "1" ]; then
         echo "Starting MariaDB via systemctl ($SERVICE_NAME)..." >&2
         sudo systemctl start "$SERVICE_NAME"
     else
         sudo systemctl start "$SERVICE_NAME" > /dev/null 2>&1
     fi
-    
+
     # Wait for service to be active
     if [ "$DEBUG" = "1" ]; then
         sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
@@ -178,10 +178,10 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
         echo -e "${GREEN}   ✓ MariaDB is ready${NC}"
         break
     fi
-    
+
     sleep $RETRY_INTERVAL
     ELAPSED=$((ELAPSED + RETRY_INTERVAL))
-    
+
     if [ "$DEBUG" = "1" ] && [ $((ELAPSED % 5)) -eq 0 ]; then
         echo "   Still waiting... (${ELAPSED}s elapsed)" >&2
     fi
@@ -190,24 +190,24 @@ done
 # Final check: fail if MariaDB is not ready
 if ! check_mariadb_ready; then
     echo -e "${RED}❌ Failed to start MariaDB - service did not become ready within ${TIMEOUT}s${NC}" >&2
-    
+
     # Provide diagnostic information
     echo -e "${YELLOW}   Diagnostics:${NC}" >&2
-    
+
     # Check if process is running
     if pgrep -x mysqld > /dev/null 2>&1; then
         echo "   - mysqld process is running" >&2
     else
         echo "   - mysqld process is NOT running" >&2
     fi
-    
+
     # Check socket file
     if [ -S "/var/run/mysqld/mysqld.sock" ]; then
         echo "   - Socket file exists: /var/run/mysqld/mysqld.sock" >&2
     else
         echo "   - Socket file NOT found: /var/run/mysqld/mysqld.sock" >&2
     fi
-    
+
     # Show error logs if available
     if [ "$DEBUG" = "1" ]; then
         echo "   - Checking error logs..." >&2
@@ -220,7 +220,7 @@ if ! check_mariadb_ready; then
         else
             echo "   - No error log found" >&2
         fi
-        
+
         # Check systemctl status if available
         if command -v systemctl > /dev/null 2>&1; then
             if systemctl list-unit-files | grep -qE 'mariadb|mysqld'; then
@@ -231,7 +231,7 @@ if ! check_mariadb_ready; then
     else
         echo -e "${YELLOW}   Run with DEBUG=1 for detailed diagnostics.${NC}" >&2
     fi
-    
+
     exit 1
 fi
 

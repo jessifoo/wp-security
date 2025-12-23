@@ -35,6 +35,18 @@ class OMS_Database_Scanner {
 	 *
 	 * @var OMS_Database_Cleaner
 	 */
+	/**
+	 * Database instance
+	 *
+	 * @var wpdb
+	 */
+	private $wpdb;
+
+	/**
+	 * Database cleaner instance (for row-level operations with transactions)
+	 *
+	 * @var OMS_Database_Cleaner
+	 */
 	private $cleaner;
 
 	/**
@@ -57,12 +69,14 @@ class OMS_Database_Scanner {
 	 *
 	 * @param OMS_Logger           $logger  Logger instance.
 	 * @param OMS_Cache            $cache   Cache instance.
+	 * @param wpdb                 $wpdb    Database instance.
 	 * @param OMS_Database_Cleaner $cleaner Cleaner instance (optional).
 	 */
-	public function __construct( OMS_Logger $logger, OMS_Cache $cache, OMS_Database_Cleaner $cleaner = null ) {
+	public function __construct( OMS_Logger $logger, OMS_Cache $cache, $wpdb, ?OMS_Database_Cleaner $cleaner = null ) {
 		$this->logger  = $logger;
 		$this->cache   = $cache;
-		$this->cleaner = $cleaner ? $cleaner : new OMS_Database_Cleaner( $this->logger );
+		$this->wpdb    = $wpdb;
+		$this->cleaner = $cleaner ? $cleaner : new OMS_Database_Cleaner( $this->logger, $this->wpdb );
 	}
 
 	/**
@@ -81,8 +95,8 @@ class OMS_Database_Scanner {
 		$identifier = str_replace( '`', '', $identifier );
 
 		// Check against whitelist for table names (without prefix).
-		global $wpdb;
-		$table_base = str_replace( $wpdb->prefix, '', $identifier );
+		// Check against whitelist for table names (without prefix).
+		$table_base = str_replace( $this->wpdb->prefix, '', $identifier );
 		if ( in_array( $table_base, $this->critical_tables, true ) ) {
 			return $identifier;
 		}
@@ -101,9 +115,7 @@ class OMS_Database_Scanner {
 	 * @return array Scan results with issues found.
 	 */
 	public function scan_database() {
-		global $wpdb;
-
-		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+		if ( ! $this->wpdb instanceof wpdb ) {
 			$this->logger->error( 'WordPress database object not available for database scan' );
 			return array(
 				'success' => false,
@@ -164,13 +176,11 @@ class OMS_Database_Scanner {
 	 * @return array Integrity issues found.
 	 */
 	private function check_database_integrity() {
-		global $wpdb;
-
 		$issues = array();
 
 		try {
 			// Get table prefix.
-			$prefix = $wpdb->prefix;
+			$prefix = $this->wpdb->prefix;
 
 			// Check each critical table.
 			foreach ( $this->critical_tables as $table_name ) {
@@ -178,8 +188,8 @@ class OMS_Database_Scanner {
 
 				// Check if table exists.
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
-				$table_exists = $wpdb->get_var(
-					$wpdb->prepare(
+				$table_exists = $this->wpdb->get_var(
+					$this->wpdb->prepare(
 						'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s',
 						defined( 'DB_NAME' ) ? DB_NAME : '',
 						$full_table_name
@@ -227,7 +237,6 @@ class OMS_Database_Scanner {
 	 * @return array Structure issues found.
 	 */
 	private function check_table_structure( $table_name ) {
-		global $wpdb;
 
 		$issues = array();
 
@@ -240,8 +249,8 @@ class OMS_Database_Scanner {
 
 			// Get actual table structure.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
-			$actual_columns = $wpdb->get_results(
-				$wpdb->prepare(
+			$actual_columns = $this->wpdb->get_results(
+				$this->wpdb->prepare(
 					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
 					FROM information_schema.COLUMNS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
@@ -252,7 +261,7 @@ class OMS_Database_Scanner {
 			);
 
 			if ( ! is_array( $actual_columns ) ) {
-				$this->logger->error( sprintf( 'Query failed for table %s: %s', $table_name, $wpdb->last_error ) );
+				$this->logger->error( sprintf( 'Query failed for table %s: %s', $table_name, $this->wpdb->last_error ) );
 				$issues[] = array(
 					'type'     => 'check_error',
 					'table'    => $table_name,
@@ -303,7 +312,6 @@ class OMS_Database_Scanner {
 	 * @return array Index issues found.
 	 */
 	private function check_table_indexes( $table_name ) {
-		global $wpdb;
 
 		$issues = array();
 
@@ -316,8 +324,8 @@ class OMS_Database_Scanner {
 
 			// Get actual indexes.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
-			$actual_indexes = $wpdb->get_results(
-				$wpdb->prepare(
+			$actual_indexes = $this->wpdb->get_results(
+				$this->wpdb->prepare(
 					'SELECT INDEX_NAME FROM information_schema.STATISTICS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 					GROUP BY INDEX_NAME',
@@ -354,7 +362,6 @@ class OMS_Database_Scanner {
 	 * @return array Content issues found.
 	 */
 	private function scan_database_content() {
-		global $wpdb;
 
 		$issues = array();
 
@@ -364,7 +371,7 @@ class OMS_Database_Scanner {
 
 			// Scan critical tables.
 			foreach ( $this->critical_tables as $table_name ) {
-				$full_table_name = $wpdb->prefix . $table_name;
+				$full_table_name = $this->wpdb->prefix . $table_name;
 
 				// Get table content to scan.
 				$table_issues = $this->scan_table_content( $full_table_name, $patterns );
@@ -392,15 +399,14 @@ class OMS_Database_Scanner {
 	 * @return array Content issues found.
 	 */
 	private function scan_table_content( $table_name, $patterns ) {
-		global $wpdb;
 
 		$issues = array();
 
 		try {
 			// Get all text columns from the table.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, information_schema queries don't benefit from caching.
-			$columns = $wpdb->get_col(
-				$wpdb->prepare(
+			$columns = $this->wpdb->get_col(
+				$this->wpdb->prepare(
 					'SELECT COLUMN_NAME FROM information_schema.COLUMNS
 					WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 					AND DATA_TYPE IN ("varchar", "text", "longtext", "mediumtext", "tinytext", "char")',
@@ -436,7 +442,6 @@ class OMS_Database_Scanner {
 	 * @return array Content issues found.
 	 */
 	private function scan_column_content( $table_name, $column, $patterns ) {
-		global $wpdb;
 
 		$issues = array();
 
@@ -467,8 +472,8 @@ class OMS_Database_Scanner {
 
 			while ( true ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, content scanning needs current data not cached. Table and column names are validated and sanitized via validate_db_identifier().
-				$rows = $wpdb->get_results(
-					$wpdb->prepare(
+				$rows = $this->wpdb->get_results(
+					$this->wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
 						'SELECT %i, %i FROM %i WHERE %i IS NOT NULL AND %i != %s LIMIT %d OFFSET %d',
 						$validated_id_column,
@@ -536,12 +541,10 @@ class OMS_Database_Scanner {
 	 * @return array Modification issues found.
 	 */
 	private function check_suspicious_modifications() {
-		global $wpdb;
-
 		$issues = array();
 
 		try {
-			$prefix = $wpdb->prefix;
+			$prefix = $this->wpdb->prefix;
 
 			// Check for suspicious options.
 			$suspicious_options = $this->check_suspicious_options( $prefix . 'options' );
@@ -568,8 +571,6 @@ class OMS_Database_Scanner {
 	 * @return array Suspicious options found.
 	 */
 	private function check_suspicious_options( $options_table ) {
-		global $wpdb;
-
 		$issues                  = array();
 		$suspicious_option_names = array(
 			'%eval%',
@@ -590,8 +591,8 @@ class OMS_Database_Scanner {
 
 			foreach ( $suspicious_option_names as $pattern ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, needs current data for security checks. Table name is validated and sanitized via validate_db_identifier().
-				$options = $wpdb->get_results(
-					$wpdb->prepare(
+				$options = $this->wpdb->get_results(
+					$this->wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
 						'SELECT option_id, option_name, option_value FROM %i WHERE option_name LIKE %s',
 						$validated_table,
@@ -625,8 +626,6 @@ class OMS_Database_Scanner {
 	 * @return array Suspicious user meta found.
 	 */
 	private function check_suspicious_usermeta( $usermeta_table ) {
-		global $wpdb;
-
 		$issues = array();
 
 		try {
@@ -647,8 +646,8 @@ class OMS_Database_Scanner {
 
 			foreach ( $suspicious_keys as $pattern ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, needs current data for security checks. Table name is validated and sanitized via validate_db_identifier().
-				$meta = $wpdb->get_results(
-					$wpdb->prepare(
+				$meta = $this->wpdb->get_results(
+					$this->wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
 						'SELECT umeta_id, user_id, meta_key FROM %i WHERE meta_key LIKE %s',
 						$validated_table,
@@ -714,8 +713,7 @@ class OMS_Database_Scanner {
 		);
 
 		// Extract table name without prefix.
-		global $wpdb;
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
 		$structure = isset( $structures[ $table_base ] ) ? $structures[ $table_base ] : array();
 
@@ -746,8 +744,7 @@ class OMS_Database_Scanner {
 		// future enhancement to reduce false positives on standard installs.
 
 		// Basic expected indexes for common tables.
-		global $wpdb;
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
 		$default_indexes = array(
 			'options' => array( 'PRIMARY', 'option_name' ),

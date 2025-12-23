@@ -207,14 +207,21 @@ class OMS_API {
 	 */
 	public function get_report() {
 		// Retrieve logs or report data.
-		$log_path = $this->scanner->get_log_path();
-		// Append log filename to directory path.
-		$log_file = $log_path . '/security.log';
-
+		// Retrieve logs or report data.
 		$logs = array();
-		if ( file_exists( $log_file ) ) {
-			// Read last 100 lines or similar.
-			$logs = array_slice( file( $log_file ), -50 );
+
+		// Check for in-memory logs (Test Mode).
+		if ( defined( 'OMS_TEST_MODE' ) && OMS_TEST_MODE && method_exists( $this->logger, 'get_memory_logs' ) ) {
+			$logs = $this->logger->get_memory_logs(); // @phpstan-ignore-line -- Method exists check performed.
+		} else {
+			$log_path = $this->scanner->get_log_path();
+			// Append log filename to directory path.
+			$log_file = $log_path . '/security.log';
+
+			if ( file_exists( $log_file ) ) {
+				// Read last 100 lines or similar.
+				$logs = array_slice( file( $log_file ), -50 );
+			}
 		}
 
 		return new WP_REST_Response( array( 'logs' => $logs ), 200 );

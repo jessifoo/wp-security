@@ -29,6 +29,13 @@ class OMS_Database_Cleaner {
 	private $logger;
 
 	/**
+	 * Database instance
+	 *
+	 * @var wpdb
+	 */
+	private $wpdb;
+
+	/**
 	 * Pending row backups for current operation
 	 *
 	 * @var array
@@ -61,9 +68,11 @@ class OMS_Database_Cleaner {
 	 * Constructor
 	 *
 	 * @param OMS_Logger $logger Logger instance.
+	 * @param wpdb       $wpdb   Database instance.
 	 */
-	public function __construct( OMS_Logger $logger ) {
+	public function __construct( OMS_Logger $logger, $wpdb ) {
 		$this->logger = $logger;
+		$this->wpdb   = $wpdb;
 	}
 
 	/**
@@ -76,9 +85,8 @@ class OMS_Database_Cleaner {
 	 * @return array Cleanup results.
 	 */
 	public function clean_issues( array $issues ) {
-		global $wpdb;
-
-		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+		// Use local property instead of global.
+		if ( ! isset( $this->wpdb ) || ! ( $this->wpdb instanceof wpdb ) ) {
 			$this->logger->error( 'WordPress database object not available for cleanup' );
 			return array(
 				'success' => false,
@@ -166,8 +174,6 @@ class OMS_Database_Cleaner {
 	 * @return array Result with success status.
 	 */
 	private function delete_row_with_backup( array $issue ) {
-		global $wpdb;
-
 		$table_name = isset( $issue['table'] ) ? $issue['table'] : '';
 		$row_id     = isset( $issue['row_id'] ) ? $issue['row_id'] : null;
 
@@ -205,7 +211,7 @@ class OMS_Database_Cleaner {
 
 		// Perform the delete.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$deleted = $wpdb->delete(
+		$deleted = $this->wpdb->delete(
 			$table_name,
 			array( $id_column => $row_id ),
 			array( is_int( $row_id ) ? '%d' : '%s' )
@@ -214,7 +220,7 @@ class OMS_Database_Cleaner {
 		if ( false === $deleted ) {
 			return array(
 				'success' => false,
-				'message' => sprintf( 'Database delete failed: %s', $wpdb->last_error ),
+				'message' => sprintf( 'Database delete failed: %s', $this->wpdb->last_error ),
 			);
 		}
 
@@ -242,11 +248,9 @@ class OMS_Database_Cleaner {
 	 * @return array Result with success status.
 	 */
 	private function backup_row( $table_name, $id_column, $row_id ) {
-		global $wpdb;
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$row = $wpdb->get_row(
-			$wpdb->prepare(
+		$row = $this->wpdb->get_row(
+			$this->wpdb->prepare(
 				'SELECT * FROM %i WHERE %i = %s',
 				$table_name,
 				$id_column,
@@ -286,8 +290,6 @@ class OMS_Database_Cleaner {
 	 * @return array Result with restore count.
 	 */
 	private function restore_pending_backups() {
-		global $wpdb;
-
 		$restored = 0;
 		$errors   = 0;
 
@@ -297,7 +299,7 @@ class OMS_Database_Cleaner {
 			}
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$result = $wpdb->insert( $backup['table'], $backup['data'] );
+			$result = $this->wpdb->insert( $backup['table'], $backup['data'] );
 
 			if ( false !== $result ) {
 				++$restored;
@@ -315,7 +317,7 @@ class OMS_Database_Cleaner {
 						'Failed to restore row %s in table %s: %s',
 						esc_html( (string) $backup['row_id'] ),
 						esc_html( $backup['table'] ),
-						esc_html( $wpdb->last_error )
+						esc_html( $this->wpdb->last_error )
 					)
 				);
 			}
@@ -335,14 +337,12 @@ class OMS_Database_Cleaner {
 	 * @return bool True if transaction started.
 	 */
 	private function begin_transaction() {
-		global $wpdb;
-
 		if ( $this->in_transaction ) {
 			return true;
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$result = $wpdb->query( 'START TRANSACTION' );
+		$result = $this->wpdb->query( 'START TRANSACTION' );
 
 		if ( false !== $result ) {
 			$this->in_transaction = true;
@@ -360,14 +360,12 @@ class OMS_Database_Cleaner {
 	 * @return bool True if committed successfully.
 	 */
 	private function commit_transaction() {
-		global $wpdb;
-
 		if ( ! $this->in_transaction ) {
 			return true;
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$result = $wpdb->query( 'COMMIT' );
+		$result = $this->wpdb->query( 'COMMIT' );
 
 		$this->in_transaction = false;
 
@@ -386,14 +384,12 @@ class OMS_Database_Cleaner {
 	 * @return bool True if rolled back successfully.
 	 */
 	private function rollback_transaction() {
-		global $wpdb;
-
 		if ( ! $this->in_transaction ) {
 			return true;
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$result = $wpdb->query( 'ROLLBACK' );
+		$result = $this->wpdb->query( 'ROLLBACK' );
 
 		$this->in_transaction = false;
 
@@ -515,9 +511,7 @@ class OMS_Database_Cleaner {
 	 * @return bool True if allowed.
 	 */
 	private function is_allowed_table( $table_name ) {
-		global $wpdb;
-
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
 		/**
 		 * Filter the list of tables allowed for cleanup operations.
@@ -539,9 +533,7 @@ class OMS_Database_Cleaner {
 	 * @return string|false ID column name or false.
 	 */
 	private function get_id_column( $table_name ) {
-		global $wpdb;
-
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
 		$id_columns = array(
 			'posts'       => 'ID',

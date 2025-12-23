@@ -7,7 +7,7 @@ require_once __DIR__ . '/../mocks/class-wpdb-mock.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-oms-database-scanner.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-oms-logger.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-oms-cache.php';
-require_once dirname( __DIR__, 2 ) . '/includes/class-oms-database-backup.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-oms-database-cleaner.php';
 
 class OMS_Database_ScannerTest extends TestCase {
 
@@ -17,7 +17,7 @@ class OMS_Database_ScannerTest extends TestCase {
 	private $logger;
 	private $cache;
 	private $wpdb;
-	private $backup;
+	private $cleaner;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -31,9 +31,8 @@ class OMS_Database_ScannerTest extends TestCase {
 		// Mock Logger and Cache
 		$this->logger = $this->createMock( OMS_Logger::class );
 		$this->cache  = $this->createMock( OMS_Cache::class );
-		$this->backup = $this->createMock( OMS_Database_Backup::class );
-
-		$this->scanner = new OMS_Database_Scanner( $this->logger, $this->cache, $this->backup );
+		$this->cleaner = $this->createMock( OMS_Database_Cleaner::class );
+		$this->scanner = new OMS_Database_Scanner( $this->logger, $this->cache, $this->wpdb, $this->cleaner );
 	}
 
 	protected function tearDown(): void {
@@ -52,9 +51,9 @@ class OMS_Database_ScannerTest extends TestCase {
 	}
 
 	public function testCleanDatabaseContent() {
-		// Mock backup success
-		$this->backup->method( 'backup_critical_tables' )
-			->willReturn( array( 'success' => true ) );
+		// Mock cleaner success
+		$this->cleaner->method( 'clean_issues' )
+			->willReturn( array( 'success' => true, 'cleaned' => 1 ) );
 
 		// Mock issues
 		$issues = array(

@@ -9,6 +9,7 @@
     <exclude-pattern>wordpress/*</exclude-pattern>
     <exclude-pattern>.github/*</exclude-pattern>
     <exclude-pattern>src/*</exclude-pattern>
+    <config name="testVersion" value="8.4-"/>
     <rule ref="WordPress"/>
     <!-- Allow class-file-security-policy.php naming (legacy compatibility) -->
     <rule ref="WordPress.Files.FileName">

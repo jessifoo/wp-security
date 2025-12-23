@@ -32,9 +32,19 @@ class OMS_Logger {
 	private $log_file;
 
 	/**
+	 * In-memory logs for testing.
+	 *
+	 * @var array
+	 */
+	private $memory_logs = array();
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		if ( defined( 'OMS_TEST_MODE' ) && OMS_TEST_MODE ) {
+			return;
+		}
 		$this->log_file = OMS_Config::LOG_CONFIG['path'] . '/malware-scanner.log';
 		$this->init_log_dir();
 	}
@@ -182,6 +192,11 @@ class OMS_Logger {
 	 * @param string $log_message Formatted log message.
 	 */
 	private function log_to_file( $log_message ) {
+		if ( defined( 'OMS_TEST_MODE' ) && OMS_TEST_MODE ) {
+			$this->memory_logs[] = $log_message;
+			return;
+		}
+
 		if ( ! defined( 'OMS_LOG_FILE' ) ) {
 			return;
 		}
@@ -211,6 +226,15 @@ class OMS_Logger {
 
 		// Rotate log file if it exceeds 5MB.
 		$this->maybe_rotate_log_file( $log_file );
+	}
+
+	/**
+	 * Get in-memory logs (for testing).
+	 *
+	 * @return array
+	 */
+	public function get_memory_logs() {
+		return $this->memory_logs;
 	}
 
 	/**

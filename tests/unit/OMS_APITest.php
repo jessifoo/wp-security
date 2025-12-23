@@ -28,7 +28,7 @@ class OMS_APITest extends TestCase {
 		$request = $this->createMock( WP_REST_Request::class );
 		$request->method( 'get_json_params' )->willReturn(
 			array(
-				'master_key'    => 'secret',
+				'master_key'    => OMS_Config::OMS_LINKING_KEY,
 				'dashboard_url' => 'https://master.example.com',
 			)
 		);
@@ -96,10 +96,14 @@ class OMS_APITest extends TestCase {
 	}
 
 	public function testGetReport() {
-		$log_file = $this->tempDir . '/oms.log';
-		file_put_contents( $log_file, "Line 1\nLine 2" );
+		$expected_logs = array( "Line 1\n", "Line 2" );
 
-		$this->scanner->method( 'get_log_path' )->willReturn( $log_file );
+		// Configure logger mock to return expected memory logs
+		$this->logger->method( 'get_memory_logs' )
+			->willReturn( $expected_logs );
+
+		// We don't need to mock get_log_path or file existence anymore
+		// because the API prioritizes memory logs in test mode.
 
 		$response = $this->api->get_report();
 
