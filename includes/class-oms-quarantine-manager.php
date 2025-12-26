@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Quarantine Manager class for the Obfuscated Malware Scanner
  *
@@ -15,20 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OMS_Quarantine_Manager {
 	/**
-	 * Logger instance.
-	 *
-	 * @var OMS_Logger
-	 */
-	private $logger;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param OMS_Logger $logger Logger instance.
 	 */
-	public function __construct( OMS_Logger $logger ) {
-		$this->logger = $logger;
-	}
+	public function __construct( private readonly OMS_Logger $logger ) {}
 
 	/**
 	 * Quarantine a file with fallback options and safety checks.
@@ -37,9 +30,9 @@ class OMS_Quarantine_Manager {
 	 * @return bool True if quarantine succeeded, false otherwise.
 	 * @throws Exception If quarantine fails.
 	 */
-	public function quarantine_file( $path ) {
+	public function quarantine_file( string $path ): bool {
 		try {
-			$quarantine_dir = OMS_Config::QUARANTINE_CONFIG['path'];
+			$quarantine_dir = (string) OMS_Config::QUARANTINE_CONFIG['path'];
 
 			// Ensure quarantine directory exists and is writable.
 			if ( ! file_exists( $quarantine_dir ) ) {
@@ -144,7 +137,7 @@ class OMS_Quarantine_Manager {
 	 * @param string $path Path to the file.
 	 * @return bool True if successful, false otherwise.
 	 */
-	private function make_file_inaccessible( $path ) {
+	private function make_file_inaccessible( string $path ): bool {
 		// Try to remove all permissions.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Security requirement: must change file permissions to make malicious files inaccessible.
 		$chmod_result = chmod( $path, 0000 );

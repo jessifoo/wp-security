@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Database Cleaner class for malicious content removal
  *
@@ -22,39 +24,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OMS_Database_Cleaner {
 
 	/**
-	 * Logger instance
-	 *
-	 * @var OMS_Logger
-	 */
-	private $logger;
-
-	/**
-	 * Database instance
-	 *
-	 * @var wpdb
-	 */
-	private $wpdb;
-
-	/**
 	 * Pending row backups for current operation
 	 *
 	 * @var array
 	 */
-	private $pending_backups = array();
+	private array $pending_backups = [];
 
 	/**
 	 * Whether we're in a transaction
 	 *
 	 * @var bool
 	 */
-	private $in_transaction = false;
+	private bool $in_transaction = false;
 
 	/**
 	 * Critical tables that are allowed to be cleaned
 	 *
-	 * @var array
+	 * @var string[]
 	 */
-	private $allowed_tables = array(
+	private array $allowed_tables = [
 		'options',
 		'posts',
 		'postmeta',
@@ -62,7 +50,7 @@ class OMS_Database_Cleaner {
 		'usermeta',
 		'comments',
 		'commentmeta',
-	);
+	];
 
 	/**
 	 * Constructor
@@ -70,10 +58,10 @@ class OMS_Database_Cleaner {
 	 * @param OMS_Logger $logger Logger instance.
 	 * @param wpdb       $wpdb   Database instance.
 	 */
-	public function __construct( OMS_Logger $logger, $wpdb ) {
-		$this->logger = $logger;
-		$this->wpdb   = $wpdb;
-	}
+	public function __construct(
+		private readonly OMS_Logger $logger,
+		private readonly wpdb $wpdb
+	) {}
 
 	/**
 	 * Clean malicious database content with transaction support
@@ -82,16 +70,16 @@ class OMS_Database_Cleaner {
 	 * the entire operation is rolled back automatically.
 	 *
 	 * @param array $issues Array of malicious content issues to clean.
-	 * @return array Cleanup results.
+	 * @return array{success: bool, cleaned?: int, message?: string, errors?: array, rollback?: bool, backup_id?: string} Cleanup results.
 	 */
-	public function clean_issues( array $issues ) {
+	public function clean_issues( array $issues ): array {
 		// Use local property instead of global.
-		if ( ! isset( $this->wpdb ) || ! ( $this->wpdb instanceof wpdb ) ) {
+		if ( ! $this->wpdb instanceof wpdb ) {
 			$this->logger->error( 'WordPress database object not available for cleanup' );
-			return array(
+			return [
 				'success' => false,
 				'message' => 'Database object not available',
-			);
+			];
 		}
 
 		// Filter to only malicious content issues.
@@ -103,11 +91,11 @@ class OMS_Database_Cleaner {
 		);
 
 		if ( empty( $cleanable_issues ) ) {
-			return array(
+			return [
 				'success' => true,
 				'cleaned' => 0,
 				'message' => 'No cleanable issues found',
-			);
+			];
 		}
 
 		$this->logger->info( sprintf( 'Starting database cleanup for %d issues', count( $cleanable_issues ) ) );
@@ -117,7 +105,7 @@ class OMS_Database_Cleaner {
 			$this->begin_transaction();
 
 			$cleaned = 0;
-			$errors  = array();
+			$errors  = [];
 
 			foreach ( $cleanable_issues as $issue ) {
 				$result = $this->delete_row_with_backup( $issue );
@@ -130,13 +118,13 @@ class OMS_Database_Cleaner {
 					$this->rollback_transaction();
 					$this->restore_pending_backups();
 
-					return array(
+					return [
 						'success'  => false,
 						'cleaned'  => 0,
 						'message'  => 'Cleanup failed, all changes rolled back',
 						'errors'   => $errors,
 						'rollback' => true,
-					);
+					];
 				}
 			}
 
@@ -148,22 +136,22 @@ class OMS_Database_Cleaner {
 
 			$this->logger->info( sprintf( 'Database cleanup completed: %d rows cleaned', $cleaned ) );
 
-			return array(
+			return [
 				'success'   => true,
 				'cleaned'   => $cleaned,
 				'backup_id' => $this->get_current_backup_id(),
-			);
+			];
 		} catch ( Exception $e ) {
 			$this->rollback_transaction();
 			$this->restore_pending_backups();
 
 			$this->logger->error( sprintf( 'Database cleanup failed: %s', esc_html( $e->getMessage() ) ) );
 
-			return array(
+			return [
 				'success'  => false,
 				'message'  => $e->getMessage(),
 				'rollback' => true,
-			);
+			];
 		}
 	}
 
@@ -171,72 +159,72 @@ class OMS_Database_Cleaner {
 	 * Delete a single row with backup for potential restore
 	 *
 	 * @param array $issue Issue details containing table, column, and row_id.
-	 * @return array Result with success status.
+	 * @return array{success: bool, message: string} Result with success status.
 	 */
-	private function delete_row_with_backup( array $issue ) {
-		$table_name = isset( $issue['table'] ) ? $issue['table'] : '';
+	private function delete_row_with_backup( array $issue ): array {
+		$table_name = isset( $issue['table'] ) ? (string) $issue['table'] : '';
 		$row_id     = isset( $issue['row_id'] ) ? $issue['row_id'] : null;
 
 		if ( empty( $table_name ) || null === $row_id ) {
-			return array(
+			return [
 				'success' => false,
 				'message' => 'Missing table name or row ID',
-			);
+			];
 		}
 
 		// Validate table is in allowed list.
 		if ( ! $this->is_allowed_table( $table_name ) ) {
-			return array(
+			return [
 				'success' => false,
 				'message' => sprintf( 'Table %s is not in the allowed cleanup list', $table_name ),
-			);
+			];
 		}
 
 		$id_column = $this->get_id_column( $table_name );
 		if ( false === $id_column ) {
-			return array(
+			return [
 				'success' => false,
 				'message' => sprintf( 'Could not determine ID column for table %s', $table_name ),
-			);
+			];
 		}
 
 		// Backup the row before deletion.
 		$backup_result = $this->backup_row( $table_name, $id_column, $row_id );
 		if ( ! $backup_result['success'] ) {
-			return array(
+			return [
 				'success' => false,
 				'message' => sprintf( 'Failed to backup row before deletion: %s', $backup_result['message'] ),
-			);
+			];
 		}
 
 		// Perform the delete.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$deleted = $this->wpdb->delete(
 			$table_name,
-			array( $id_column => $row_id ),
-			array( is_int( $row_id ) ? '%d' : '%s' )
+			[ $id_column => $row_id ],
+			[ is_int( $row_id ) ? '%d' : '%s' ]
 		);
 
 		if ( false === $deleted ) {
-			return array(
+			return [
 				'success' => false,
 				'message' => sprintf( 'Database delete failed: %s', $this->wpdb->last_error ),
-			);
+			];
 		}
 
 		if ( 0 === $deleted ) {
 			// Row didn't exist, remove from pending backups.
 			array_pop( $this->pending_backups );
-			return array(
+			return [
 				'success' => true,
 				'message' => 'Row not found (may have already been deleted)',
-			);
+			];
 		}
 
-		return array(
+		return [
 			'success' => true,
 			'message' => 'Row deleted successfully',
-		);
+		];
 	}
 
 	/**
@@ -245,9 +233,9 @@ class OMS_Database_Cleaner {
 	 * @param string $table_name Full table name.
 	 * @param string $id_column  ID column name.
 	 * @param mixed  $row_id     Row ID value.
-	 * @return array Result with success status.
+	 * @return array{success: bool, message: string} Result with success status.
 	 */
-	private function backup_row( $table_name, $id_column, $row_id ) {
+	private function backup_row( string $table_name, string $id_column, mixed $row_id ): array {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $this->wpdb->get_row(
 			$this->wpdb->prepare(
@@ -261,24 +249,24 @@ class OMS_Database_Cleaner {
 
 		if ( null === $row ) {
 			// Row doesn't exist, nothing to backup.
-			return array(
+			return [
 				'success' => true,
 				'message' => 'Row not found, nothing to backup',
-			);
+			];
 		}
 
-		$this->pending_backups[] = array(
+		$this->pending_backups[] = [
 			'table'     => $table_name,
 			'id_column' => $id_column,
 			'row_id'    => $row_id,
 			'data'      => $row,
 			'timestamp' => time(),
-		);
+		];
 
-		return array(
+		return [
 			'success' => true,
 			'message' => 'Row backed up',
-		);
+		];
 	}
 
 	/**
@@ -287,9 +275,9 @@ class OMS_Database_Cleaner {
 	 * Called when a transaction fails and we need to manually restore
 	 * rows that were deleted before the failure.
 	 *
-	 * @return array Result with restore count.
+	 * @return array{restored: int, errors: int} Result with restore count.
 	 */
-	private function restore_pending_backups() {
+	private function restore_pending_backups(): array {
 		$restored = 0;
 		$errors   = 0;
 
@@ -323,12 +311,12 @@ class OMS_Database_Cleaner {
 			}
 		}
 
-		$this->pending_backups = array();
+		$this->pending_backups = [];
 
-		return array(
+		return [
 			'restored' => $restored,
 			'errors'   => $errors,
-		);
+		];
 	}
 
 	/**
@@ -336,7 +324,7 @@ class OMS_Database_Cleaner {
 	 *
 	 * @return bool True if transaction started.
 	 */
-	private function begin_transaction() {
+	private function begin_transaction(): bool {
 		if ( $this->in_transaction ) {
 			return true;
 		}
@@ -359,7 +347,7 @@ class OMS_Database_Cleaner {
 	 *
 	 * @return bool True if committed successfully.
 	 */
-	private function commit_transaction() {
+	private function commit_transaction(): bool {
 		if ( ! $this->in_transaction ) {
 			return true;
 		}
@@ -383,7 +371,7 @@ class OMS_Database_Cleaner {
 	 *
 	 * @return bool True if rolled back successfully.
 	 */
-	private function rollback_transaction() {
+	private function rollback_transaction(): bool {
 		if ( ! $this->in_transaction ) {
 			return true;
 		}
@@ -408,7 +396,7 @@ class OMS_Database_Cleaner {
 	 * Keeps backups available for a short period after successful cleanup
 	 * in case the user wants to manually undo the operation.
 	 */
-	private function store_session_backups() {
+	private function store_session_backups(): void {
 		if ( empty( $this->pending_backups ) ) {
 			return;
 		}
@@ -423,12 +411,12 @@ class OMS_Database_Cleaner {
 		);
 
 		// Track backup IDs for listing.
-		$backup_ids   = get_option( 'oms_cleanup_backup_ids', array() );
-		$backup_ids[] = array(
+		$backup_ids   = get_option( 'oms_cleanup_backup_ids', [] );
+		$backup_ids[] = [
 			'id'        => $backup_id,
 			'timestamp' => time(),
 			'count'     => count( $this->pending_backups ),
-		);
+		];
 
 		// Keep only last 10 backup references.
 		$backup_ids = array_slice( $backup_ids, -10 );
@@ -441,16 +429,16 @@ class OMS_Database_Cleaner {
 	 * Restore rows from a stored backup
 	 *
 	 * @param string $backup_id Backup ID to restore from.
-	 * @return array Result with restore count.
+	 * @return array{success: bool, restored?: int, errors?: int, message?: string} Result with restore count.
 	 */
-	public function restore_from_backup( $backup_id ) {
+	public function restore_from_backup( string $backup_id ): array {
 		$backups = get_transient( 'oms_cleanup_backup_' . $backup_id );
 
 		if ( false === $backups || ! is_array( $backups ) ) {
-			return array(
+			return [
 				'success' => false,
 				'message' => 'Backup not found or expired',
-			);
+			];
 		}
 
 		$this->pending_backups = $backups;
@@ -460,7 +448,7 @@ class OMS_Database_Cleaner {
 		delete_transient( 'oms_cleanup_backup_' . $backup_id );
 
 		// Update backup IDs list.
-		$backup_ids = get_option( 'oms_cleanup_backup_ids', array() );
+		$backup_ids = get_option( 'oms_cleanup_backup_ids', [] );
 		$backup_ids = array_filter(
 			$backup_ids,
 			static function ( $item ) use ( $backup_id ) {
@@ -469,11 +457,11 @@ class OMS_Database_Cleaner {
 		);
 		update_option( 'oms_cleanup_backup_ids', $backup_ids, false );
 
-		return array(
+		return [
 			'success'  => 0 === $result['errors'],
 			'restored' => $result['restored'],
 			'errors'   => $result['errors'],
-		);
+		];
 	}
 
 	/**
@@ -481,9 +469,9 @@ class OMS_Database_Cleaner {
 	 *
 	 * @return array List of available backups.
 	 */
-	public function list_backups() {
-		$backup_ids = get_option( 'oms_cleanup_backup_ids', array() );
-		$available  = array();
+	public function list_backups(): array {
+		$backup_ids = get_option( 'oms_cleanup_backup_ids', [] );
+		$available  = [];
 
 		foreach ( $backup_ids as $backup_info ) {
 			$transient = get_transient( 'oms_cleanup_backup_' . $backup_info['id'] );
@@ -500,7 +488,7 @@ class OMS_Database_Cleaner {
 	 *
 	 * @return string Unique backup identifier.
 	 */
-	private function get_current_backup_id() {
+	private function get_current_backup_id(): string {
 		return 'cleanup_' . gmdate( 'Y-m-d-H-i-s' ) . '_' . wp_generate_password( 6, false );
 	}
 
@@ -510,7 +498,7 @@ class OMS_Database_Cleaner {
 	 * @param string $table_name Full table name.
 	 * @return bool True if allowed.
 	 */
-	private function is_allowed_table( $table_name ) {
+	private function is_allowed_table( string $table_name ): bool {
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
 		/**
@@ -532,10 +520,10 @@ class OMS_Database_Cleaner {
 	 * @param string $table_name Full table name.
 	 * @return string|false ID column name or false.
 	 */
-	private function get_id_column( $table_name ) {
+	private function get_id_column( string $table_name ): string|false {
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
-		$id_columns = array(
+		$id_columns = [
 			'posts'       => 'ID',
 			'users'       => 'ID',
 			'comments'    => 'comment_ID',
@@ -545,7 +533,7 @@ class OMS_Database_Cleaner {
 			'commentmeta' => 'meta_id',
 			'terms'       => 'term_id',
 			'links'       => 'link_id',
-		);
+		];
 
 		/**
 		 * Filter the mapping of table names to their ID columns.

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Plugin initialization class
  *
@@ -17,25 +19,23 @@ class OMS_Plugin {
 	/**
 	 * Plugin instance.
 	 *
-	 * @var OMS_Plugin
+	 * @var OMS_Plugin|null
 	 */
-	private static $instance = null;
+	private static ?OMS_Plugin $instance = null;
 
 	/**
 	 * Scanner instance.
 	 *
-	 * @var Obfuscated_Malware_Scanner
+	 * @var Obfuscated_Malware_Scanner|null
 	 */
-	private $scanner = null;
-
-
+	private ?Obfuscated_Malware_Scanner $scanner = null;
 
 	/**
 	 * Get plugin instance.
 	 *
 	 * @return OMS_Plugin Plugin instance.
 	 */
-	public static function get_instance() {
+	public static function get_instance(): OMS_Plugin {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -44,8 +44,10 @@ class OMS_Plugin {
 
 	/**
 	 * Initialize plugin.
+	 *
+	 * @return void
 	 */
-	public function init() {
+	public function init(): void {
 
 		$this->scanner = new Obfuscated_Malware_Scanner();
 
@@ -53,27 +55,31 @@ class OMS_Plugin {
 		$this->scanner->init();
 
 		// Add admin menu.
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
 	}
 
 	/**
 	 * Add admin menu.
+	 *
+	 * @return void
 	 */
-	public function add_admin_menu() {
+	public function add_admin_menu(): void {
 		add_menu_page(
 			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
 			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
 			'manage_options',
 			'obfuscated-malware-scanner',
-			array( $this, 'render_admin_page' ),
+			[ $this, 'render_admin_page' ],
 			'dashicons-shield'
 		);
 	}
 
 	/**
 	 * Render admin page.
+	 *
+	 * @return void
 	 */
-	public function render_admin_page() {
+	public function render_admin_page(): void {
 		include_once OMS_PLUGIN_DIR . 'admin/partials/oms-admin-display.php';
 	}
 
@@ -83,15 +89,16 @@ class OMS_Plugin {
 	 * Creates necessary directories, sets up options, and schedules cron jobs.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
-	public function activate() {
+	public function activate(): void {
 		// Create protected directories.
-		$directories = array(
+		$directories = [
 			'oms-logs'          => 'log',
 			'oms-quarantine'    => 'quarantine',
 			'oms-theme-backups' => 'backup',
 			'oms-db-backups'    => 'database backup',
-		);
+		];
 
 		foreach ( $directories as $dir_name => $dir_type ) {
 			$this->create_protected_directory( WP_CONTENT_DIR . '/' . $dir_name, $dir_type );
@@ -112,8 +119,9 @@ class OMS_Plugin {
 	 * @since 1.0.0
 	 * @param string $dir_path Full path to the directory.
 	 * @param string $dir_type Type of directory for error logging.
+	 * @return void
 	 */
-	private function create_protected_directory( $dir_path, $dir_type ) {
+	private function create_protected_directory( string $dir_path, string $dir_type ): void {
 		if ( file_exists( $dir_path ) ) {
 			return;
 		}
@@ -122,10 +130,10 @@ class OMS_Plugin {
 
 		$htaccess_file = $dir_path . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Required for .htaccess creation.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			$result = file_put_contents( $htaccess_file, "Order deny,allow\nDeny from all\nRequire all denied\n" );
 			if ( false === $result ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security logging required.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log( 'OMS Plugin: Failed to create .htaccess file for ' . $dir_type . ' directory: ' . esc_html( $htaccess_file ) );
 			}
 		}
@@ -135,17 +143,18 @@ class OMS_Plugin {
 	 * Initialize default plugin options.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
-	private function initialize_default_options() {
-		$default_options = array(
+	private function initialize_default_options(): void {
+		$default_options = [
 			'oms_last_scan'           => 'never',
 			'oms_files_scanned'       => 0,
 			'oms_issues_found'        => 0,
-			'oms_detected_issues'     => array(),
+			'oms_detected_issues'     => [],
 			'oms_scan_schedule'       => 'daily',
 			'oms_auto_quarantine'     => true,
 			'oms_email_notifications' => true,
-		);
+		];
 
 		foreach ( $default_options as $option_name => $default_value ) {
 			if ( false === get_option( $option_name ) ) {
@@ -160,8 +169,9 @@ class OMS_Plugin {
 	 * Cleans up scheduled events and temporary data.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
-	public function deactivate() {
+	public function deactivate(): void {
 		// Clear scheduled cron job.
 		$timestamp = wp_next_scheduled( 'oms_daily_cleanup' );
 		if ( $timestamp ) {

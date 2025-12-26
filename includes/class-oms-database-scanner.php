@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Database Scanner class for malware detection and integrity checks
  *
@@ -17,44 +19,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OMS_Database_Scanner {
 	/**
-	 * Logger instance
-	 *
-	 * @var OMS_Logger
-	 */
-	private $logger;
-
-	/**
-	 * Cache instance
-	 *
-	 * @var OMS_Cache
-	 */
-	private $cache;
-
-	/**
-	 * Database cleaner instance (for row-level operations with transactions)
-	 *
-	 * @var OMS_Database_Cleaner
-	 */
-	/**
-	 * Database instance
-	 *
-	 * @var wpdb
-	 */
-	private $wpdb;
-
-	/**
-	 * Database cleaner instance (for row-level operations with transactions)
-	 *
-	 * @var OMS_Database_Cleaner
-	 */
-	private $cleaner;
-
-	/**
 	 * Critical WordPress tables that must be checked
 	 *
-	 * @var array
+	 * @var string[]
 	 */
-	private $critical_tables = array(
+	private array $critical_tables = [
 		'options',
 		'posts',
 		'postmeta',
@@ -62,7 +31,7 @@ class OMS_Database_Scanner {
 		'usermeta',
 		'comments',
 		'commentmeta',
-	);
+	];
 
 	/**
 	 * Constructor
@@ -70,22 +39,24 @@ class OMS_Database_Scanner {
 	 * @param OMS_Logger           $logger  Logger instance.
 	 * @param OMS_Cache            $cache   Cache instance.
 	 * @param wpdb                 $wpdb    Database instance.
-	 * @param OMS_Database_Cleaner $cleaner Cleaner instance (optional).
+	 * @param OMS_Database_Cleaner|null $cleaner Cleaner instance (optional).
 	 */
-	public function __construct( OMS_Logger $logger, OMS_Cache $cache, $wpdb, ?OMS_Database_Cleaner $cleaner = null ) {
-		$this->logger  = $logger;
-		$this->cache   = $cache;
-		$this->wpdb    = $wpdb;
-		$this->cleaner = $cleaner ? $cleaner : new OMS_Database_Cleaner( $this->logger, $this->wpdb );
+	public function __construct(
+		private readonly OMS_Logger $logger,
+		private readonly OMS_Cache $cache,
+		private readonly wpdb $wpdb,
+		private ?OMS_Database_Cleaner $cleaner = null
+	) {
+		$this->cleaner = $cleaner ?: new OMS_Database_Cleaner( $this->logger, $this->wpdb );
 	}
 
 	/**
 	 * Validate and sanitize database table/column name
 	 *
-	 * @param string $identifier Table or column name to validate.
+	 * @param mixed $identifier Table or column name to validate.
 	 * @return string|false Sanitized identifier or false if invalid.
 	 */
-	private function validate_db_identifier( $identifier ) {
+	private function validate_db_identifier( mixed $identifier ): string|false {
 		if ( ! is_string( $identifier ) || empty( $identifier ) ) {
 			return false;
 		}
@@ -94,7 +65,6 @@ class OMS_Database_Scanner {
 		// Remove backticks if present (we'll add them ourselves).
 		$identifier = str_replace( '`', '', $identifier );
 
-		// Check against whitelist for table names (without prefix).
 		// Check against whitelist for table names (without prefix).
 		$table_base = str_replace( $this->wpdb->prefix, '', $identifier );
 		if ( in_array( $table_base, $this->critical_tables, true ) ) {
@@ -112,21 +82,21 @@ class OMS_Database_Scanner {
 	/**
 	 * Scan database for malicious content
 	 *
-	 * @return array Scan results with issues found.
+	 * @return array{success: bool, issues: array, total?: int, message?: string} Scan results with issues found.
 	 */
-	public function scan_database() {
+	public function scan_database(): array {
 		if ( ! $this->wpdb instanceof wpdb ) {
 			$this->logger->error( 'WordPress database object not available for database scan' );
-			return array(
+			return [
 				'success' => false,
-				'issues'  => array(),
+				'issues'  => [],
 				'message' => 'Database object not available',
-			);
+			];
 		}
 
 		$this->logger->info( 'Starting database security scan' );
 
-		$issues = array();
+		$issues = [];
 
 		try {
 			// Check database integrity.
@@ -147,7 +117,7 @@ class OMS_Database_Scanner {
 				$issues['modifications'] = $modification_issues;
 			}
 
-			$total_issues = count( $issues['integrity'] ?? array() ) + count( $issues['content'] ?? array() ) + count( $issues['modifications'] ?? array() );
+			$total_issues = count( $issues['integrity'] ?? [] ) + count( $issues['content'] ?? [] ) + count( $issues['modifications'] ?? [] );
 
 			if ( $total_issues > 0 ) {
 				$this->logger->warning( sprintf( 'Database scan found %d issue(s)', $total_issues ) );
@@ -155,18 +125,18 @@ class OMS_Database_Scanner {
 				$this->logger->info( 'Database scan completed - no issues found' );
 			}
 
-			return array(
+			return [
 				'success' => true,
 				'issues'  => $issues,
 				'total'   => $total_issues,
-			);
+			];
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Database scan failed: %s', esc_html( $e->getMessage() ) ) );
-			return array(
+			return [
 				'success' => false,
-				'issues'  => array(),
+				'issues'  => [],
 				'message' => $e->getMessage(),
-			);
+			];
 		}
 	}
 
@@ -175,8 +145,8 @@ class OMS_Database_Scanner {
 	 *
 	 * @return array Integrity issues found.
 	 */
-	private function check_database_integrity() {
-		$issues = array();
+	private function check_database_integrity(): array {
+		$issues = [];
 
 		try {
 			// Get table prefix.
@@ -187,7 +157,7 @@ class OMS_Database_Scanner {
 				$full_table_name = $prefix . $table_name;
 
 				// Check if table exists.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$table_exists = $this->wpdb->get_var(
 					$this->wpdb->prepare(
 						'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s',
@@ -197,12 +167,12 @@ class OMS_Database_Scanner {
 				);
 
 				if ( ! $table_exists ) {
-					$issues[] = array(
+					$issues[] = [
 						'type'     => 'missing_table',
 						'table'    => $full_table_name,
 						'severity' => 'CRITICAL',
 						'message'  => sprintf( 'Critical table missing: %s', esc_html( $full_table_name ) ),
-					);
+					];
 					continue;
 				}
 
@@ -220,11 +190,11 @@ class OMS_Database_Scanner {
 			}
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Database integrity check failed: %s', esc_html( $e->getMessage() ) ) );
-			$issues[] = array(
+			$issues[] = [
 				'type'     => 'check_error',
 				'severity' => 'HIGH',
 				'message'  => sprintf( 'Integrity check error: %s', esc_html( $e->getMessage() ) ),
-			);
+			];
 		}
 
 		return $issues;
@@ -236,9 +206,8 @@ class OMS_Database_Scanner {
 	 * @param string $table_name Full table name.
 	 * @return array Structure issues found.
 	 */
-	private function check_table_structure( $table_name ) {
-
-		$issues = array();
+	private function check_table_structure( string $table_name ): array {
+		$issues = [];
 
 		try {
 			// Get expected structure from WordPress core.
@@ -248,7 +217,7 @@ class OMS_Database_Scanner {
 			}
 
 			// Get actual table structure.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$actual_columns = $this->wpdb->get_results(
 				$this->wpdb->prepare(
 					'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
@@ -262,12 +231,12 @@ class OMS_Database_Scanner {
 
 			if ( ! is_array( $actual_columns ) ) {
 				$this->logger->error( sprintf( 'Query failed for table %s: %s', $table_name, $this->wpdb->last_error ) );
-				$issues[] = array(
+				$issues[] = [
 					'type'     => 'check_error',
 					'table'    => $table_name,
 					'severity' => 'HIGH',
 					'message'  => sprintf( 'Database query failed while checking structure of %s', $table_name ),
-				);
+				];
 				return $issues;
 			}
 
@@ -276,26 +245,26 @@ class OMS_Database_Scanner {
 			// Check for missing columns.
 			foreach ( $expected_structure['columns'] as $expected_column => $expected_def ) {
 				if ( ! in_array( $expected_column, $actual_column_names, true ) ) {
-					$issues[] = array(
+					$issues[] = [
 						'type'     => 'missing_column',
 						'table'    => $table_name,
 						'column'   => $expected_column,
 						'severity' => 'HIGH',
 						'message'  => sprintf( 'Missing column %s in table %s', esc_html( $expected_column ), esc_html( $table_name ) ),
-					);
+					];
 				}
 			}
 
 			// Check for unexpected columns (potential injection).
 			foreach ( $actual_column_names as $actual_column ) {
 				if ( ! isset( $expected_structure['columns'][ $actual_column ] ) ) {
-					$issues[] = array(
+					$issues[] = [
 						'type'     => 'unexpected_column',
 						'table'    => $table_name,
 						'column'   => $actual_column,
 						'severity' => 'MEDIUM',
 						'message'  => sprintf( 'Unexpected column %s in table %s', esc_html( $actual_column ), esc_html( $table_name ) ),
-					);
+					];
 				}
 			}
 		} catch ( Exception $e ) {
@@ -311,9 +280,8 @@ class OMS_Database_Scanner {
 	 * @param string $table_name Full table name.
 	 * @return array Index issues found.
 	 */
-	private function check_table_indexes( $table_name ) {
-
-		$issues = array();
+	private function check_table_indexes( string $table_name ): array {
+		$issues = [];
 
 		try {
 			// Get expected indexes from WordPress core.
@@ -323,7 +291,7 @@ class OMS_Database_Scanner {
 			}
 
 			// Get actual indexes.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database integrity check requires direct query, information_schema queries don't benefit from caching.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$actual_indexes = $this->wpdb->get_results(
 				$this->wpdb->prepare(
 					'SELECT INDEX_NAME FROM information_schema.STATISTICS
@@ -340,13 +308,13 @@ class OMS_Database_Scanner {
 			// Check for missing critical indexes.
 			foreach ( $expected_indexes as $expected_index ) {
 				if ( ! in_array( $expected_index, $actual_index_names, true ) ) {
-					$issues[] = array(
+					$issues[] = [
 						'type'     => 'missing_index',
 						'table'    => $table_name,
 						'index'    => $expected_index,
 						'severity' => 'MEDIUM',
 						'message'  => sprintf( 'Missing index %s in table %s', esc_html( $expected_index ), esc_html( $table_name ) ),
-					);
+					];
 				}
 			}
 		} catch ( Exception $e ) {
@@ -361,9 +329,8 @@ class OMS_Database_Scanner {
 	 *
 	 * @return array Content issues found.
 	 */
-	private function scan_database_content() {
-
-		$issues = array();
+	private function scan_database_content(): array {
+		$issues = [];
 
 		try {
 			// Get database patterns from config.
@@ -381,11 +348,11 @@ class OMS_Database_Scanner {
 			}
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Database content scan failed: %s', esc_html( $e->getMessage() ) ) );
-			$issues[] = array(
+			$issues[] = [
 				'type'     => 'scan_error',
 				'severity' => 'HIGH',
 				'message'  => sprintf( 'Content scan error: %s', esc_html( $e->getMessage() ) ),
-			);
+			];
 		}
 
 		return $issues;
@@ -398,13 +365,12 @@ class OMS_Database_Scanner {
 	 * @param array  $patterns Malware patterns to check.
 	 * @return array Content issues found.
 	 */
-	private function scan_table_content( $table_name, $patterns ) {
-
-		$issues = array();
+	private function scan_table_content( string $table_name, array $patterns ): array {
+		$issues = [];
 
 		try {
 			// Get all text columns from the table.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Database security scan requires direct query, information_schema queries don't benefit from caching.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$columns = $this->wpdb->get_col(
 				$this->wpdb->prepare(
 					'SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -441,9 +407,8 @@ class OMS_Database_Scanner {
 	 * @param array  $patterns Malware patterns to check.
 	 * @return array Content issues found.
 	 */
-	private function scan_column_content( $table_name, $column, $patterns ) {
-
-		$issues = array();
+	private function scan_column_content( string $table_name, string $column, array $patterns ): array {
+		$issues = [];
 
 		try {
 			// Validate table and column names.
@@ -471,10 +436,10 @@ class OMS_Database_Scanner {
 			$offset     = 0;
 
 			while ( true ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, content scanning needs current data not cached. Table and column names are validated and sanitized via validate_db_identifier().
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 				$rows = $this->wpdb->get_results(
 					$this->wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and column names are validated via validate_db_identifier().
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						'SELECT %i, %i FROM %i WHERE %i IS NOT NULL AND %i != %s LIMIT %d OFFSET %d',
 						$validated_id_column,
 						$validated_column,
@@ -488,8 +453,12 @@ class OMS_Database_Scanner {
 					ARRAY_A
 				);
 
+				if ( empty( $rows ) ) {
+					break;
+				}
+
 				foreach ( $rows as $row ) {
-					$content = isset( $row[ $validated_column ] ) ? $row[ $validated_column ] : '';
+					$content = isset( $row[ $validated_column ] ) ? (string) $row[ $validated_column ] : '';
 					if ( '' === $content ) {
 						continue;
 					}
@@ -498,11 +467,11 @@ class OMS_Database_Scanner {
 
 					// Check against patterns.
 					foreach ( $patterns as $pattern_data ) {
-						$pattern  = is_array( $pattern_data ) && isset( $pattern_data['pattern'] ) ? $pattern_data['pattern'] : $pattern_data;
+						$pattern  = is_array( $pattern_data ) && isset( $pattern_data['pattern'] ) ? $pattern_data['pattern'] : (string) $pattern_data;
 						$severity = is_array( $pattern_data ) && isset( $pattern_data['severity'] ) ? $pattern_data['severity'] : 'MEDIUM';
 
 						if ( preg_match( $pattern, $content, $matches ) ) {
-							$issues[] = array(
+							$issues[] = [
 								'type'     => 'malicious_content',
 								'table'    => $table_name,
 								'column'   => $column,
@@ -516,7 +485,7 @@ class OMS_Database_Scanner {
 									null !== $row_id ? esc_html( (string) $row_id ) : 'unknown'
 								),
 								'match'    => isset( $matches[0] ) ? substr( $matches[0], 0, 100 ) : '',
-							);
+							];
 						}
 					}
 				}
@@ -540,8 +509,8 @@ class OMS_Database_Scanner {
 	 *
 	 * @return array Modification issues found.
 	 */
-	private function check_suspicious_modifications() {
-		$issues = array();
+	private function check_suspicious_modifications(): array {
+		$issues = [];
 
 		try {
 			$prefix = $this->wpdb->prefix;
@@ -570,16 +539,16 @@ class OMS_Database_Scanner {
 	 * @param string $options_table Options table name.
 	 * @return array Suspicious options found.
 	 */
-	private function check_suspicious_options( $options_table ) {
-		$issues                  = array();
-		$suspicious_option_names = array(
+	private function check_suspicious_options( string $options_table ): array {
+		$issues                  = [];
+		$suspicious_option_names = [
 			'%eval%',
 			'%base64%',
 			'%shell%',
 			'%backdoor%',
 			'%hack%',
 			'%malware%',
-		);
+		];
 
 		try {
 			// Validate table name.
@@ -590,10 +559,10 @@ class OMS_Database_Scanner {
 			}
 
 			foreach ( $suspicious_option_names as $pattern ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, needs current data for security checks. Table name is validated and sanitized via validate_db_identifier().
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 				$options = $this->wpdb->get_results(
 					$this->wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						'SELECT option_id, option_name, option_value FROM %i WHERE option_name LIKE %s',
 						$validated_table,
 						$pattern
@@ -601,15 +570,17 @@ class OMS_Database_Scanner {
 					ARRAY_A
 				);
 
-				foreach ( $options as $option ) {
-					$issues[] = array(
-						'type'        => 'suspicious_option',
-						'table'       => $options_table,
-						'option_id'   => $option['option_id'],
-						'option_name' => $option['option_name'],
-						'severity'    => 'HIGH',
-						'message'     => sprintf( 'Suspicious option name detected: %s', esc_html( $option['option_name'] ) ),
-					);
+				if ( is_array( $options ) ) {
+					foreach ( $options as $option ) {
+						$issues[] = [
+							'type'        => 'suspicious_option',
+							'table'       => $options_table,
+							'option_id'   => $option['option_id'],
+							'option_name' => $option['option_name'],
+							'severity'    => 'HIGH',
+							'message'     => sprintf( 'Suspicious option name detected: %s', esc_html( $option['option_name'] ) ),
+						];
+					}
 				}
 			}
 		} catch ( Exception $e ) {
@@ -625,17 +596,17 @@ class OMS_Database_Scanner {
 	 * @param string $usermeta_table User meta table name.
 	 * @return array Suspicious user meta found.
 	 */
-	private function check_suspicious_usermeta( $usermeta_table ) {
-		$issues = array();
+	private function check_suspicious_usermeta( string $usermeta_table ): array {
+		$issues = [];
 
 		try {
 			// Check for suspicious meta keys.
-			$suspicious_keys = array(
+			$suspicious_keys = [
 				'%eval%',
 				'%base64%',
 				'%shell%',
 				'%backdoor%',
-			);
+			];
 
 			// Validate table name.
 			$validated_table = $this->validate_db_identifier( $usermeta_table );
@@ -645,10 +616,10 @@ class OMS_Database_Scanner {
 			}
 
 			foreach ( $suspicious_keys as $pattern ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Database security scan requires direct query, needs current data for security checks. Table name is validated and sanitized via validate_db_identifier().
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 				$meta = $this->wpdb->get_results(
 					$this->wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated via validate_db_identifier().
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						'SELECT umeta_id, user_id, meta_key FROM %i WHERE meta_key LIKE %s',
 						$validated_table,
 						$pattern
@@ -656,17 +627,19 @@ class OMS_Database_Scanner {
 					ARRAY_A
 				);
 
-				foreach ( $meta as $meta_row ) {
-					$issues[] = array(
-						'type'     => 'suspicious_usermeta',
-						'table'    => $usermeta_table,
-						'umeta_id' => $meta_row['umeta_id'],
-						'user_id'  => $meta_row['user_id'],
-						// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Security scan requires checking meta_key for suspicious patterns.
-						'meta_key' => $meta_row['meta_key'],
-						'severity' => 'HIGH',
-						'message'  => sprintf( 'Suspicious user meta key detected: %s (user: %d)', esc_html( $meta_row['meta_key'] ), $meta_row['user_id'] ),
-					);
+				if ( is_array( $meta ) ) {
+					foreach ( $meta as $meta_row ) {
+						$issues[] = [
+							'type'     => 'suspicious_usermeta',
+							'table'    => $usermeta_table,
+							'umeta_id' => $meta_row['umeta_id'],
+							'user_id'  => $meta_row['user_id'],
+							// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+							'meta_key' => $meta_row['meta_key'],
+							'severity' => 'HIGH',
+							'message'  => sprintf( 'Suspicious user meta key detected: %s (user: %d)', esc_html( $meta_row['meta_key'] ), $meta_row['user_id'] ),
+						];
+					}
 				}
 			}
 		} catch ( Exception $e ) {
@@ -682,7 +655,7 @@ class OMS_Database_Scanner {
 	 * @param string $table_name Full table name.
 	 * @return array Expected structure or empty array.
 	 */
-	private function get_expected_table_structure( $table_name ) {
+	private function get_expected_table_structure( string $table_name ): array {
 		// Cache key for structure.
 		$cache_key = 'oms_table_structure_' . $table_name;
 		$cached    = $this->cache->get( $cache_key );
@@ -691,31 +664,30 @@ class OMS_Database_Scanner {
 		}
 
 		// For now, return basic structure for common tables.
-		// In a full implementation, this would fetch from WordPress core schema.
-		$structures = array(
-			'options' => array(
-				'columns' => array(
-					'option_id'    => array( 'type' => 'bigint' ),
-					'option_name'  => array( 'type' => 'varchar' ),
-					'option_value' => array( 'type' => 'longtext' ),
-					'autoload'     => array( 'type' => 'varchar' ),
-				),
-			),
-			'posts'   => array(
-				'columns' => array(
-					'ID'           => array( 'type' => 'bigint' ),
-					'post_author'  => array( 'type' => 'bigint' ),
-					'post_content' => array( 'type' => 'longtext' ),
-					'post_title'   => array( 'type' => 'text' ),
-					'post_status'  => array( 'type' => 'varchar' ),
-				),
-			),
-		);
+		$structures = [
+			'options' => [
+				'columns' => [
+					'option_id'    => [ 'type' => 'bigint' ],
+					'option_name'  => [ 'type' => 'varchar' ],
+					'option_value' => [ 'type' => 'longtext' ],
+					'autoload'     => [ 'type' => 'varchar' ],
+				],
+			],
+			'posts'   => [
+				'columns' => [
+					'ID'           => [ 'type' => 'bigint' ],
+					'post_author'  => [ 'type' => 'bigint' ],
+					'post_content' => [ 'type' => 'longtext' ],
+					'post_title'   => [ 'type' => 'text' ],
+					'post_status'  => [ 'type' => 'varchar' ],
+				],
+			],
+		];
 
 		// Extract table name without prefix.
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
-		$structure = isset( $structures[ $table_base ] ) ? $structures[ $table_base ] : array();
+		$structure = isset( $structures[ $table_base ] ) ? $structures[ $table_base ] : [];
 
 		// Cache for 1 hour.
 		if ( ! empty( $structure ) ) {
@@ -731,7 +703,7 @@ class OMS_Database_Scanner {
 	 * @param string $table_name Full table name.
 	 * @return array Expected indexes or empty array.
 	 */
-	private function get_expected_indexes( $table_name ) {
+	private function get_expected_indexes( string $table_name ): array {
 		// Cache key for indexes.
 		$cache_key = 'oms_table_indexes_' . $table_name;
 		$cached    = $this->cache->get( $cache_key );
@@ -739,26 +711,19 @@ class OMS_Database_Scanner {
 			return $cached;
 		}
 
-		// TODO: Optionally fetch authoritative index definitions from WordPress core
-		// schema (e.g., via wp-admin/includes/schema.php or SHOW INDEX queries) in a
-		// future enhancement to reduce false positives on standard installs.
-
 		// Basic expected indexes for common tables.
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
-		$default_indexes = array(
-			'options' => array( 'PRIMARY', 'option_name' ),
-			'posts'   => array( 'PRIMARY', 'post_name', 'type_status_date', 'post_author', 'post_parent' ),
-			'users'   => array( 'PRIMARY', 'user_login', 'user_nicename', 'user_email' ),
-		);
+		$default_indexes = [
+			'options' => [ 'PRIMARY', 'option_name' ],
+			'posts'   => [ 'PRIMARY', 'post_name', 'type_status_date', 'post_author', 'post_parent' ],
+			'users'   => [ 'PRIMARY', 'user_login', 'user_nicename', 'user_email' ],
+		];
 
-		$expected = isset( $default_indexes[ $table_base ] ) ? $default_indexes[ $table_base ] : array();
+		$expected = isset( $default_indexes[ $table_base ] ) ? $default_indexes[ $table_base ] : [];
 
 		/**
 		 * Filter the expected indexes for a WordPress table.
-		 *
-		 * Allows themes and plugins to override or extend the expected indexes
-		 * to prevent false positives on customized installs.
 		 *
 		 * @since 1.0.0
 		 *
@@ -779,15 +744,14 @@ class OMS_Database_Scanner {
 	/**
 	 * Clean malicious database content
 	 *
-	 * Uses the OMS_Database_Cleaner for row-level operations with
-	 * transaction support and automatic rollback on failure.
-	 * Only the affected rows are backed up, not entire tables.
-	 *
 	 * @param array $issues Issues to clean.
 	 * @return array Cleanup results.
 	 */
-	public function clean_database_content( $issues ) {
-		return $this->cleaner->clean_issues( $issues );
+	public function clean_database_content( array $issues ): array {
+		if ( $this->cleaner ) {
+			return $this->cleaner->clean_issues( $issues );
+		}
+		return [ 'success' => false, 'message' => 'Cleaner not initialized' ];
 	}
 
 	/**
@@ -796,8 +760,11 @@ class OMS_Database_Scanner {
 	 * @param string $backup_id Backup ID to restore from.
 	 * @return array Restore results.
 	 */
-	public function restore_cleaned_rows( $backup_id ) {
-		return $this->cleaner->restore_from_backup( $backup_id );
+	public function restore_cleaned_rows( string $backup_id ): array {
+		if ( $this->cleaner ) {
+			return $this->cleaner->restore_from_backup( $backup_id );
+		}
+		return [ 'success' => false, 'message' => 'Cleaner not initialized' ];
 	}
 
 	/**
@@ -805,94 +772,30 @@ class OMS_Database_Scanner {
 	 *
 	 * @return array List of available backups with metadata.
 	 */
-	public function list_cleanup_backups() {
-		return $this->cleaner->list_backups();
+	public function list_cleanup_backups(): array {
+		if ( $this->cleaner ) {
+			return $this->cleaner->list_backups();
+		}
+		return [];
 	}
 
 	/**
-	 * Get the primary key column name for a table
+	 * Helper to get ID column name
 	 *
-	 * @param string $table_name Full table name.
-	 * @return string|false ID column name, or false if unable to determine.
+	 * @param string $table_name Table Name.
+	 * @return string|false ID column.
 	 */
-	private function get_id_column_name( $table_name ) {
-		global $wpdb;
-
-		// Strip prefix to identify table type.
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
-
-		// Known WordPress core table mappings.
-		switch ( $table_base ) {
-			case 'posts':
-				return 'ID';
-			case 'users':
-				return 'ID';
-			case 'comments':
-				return 'comment_ID';
-			case 'options':
-				return 'option_id';
-			case 'postmeta':
-				return 'meta_id';
-			case 'usermeta':
-				return 'umeta_id';
-			case 'commentmeta':
-				return 'meta_id';
-			case 'terms':
-				return 'term_id';
-			case 'term_taxonomy':
-				return 'term_taxonomy_id';
-			case 'links':
-				return 'link_id';
-		}
-
-		// Fallback: query information_schema to discover columns.
-		$db_name = defined( 'DB_NAME' ) ? DB_NAME : '';
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- ID column discovery requires direct query, schema queries don't benefit from caching.
-		$columns = $wpdb->get_col(
-			$wpdb->prepare(
-				'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION',
-				$db_name,
-				$table_name
-			)
-		);
-
-		// Check if query failed or returned empty results.
-		if ( ! is_array( $columns ) || empty( $columns ) ) {
-			$this->logger->error(
-				sprintf(
-					'ID column resolver failed for table %s (DB: %s): information_schema query returned no columns',
-					esc_html( $table_name ),
-					esc_html( $db_name )
-				)
-			);
-			return false;
-		}
-
-		// Check for common ID column names.
-		$common_id_names = array( 'ID', 'id', 'Id', $table_base . '_id', $table_base . '_ID' );
-		foreach ( $common_id_names as $id_name ) {
-			if ( in_array( $id_name, $columns, true ) ) {
-				$this->logger->debug(
-					sprintf(
-						'ID column resolver for table %s: found common ID column "%s"',
-						esc_html( $table_name ),
-						esc_html( $id_name )
-					)
-				);
-				return $id_name;
-			}
-		}
-
-		// Fall back to first column (typically the primary key).
-		$first_column = $columns[0];
-		$this->logger->debug(
-			sprintf(
-				'ID column resolver for table %s: using first column "%s" as fallback (no common ID column found)',
-				esc_html( $table_name ),
-				esc_html( $first_column )
-			)
-		);
-		return $first_column;
+	private function get_id_column_name( string $table_name ): string|false {
+		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
+		$id_columns = [
+			'posts'       => 'ID',
+			'users'       => 'ID',
+			'comments'    => 'comment_ID',
+			'options'     => 'option_id',
+			'postmeta'    => 'meta_id',
+			'usermeta'    => 'umeta_id',
+			'commentmeta' => 'meta_id',
+		];
+		return $id_columns[ $table_base ] ?? false;
 	}
 }

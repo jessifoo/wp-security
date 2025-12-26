@@ -19,30 +19,50 @@ class OMS_Database_ScannerTest extends TestCase {
 	private $wpdb;
 	private $cleaner;
 
-	protected function setUp(): void {
+	public function setUp(): void {
 		parent::setUp();
 		$this->setup_wordpress_mocks();
 
-		// Setup mock wpdb
-		global $wpdb;
-		$wpdb       = new wpdb( 'user', 'pass', 'db', 'host' );
-		$this->wpdb = $wpdb;
+		// Mock wpdb using PHPUnit builder
+		$this->wpdb = $this->getMockBuilder( wpdb::class )
+			->setConstructorArgs( array( 'user', 'pass', 'db', 'host' ) )
+			->onlyMethods( array( 'get_results', 'get_var', 'get_col', 'prepare' ) )
+			->getMock();
+
+		// Simple prepare mock
+		$this->wpdb->method( 'prepare' )->willReturnCallback( function( $query, ...$args ) {
+			$query = str_replace( array( '%s', '%i' ), array( "'%s'", '%s' ), $query );
+			return vsprintf( $query, $args );
+		} );
+
+		// Smart get_results
+		$this->wpdb->method( 'get_results' )->willReturnCallback( function( $query ) {
+			// Structure or content queries - return empty to pass checks safely or simulate no malware
+			return [];
+		} );
+
+		// Smart get_var (table existence)
+		$this->wpdb->method( 'get_var' )->willReturn( 1 ); // Always exists
+
+		// Smart get_col (columns)
+		$this->wpdb->method( 'get_col' )->willReturn( ['test_column'] ); // Always one column
 
 		// Mock Logger and Cache
-		$this->logger = $this->createMock( OMS_Logger::class );
-		$this->cache  = $this->createMock( OMS_Cache::class );
-		$this->cleaner = $this->createMock( OMS_Database_Cleaner::class );
+		$this->logger       = $this->createMock( OMS_Logger::class );
+		$this->cache        = $this->createMock( OMS_Cache::class );
+		$this->cleaner      = $this->createMock( OMS_Database_Cleaner::class );
+
+		// scanner needs the mock
 		$this->scanner = new OMS_Database_Scanner( $this->logger, $this->cache, $this->wpdb, $this->cleaner );
 	}
 
-	protected function tearDown(): void {
+	public function tearDown(): void {
 		$this->teardown_wordpress_mocks();
 		parent::tearDown();
 	}
 
 	public function testScanDatabaseIntegrity() {
-		// Mock table existence check
-		$this->wpdb->results = array( 1 ); // Table exists
+		// Mock is handled in setUp via callback
 
 		$result = $this->scanner->scan_database();
 
@@ -55,7 +75,6 @@ class OMS_Database_ScannerTest extends TestCase {
 		$this->cleaner->method( 'clean_issues' )
 			->willReturn( array( 'success' => true, 'cleaned' => 1 ) );
 
-		// Mock issues
 		$issues = array(
 			array(
 				'type'     => 'malicious_content',
@@ -65,9 +84,6 @@ class OMS_Database_ScannerTest extends TestCase {
 				'severity' => 'CRITICAL',
 			),
 		);
-
-		// Mock wpdb query for deletion
-		// We expect a DELETE query
 
 		$result = $this->scanner->clean_database_content( $issues );
 

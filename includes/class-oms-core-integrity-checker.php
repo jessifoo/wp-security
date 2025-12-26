@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Core Integrity Checker
  *
@@ -18,46 +20,37 @@ class OMS_Core_Integrity_Checker {
 	/**
 	 * WordPress API URL for checksums.
 	 */
-	const API_URL = 'https://api.wordpress.org/core/checksums/1.0/';
-
-	/**
-	 * Logger instance.
-	 *
-	 * @var OMS_Logger
-	 */
-	private $logger;
+	public const string API_URL = 'https://api.wordpress.org/core/checksums/1.0/';
 
 	/**
 	 * Constructor.
 	 *
 	 * @param OMS_Logger $logger Logger instance.
 	 */
-	public function __construct( OMS_Logger $logger ) {
-		$this->logger = $logger;
-	}
+	public function __construct( private readonly OMS_Logger $logger ) {}
 
 	/**
 	 * Verify core files against official checksums.
 	 *
-	 * @return array Array of verification results ('safe' => [], 'modified' => [], 'missing' => []).
+	 * @return array{safe: string[], modified: string[], missing: string[], error?: string} Verfication results.
 	 */
-	public function verify_core_files() {
+	public function verify_core_files(): array {
 		$checksums = $this->fetch_checksums();
 		if ( false === $checksums ) {
 			$this->logger->error( 'Failed to fetch WordPress core checksums.' );
-			return array(
-				'safe'     => array(),
-				'modified' => array(),
-				'missing'  => array(),
+			return [
+				'safe'     => [],
+				'modified' => [],
+				'missing'  => [],
 				'error'    => 'Failed to fetch checksums',
-			);
+			];
 		}
 
-		$results = array(
-			'safe'     => array(),
-			'modified' => array(),
-			'missing'  => array(),
-		);
+		$results = [
+			'safe'     => [],
+			'modified' => [],
+			'missing'  => [],
+		];
 
 		foreach ( $checksums as $file => $checksum ) {
 			$full_path = ABSPATH . $file;
@@ -83,20 +76,20 @@ class OMS_Core_Integrity_Checker {
 	/**
 	 * Fetch checksums from WordPress API.
 	 *
-	 * @return array|bool Array of checksums or false on failure.
+	 * @return array|false Array of checksums or false on failure.
 	 */
-	private function fetch_checksums() {
+	private function fetch_checksums(): array|false {
 		global $wp_version;
 
 		$url = add_query_arg(
-			array(
+			[
 				'version' => $wp_version,
 				'locale'  => get_locale(),
-			),
+			],
 			self::API_URL
 		);
 
-		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
+		$response = wp_remote_get( $url, [ 'timeout' => 10 ] );
 
 		if ( is_wp_error( $response ) ) {
 			// @phpstan-ignore-next-line
@@ -128,7 +121,7 @@ class OMS_Core_Integrity_Checker {
 	 * @param array  $safe_files Array of safe relative paths from verify_core_files().
 	 * @return bool True if file is a verified core file.
 	 */
-	public function is_verified_core_file( $path, $safe_files ) {
+	public function is_verified_core_file( string $path, array $safe_files ): bool {
 		$relative_path = str_replace( ABSPATH, '', $path );
 		// Normalize slashes.
 		$relative_path = str_replace( '\\', '/', $relative_path );

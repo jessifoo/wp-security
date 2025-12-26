@@ -20,7 +20,7 @@
         <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
         <exclude-pattern>includes/class-oms-scanner.php</exclude-pattern>
         <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
-        <exclude-pattern>includes/class-file-security-policy.php</exclude-pattern>
+		<exclude-pattern>includes/class-oms-file-security-policy.php</exclude-pattern>
     </rule>
     <!-- Allow development functions only in scanner/logger -->
     <rule ref="WordPress.PHP.DevelopmentFunctions">

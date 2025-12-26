@@ -57,7 +57,12 @@ trait WordPressMocksTrait {
 		}
 
 		// Define global variables for mocks
-		global $wp_verify_nonce_mock, $wp_check_filetype_mock;
+		global $wp_verify_nonce_mock, $wp_check_filetype_mock, $wpdb;
+
+		if ( ! isset( $wpdb ) ) {
+			$wpdb = new wpdb( 'user', 'pass', 'db', 'host' );
+		}
+
 		$wp_verify_nonce_mock   = true;
 		$wp_check_filetype_mock = array(
 			'type' => 'text/plain',

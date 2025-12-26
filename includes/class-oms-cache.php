@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Cache handler for malware scanner
  *
@@ -19,24 +21,25 @@ class OMS_Cache {
 	 *
 	 * @var array
 	 */
-	private $cache = array();
+	private array $cache = [];
 
 	/**
 	 * Cache timestamps array.
 	 *
 	 * @var array
 	 */
-	private $cache_times = array();
+	private array $cache_times = [];
 
 	/**
 	 * Get cached value.
 	 *
 	 * @param string $key Cache key.
-	 * @return mixed|null Cached value or null if not found.
+	 * @return mixed Cached value or null if not found.
 	 */
-	public function get( $key ) {
+	public function get( string $key ): mixed {
+		// Use cast to int for timestamp comparison.
 		if ( isset( $this->cache[ $key ] ) &&
-			( time() - $this->cache_times[ $key ] ) < OMS_Config::CACHE_CONFIG['ttl'] ) {
+			( time() - (int) ( $this->cache_times[ $key ] ?? 0 ) ) < (int) OMS_Config::CACHE_CONFIG['ttl'] ) {
 			return $this->cache[ $key ];
 		}
 		return null;
@@ -47,17 +50,19 @@ class OMS_Cache {
 	 *
 	 * @param string $key Cache key.
 	 * @param mixed  $value Value to cache.
-	 * @param int    $ttl Time to live in seconds (optional, for compatibility, currently unused).
+	 * @param int|null $ttl Time to live in seconds (optional).
 	 * @return void
 	 */
-	public function set( $key, $value, ?int $ttl = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- TTL parameter for future use and API compatibility.
+	public function set( string $key, mixed $value, ?int $ttl = null ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		// Maintain cache size limit.
-		if ( count( $this->cache ) >= OMS_Config::CACHE_CONFIG['max_size'] ) {
+		if ( count( $this->cache ) >= (int) OMS_Config::CACHE_CONFIG['max_size'] ) {
 			// Remove oldest cache entry.
 			asort( $this->cache_times );
-			$oldest_key = key( $this->cache_times );
-			unset( $this->cache[ $oldest_key ] );
-			unset( $this->cache_times[ $oldest_key ] );
+			$oldest_key = array_key_first( $this->cache_times );
+			if ( null !== $oldest_key ) {
+				unset( $this->cache[ $oldest_key ] );
+				unset( $this->cache_times[ $oldest_key ] );
+			}
 		}
 
 		$this->cache[ $key ]       = $value;
@@ -69,8 +74,8 @@ class OMS_Cache {
 	 *
 	 * @return void
 	 */
-	public function clear() {
-		$this->cache       = array();
-		$this->cache_times = array();
+	public function clear(): void {
+		$this->cache       = [];
+		$this->cache_times = [];
 	}
 }
