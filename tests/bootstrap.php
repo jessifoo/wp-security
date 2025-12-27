@@ -9,6 +9,8 @@
 // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- Required for large test suites.
 ini_set( 'memory_limit', '512M' );
 
+define( 'OMS_TEST_MODE', true );
+
 // Composer autoloader must be loaded before WP_PHPUNIT__DIR will be available
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
@@ -51,17 +53,20 @@ foreach ( $dirs as $dir ) {
 require_once __DIR__ . '/wp-functions-mock.php';
 
 // Include plugin classes
-// Include plugin classes
 require_once __DIR__ . '/../includes/class-oms-exception.php';
+require_once __DIR__ . '/../includes/class-oms-error-handler.php';
 require_once __DIR__ . '/../includes/class-oms-utils.php';
 require_once __DIR__ . '/../includes/class-oms-config.php';
 require_once __DIR__ . '/../includes/class-oms-logger.php';
 require_once __DIR__ . '/../includes/class-oms-cache.php';
 require_once __DIR__ . '/../includes/class-oms-rate-limiter.php';
-require_once __DIR__ . '/../includes/class-oms-database-backup.php';
+require_once __DIR__ . '/../includes/class-oms-filesystem.php';
+require_once __DIR__ . '/../includes/class-oms-database-cleaner.php';
 require_once __DIR__ . '/../includes/class-oms-database-scanner.php';
 require_once __DIR__ . '/../includes/class-oms-core-integrity-checker.php';
 require_once __DIR__ . '/../includes/class-oms-quarantine-manager.php';
 require_once __DIR__ . '/../includes/class-oms-api.php';
-require_once __DIR__ . '/../includes/class-file-security-policy.php';
+require_once __DIR__ . '/../includes/class-oms-plugin.php';
+require_once __DIR__ . '/../includes/class-oms-file-security-policy.php';
+require_once __DIR__ . '/../admin/class-oms-admin.php';
 require_once __DIR__ . '/../includes/class-obfuscated-malware-scanner.php';

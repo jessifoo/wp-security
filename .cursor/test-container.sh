@@ -66,7 +66,7 @@ echo "Test 5: hooks.json Check" | tee -a "$LOG_FILE"
 if [ -f "$CURSOR_DIR/hooks.json" ]; then
     echo "✓ hooks.json found" | tee -a "$LOG_FILE"
     if command -v jq &> /dev/null; then
-        HOOK_COMMAND=$(jq -r '.hooks.SessionStart[0].hooks[0].command // "not set"' "$CURSOR_DIR/hooks.json")
+        HOOK_COMMAND=$(jq -r '.hooks.beforeSubmitPrompt[0].hooks[0].command // "not set"' "$CURSOR_DIR/hooks.json")
         echo "  SessionStart command: $HOOK_COMMAND" | tee -a "$LOG_FILE"
     fi
 else
@@ -103,7 +103,7 @@ fi
 if [ "$BUILD_SUCCESS" = true ]; then
     echo "" | tee -a "$LOG_FILE"
     echo "Test 8: Container Run Test" | tee -a "$LOG_FILE"
-    
+
     # Test if container can access workspace
     CONTAINER_OUTPUT=$(docker run --rm -v "$PROJECT_ROOT:/workspace" cursor-test-wp-security:test bash -c "
         echo 'Container workspace test:'
@@ -114,9 +114,9 @@ if [ "$BUILD_SUCCESS" = true ]; then
         echo '  session-start.sh exists: '\$([ -f /workspace/.cursor/session-start.sh ] && echo 'yes' || echo 'no')
         ls -la /workspace/.cursor/ 2>&1 | head -10
     " 2>&1)
-    
+
     echo "$CONTAINER_OUTPUT" | tee -a "$LOG_FILE"
-    
+
     if echo "$CONTAINER_OUTPUT" | grep -q "hooks.json exists: yes"; then
         echo "✓ Container can access hooks.json" | tee -a "$LOG_FILE"
     else
@@ -147,4 +147,3 @@ if [ "$BUILD_SUCCESS" = true ]; then
 fi
 
 echo "Diagnostic complete. Check $LOG_FILE for details."
-

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * OMS Exception Class
  *
@@ -44,7 +46,7 @@ class OMS_Exception extends Exception {
 	 *
 	 * @return string String representation of exception.
 	 */
-	public function __toString() {
+	public function __toString(): string {
 		return __CLASS__ . ': [' . esc_html( (string) $this->code ) . ']: ' . esc_html( $this->message ) . "\n";
 	}
 
@@ -53,7 +55,7 @@ class OMS_Exception extends Exception {
 	 *
 	 * @return string Exception message.
 	 */
-	public function get_message() {
+	public function get_message(): string {
 		return $this->message;
 	}
 
@@ -62,7 +64,7 @@ class OMS_Exception extends Exception {
 	 *
 	 * @return int Exception code.
 	 */
-	public function get_code() {
-		return $this->code;
+	public function get_code(): int {
+		return (int) $this->code;
 	}
 }

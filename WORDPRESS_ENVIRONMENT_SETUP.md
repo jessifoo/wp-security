@@ -98,7 +98,7 @@ DEBUG=1 DB_NAME=test_db DB_USER=test_user DB_PASS=test_pass ./setup-wordpress.sh
 
 1. **Installs Dependencies**
    - MariaDB server and client
-   - PHP 8.2 MySQL extensions
+   - PHP 8.4 MySQL extensions
    - Enables required PHP modules
 
 2. **Starts MariaDB**

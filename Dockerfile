@@ -17,24 +17,24 @@ RUN apt-get update && \
 RUN add-apt-repository -y ppa:ondrej/php && \
     apt-get update
 
-# Install PHP 8.2 and required extensions (matching composer.json requirement)
+# Install PHP 8.4 and required extensions (matching composer.json requirement)
 RUN apt-get install -y \
-    php8.2 \
-    php8.2-cli \
-    php8.2-common \
-    php8.2-mbstring \
-    php8.2-xml \
-    php8.2-curl \
-    php8.2-zip \
-    php8.2-gd \
-    php8.2-mysql \
-    php8.2-mysqli \
-    php8.2-sqlite3 \
+    php8.4 \
+    php8.4-cli \
+    php8.4-common \
+    php8.4-mbstring \
+    php8.4-xml \
+    php8.4-curl \
+    php8.4-zip \
+    php8.4-gd \
+    php8.4-mysql \
+    php8.4-mysqli \
+    php8.4-sqlite3 \
     mariadb-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Set PHP as default
-RUN update-alternatives --set php /usr/bin/php8.2
+RUN update-alternatives --set php /usr/bin/php8.4
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php && \

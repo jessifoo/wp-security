@@ -6,7 +6,7 @@ require_once __DIR__ . '/../WordPressMocksTrait.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-oms-utils.php';
 require_once __DIR__ . '/../mocks/class-oms-security-exception.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-oms-filesystem.php';
-require_once dirname( __DIR__, 2 ) . '/includes/class-file-security-policy.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-oms-file-security-policy.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-oms-config.php';
 
 /**
