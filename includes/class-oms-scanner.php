@@ -1,4 +1,4 @@
-```php
+<?php
 declare(strict_types=1);
 
 /**
@@ -24,7 +24,7 @@ class OMS_Scanner {
 	 *
 	 * @var array<string>
 	 */
-	private array $compiled_patterns = [];
+	private array $compiled_patterns = array();
 
 	/**
 	 * Constructor
@@ -36,6 +36,8 @@ class OMS_Scanner {
 	public function __construct(
 		private readonly OMS_Logger $logger,
 		private readonly OMS_Rate_Limiter $rate_limiter,
+		// phpcs:ignore Generic.Commenting -- PHPStan directive.
+		/** @phpstan-ignore property.onlyWritten */
 		private readonly OMS_Cache $cache
 	) {
 		$this->compiled_patterns = $this->compile_patterns();
@@ -47,14 +49,14 @@ class OMS_Scanner {
 	 * @return array<string> Array of compiled patterns
 	 */
 	private function compile_patterns(): array {
-		$patterns = [];
+		$patterns = array();
 
 		// Compile standard patterns.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
 			if ( @preg_match( '#' . $pattern . '#i', '' ) !== false ) {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
-				$this->logger->log( 'Invalid pattern: ' . $pattern, 'error', 'scanner' );
+				$this->logger->error( 'Invalid pattern: ' . $pattern );
 			}
 		}
 
@@ -64,7 +66,7 @@ class OMS_Scanner {
 			if ( @preg_match( '#' . $pattern . '#i', '' ) !== false ) {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
-				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern, 'error', 'scanner' );
+				$this->logger->error( 'Invalid obfuscation pattern: ' . $pattern );
 			}
 		}
 
@@ -132,21 +134,21 @@ class OMS_Scanner {
 	 */
 	public function contains_malware( string $path ): bool {
 		if ( ! is_readable( $path ) ) {
-			throw new OMS_Exception( 'File is not readable: ' . $path );
+			throw new OMS_Exception( 'File is not readable: ' . esc_html( $path ) );
 		}
 
 		// Quick check for obvious binary files.
 		$finfo = new finfo( FILEINFO_MIME_TYPE );
 		$mime  = $finfo->file( $path );
 
-		if ( strpos( $mime, 'text/' ) === false && $mime !== 'application/x-php' && $mime !== 'application/json' ) {
+		if ( false === strpos( $mime, 'text/' ) && 'application/x-php' !== $mime && 'application/json' !== $mime ) {
 			// Skip likely binary files unless explicitly PHP.
 			return false;
 		}
 
 		$filesize = filesize( $path );
 		if ( $filesize > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
-			$this->logger->log( 'File too large to scan: ' . $path, 'warning', 'scanner' );
+			$this->logger->warning( 'File too large to scan: ' . $path );
 			return false;
 		}
 
@@ -166,7 +168,7 @@ class OMS_Scanner {
 	private function scan_file_chunks( string $path, int $chunk_size ): bool {
 		$handle = fopen( $path, 'rb' );
 		if ( false === $handle ) {
-			throw new OMS_Exception( 'Could not open file: ' . $path );
+			throw new OMS_Exception( 'Could not open file: ' . esc_html( $path ) );
 		}
 
 		$position     = 0;
@@ -205,7 +207,7 @@ class OMS_Scanner {
 	 * Apply rate limiting with configurable threshold
 	 */
 	private function apply_rate_limiting(): void {
-		if ( $this->rate_limiter->should_limit() ) {
+		if ( $this->rate_limiter->should_throttle() ) {
 			usleep( (int) ( OMS_Config::SCAN_CONFIG['batch_pause'] * 1000 ) );
 		}
 	}
@@ -231,26 +233,24 @@ class OMS_Scanner {
 	/**
 	 * Log pattern match with context
 	 *
-	 * @param array<array-key, mixed>  $matches Pattern matches.
-	 * @param string $path File path.
-	 * @param string $pattern_name Name of matched pattern.
-	 * @param int    $position Current position in file.
-	 * @param string $content File content.
+	 * @param array<array-key, mixed> $matches Pattern matches.
+	 * @param string                  $path File path.
+	 * @param string                  $pattern_name Name of matched pattern.
+	 * @param int                     $position Current position in file.
+	 * @param string                  $content File content.
 	 */
 	private function log_pattern_match( array $matches, string $path, string $pattern_name, int $position, string $content ): void {
 		$match_pos = $matches[0][1];
 		$context   = $this->extract_match_context( $content, $match_pos );
 
-		$this->logger->log(
+		$this->logger->error(
 			sprintf(
 				'Malware pattern detected in %s at position %d. Pattern: %s. Context: %s',
 				$path,
 				$position + $match_pos,
 				$pattern_name,
 				$context
-			),
-			'critical',
-			'scanner'
+			)
 		);
 	}
 
@@ -262,7 +262,7 @@ class OMS_Scanner {
 	 * @return string Context around match.
 	 */
 	private function extract_match_context( string $content, int $match_pos ): string {
-		$start = max( 0, $match_pos - 50 );
+		$start  = max( 0, $match_pos - 50 );
 		$length = min( strlen( $content ) - $start, 100 );
 		return substr( $content, $start, $length );
 	}
@@ -302,7 +302,7 @@ class OMS_Scanner {
 		if ( $file->getSize() === 0 && ! in_array( $file->getFilename(), OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
 			// Check if it's a critical file that shouldn't be empty.
 			if ( in_array( $file->getFilename(), OMS_Config::CRITICAL_FILES, true ) ) {
-				$this->logger->log( 'Critical file is zero bytes: ' . $path, 'critical', 'scanner' );
+				$this->logger->error( 'Critical file is zero bytes: ' . $path );
 				return true;
 			}
 		}
@@ -321,7 +321,7 @@ class OMS_Scanner {
 
 		// World writable?
 		if ( ( $perms & 0x0002 ) ) { // 0002 is world writable bit (S_IWOTH).
-			$this->logger->log( 'File is world writable: ' . $path, 'warning', 'scanner' );
+			$this->logger->warning( 'File is world writable: ' . $path );
 			return true;
 		}
 
@@ -337,19 +337,17 @@ class OMS_Scanner {
 	 */
 	private function check_modification_time( string $path, SplFileInfo $file ): bool {
 		$mtime = $file->getMTime();
-		$hour  = (int) date( 'G', $mtime );
+		$hour  = (int) gmdate( 'G', $mtime );
 
 		// Check night hours.
 		$night_start = OMS_Config::SUSPICIOUS_TIMES['night_hours'][0];
 		$night_end   = OMS_Config::SUSPICIOUS_TIMES['night_hours'][1];
 
 		if ( $hour >= $night_start && $hour <= $night_end ) {
-			// This alone isn't critical, but worth logging if verbose.
-			// $this->logger->log('File modified during night hours: ' . $path, 'info', 'scanner');
+			// This alone isn't critical, but worth logging if verbose mode is enabled.
 			return false;
 		}
 
 		return false;
 	}
 }
-```

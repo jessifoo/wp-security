@@ -22,7 +22,7 @@ class OMS_File_Security_Policy {
 	 *
 	 * @var string[]
 	 */
-	private array $forbidden_extensions = [
+	private array $forbidden_extensions = array(
 		// PHP variants.
 		'php',
 		'phtml',
@@ -64,53 +64,53 @@ class OMS_File_Security_Policy {
 		'tar',
 		'gz',
 		'7z',
-	];
+	);
 
 	/**
 	 * Paths that should never contain executable files
 	 *
 	 * @var string[]
 	 */
-	private array $restricted_paths = [
+	private array $restricted_paths = array(
 		'wp-admin',
 		'wp-includes',
 		'wp-config.php',
-	];
+	);
 
 	/**
 	 * List of protected theme paths
 	 *
 	 * @var string[]
 	 */
-	private array $protected_theme_paths = [
+	private array $protected_theme_paths = array(
 		'wp-content/themes/astra',
 		'wp-content/plugins/elementor',
-	];
+	);
 
 	/**
 	 * Suspicious file permissions
 	 *
 	 * @var array<string, int>
 	 */
-	private array $suspicious_perms = [
+	private array $suspicious_perms = array(
 		'executable' => 0111,  // Any execute permission.
-	];
+	);
 
 	/**
 	 * Suspicious modification times
 	 *
 	 * @var array<string, int[]>
 	 */
-	private array $suspicious_times = [
-		'night_hours' => [ 0, 4 ],  // Suspicious between midnight and 4 AM.
-	];
+	private array $suspicious_times = array(
+		'night_hours' => array( 0, 4 ),  // Suspicious between midnight and 4 AM.
+	);
 
 	/**
 	 * Protected paths that should never be modified
 	 *
 	 * @var string[]
 	 */
-	private array $protected_paths = [
+	private array $protected_paths = array(
 		// Elementor.
 		'wp-content/plugins/elementor',
 		'wp-content/plugins/elementor-pro',
@@ -120,18 +120,18 @@ class OMS_File_Security_Policy {
 		// WordPress Core.
 		'wp-includes',
 		'wp-admin',
-	];
+	);
 
 	/**
 	 * Known good file patterns (e.g., minified files)
 	 *
 	 * @var string[]
 	 */
-	private array $known_good_patterns = [
+	private array $known_good_patterns = array(
 		'/\.min\.(js|css)$/',  // Minified assets.
 		'/elementor.*\.js$/',  // Elementor scripts.
 		'/astra.*\.js$/',      // Astra scripts.
-	];
+	);
 
 	/**
 	 * Constructor.
@@ -148,7 +148,7 @@ class OMS_File_Security_Policy {
 	 * @return array{valid: bool, reason?: string} Validation result.
 	 * @throws OMS_Security_Exception If validation fails critically.
 	 */
-	public function validate_file( string $path, array $options = [] ): array {
+	public function validate_file( string $path, array $options = array() ): array {
 		try {
 			// Verify nonce if provided.
 			if ( isset( $options['nonce'] ) && ! wp_verify_nonce( (string) $options['nonce'], 'oms_file_validation' ) ) {
@@ -186,10 +186,10 @@ class OMS_File_Security_Policy {
 			}
 
 			// All checks passed.
-			return [
+			return array(
 				'valid'  => true,
 				'reason' => 'File passed all security checks',
-			];
+			);
 
 		} catch ( Exception $e ) {
 			throw new OMS_Security_Exception( 'File validation failed: ' . esc_html( $e->getMessage() ) );
@@ -209,13 +209,13 @@ class OMS_File_Security_Policy {
 		}
 
 		if ( ! is_file( $path ) ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'Not a regular file',
-			];
+			);
 		}
 
-		return [ 'valid' => true ];
+		return array( 'valid' => true );
 	}
 
 	/**
@@ -229,41 +229,41 @@ class OMS_File_Security_Policy {
 		if ( 0 === filesize( $path ) ) {
 			$filename = basename( $path );
 			if ( ! in_array( $filename, OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
-				return [
+				return array(
 					'valid'  => false,
 					'reason' => 'Zero byte file not in allowlist',
-				];
+				);
 			}
 		}
 
 		// Check for random filenames.
 		if ( $this->is_random_filename( basename( $path ) ) ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'Suspicious random filename detected',
-			];
+			);
 		}
 
 		// Use WordPress file type verification.
 		$file_type = wp_check_filetype( basename( $path ) );
 		// phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
 		if ( ! $file_type['type'] ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'Invalid file type',
-			];
+			);
 		}
 
 		// Check file extension.
 		$ext = ( is_string( $file_type['ext'] ) ) ? strtolower( $file_type['ext'] ) : '';
 		if ( ! empty( $ext ) && in_array( $ext, $this->forbidden_extensions, true ) ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'Forbidden file extension',
-			];
+			);
 		}
 
-		return [ 'valid' => true ];
+		return array( 'valid' => true );
 	}
 
 	/**
@@ -278,14 +278,14 @@ class OMS_File_Security_Policy {
 		// Check if file is in a restricted path.
 		foreach ( $this->restricted_paths as $restricted_path ) {
 			if ( 0 === strpos( $relative_path, $restricted_path ) ) {
-				return [
+				return array(
 					'valid'  => false,
 					'reason' => 'File in restricted path',
-				];
+				);
 			}
 		}
 
-		return [ 'valid' => true ];
+		return array( 'valid' => true );
 	}
 
 	/**
@@ -308,27 +308,19 @@ class OMS_File_Security_Policy {
 
 		// Perform content checks.
 		$content_check = $this->filesystem->check_file_content( $path );
-		// Check if strict types are satisfied.
-		if ( ! is_array( $content_check ) ) {
-			return [
-				'valid'  => false,
-				'reason' => 'File content check returned invalid type',
-			];
-		}
 
 		if ( ! $content_check['safe'] ) {
 			// If it's a theme file, we need to be more careful.
 			if ( $is_theme_file ) {
 				return $this->handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path );
 			}
-			$reason = $content_check['reason'] ?? 'File content validation failed';
-			return [
+			return array(
 				'valid'  => false,
-				'reason' => $reason,
-			];
+				'reason' => $content_check['reason'],
+			);
 		}
 
-		return [ 'valid' => true ];
+		return array( 'valid' => true );
 	}
 
 	/**
@@ -341,18 +333,18 @@ class OMS_File_Security_Policy {
 		// Check permissions using WordPress functions.
 		$stat = stat( $path );
 		if ( false === $stat ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'Unable to check file permissions',
-			];
+			);
 		}
 
 		$perms = $stat['mode'] & 0777;
 		if ( $perms & $this->suspicious_perms['executable'] ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'File has executable permissions',
-			];
+			);
 		}
 
 		// Check modification time.
@@ -369,16 +361,16 @@ class OMS_File_Security_Policy {
 			}
 
 			if ( ! $is_theme_file ) {
-				return [
+				return array(
 					'valid'  => false,
 					'reason' => 'File modified during suspicious hours',
-				];
+				);
 			}
 			// For theme files, just log the suspicious modification.
 			error_log( 'Theme file modified during suspicious hours: ' . esc_html( $path ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
-		return [ 'valid' => true ];
+		return array( 'valid' => true );
 	}
 
 	/**
@@ -506,19 +498,19 @@ class OMS_File_Security_Policy {
 	private function handle_theme_file_with_suspicious_content( string $path, array $content_check, string $relative_path ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		// Check if file matches known-good patterns.
 		if ( $this->is_known_good_file( $path ) ) {
-			return [
+			return array(
 				'valid'  => true,
 				'reason' => 'Theme file matches known-good pattern - safe',
-			];
+			);
 		}
 
 		// Read file content for detailed analysis.
 		$file_content = file_get_contents( $path );
 		if ( false === $file_content ) {
-			return [
+			return array(
 				'valid'  => false,
 				'reason' => 'Cannot read theme file for analysis',
-			];
+			);
 		}
 
 		// Create backup and check severity.
@@ -534,10 +526,10 @@ class OMS_File_Security_Policy {
 		// Low-severity - monitor and allow.
 		$this->log_suspicious_theme_file( $path, $backup_path, $backup_created, $content_check, 'low' );
 
-		return [
+		return array(
 			'valid'  => true,
 			'reason' => 'Theme file with suspicious content - monitoring (backup created)',
-		];
+		);
 	}
 
 	/**
@@ -547,14 +539,14 @@ class OMS_File_Security_Policy {
 	 * @return bool True if high-severity patterns found.
 	 */
 	private function has_high_severity_patterns( string $file_content ): bool {
-		$high_severity_patterns = [
+		$high_severity_patterns = array(
 			'eval\s*\(',
 			'base64_decode\s*\(',
 			'exec\s*\(',
 			'system\s*\(',
 			'shell_exec\s*\(',
 			'passthru\s*\(',
-		];
+		);
 
 		foreach ( $high_severity_patterns as $pattern ) {
 			if ( preg_match( '/' . $pattern . '/i', $file_content ) ) {
@@ -622,10 +614,10 @@ class OMS_File_Security_Policy {
 	private function handle_high_severity_theme_file( string $path, string|false $backup_path, bool $backup_created, array $content_check ): array {
 		$this->log_suspicious_theme_file( $path, $backup_path, $backup_created, $content_check, 'high' );
 
-		return [
+		return array(
 			'valid'  => false,
 			'reason' => 'High-severity malware detected in theme file',
-		];
+		);
 	}
 
 	/**

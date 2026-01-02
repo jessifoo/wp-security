@@ -21,7 +21,7 @@ class OMS_Rate_Limiter {
 	 *
 	 * @var array
 	 */
-	private array $last_request_time = [];
+	private array $last_request_time = array();
 
 	/**
 	 * Constructor

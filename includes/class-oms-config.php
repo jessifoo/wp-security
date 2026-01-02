@@ -20,24 +20,24 @@ class OMS_Config {
 	/**
 	 * Malware pattern severity levels.
 	 */
-	public const array SEVERITY_LEVELS = [
+	public const array SEVERITY_LEVELS = array(
 		'CRITICAL' => 5,  // Immediate action required.
 		'HIGH'     => 4,  // Likely malicious.
 		'MEDIUM'   => 3,  // Suspicious, needs context.
 		'LOW'      => 2,  // Potentially suspicious.
 		'INFO'     => 1,  // Informational only.
-	];
+	);
 
 	/**
 	 * Advanced obfuscation detection patterns.
 	 */
-	public const array OBFUSCATION_PATTERNS = [
+	public const array OBFUSCATION_PATTERNS = array(
 		// Variable function calls.
-		[
+		array(
 			'pattern'     => '\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s*=\s*[\'"](?:eval|assert|base64_decode|gzinflate|str_rot13|gzuncompress|strrev|substr|chr|ord|include|require|file|curl|wget|system)[\'"];\s*\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s*\(',
 			'severity'    => 'CRITICAL',
 			'description' => 'Variable function call obfuscation detected.',
-		],
+		),
 
 		// String splitting/concatenation.
 		array(
@@ -96,12 +96,12 @@ class OMS_Config {
 		),
 
 		// Common upload directory exploits.
-		[
+		array(
 			'pattern'     => 'wp-content\/uploads\/[^\'"]+\.php',
 			'severity'    => 'HIGH',
 			'description' => 'PHP file in uploads directory detected.',
-		],
-	];
+		),
+	);
 
 	/**
 	 * File categories and how to handle them.
