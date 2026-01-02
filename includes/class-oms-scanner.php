@@ -1,4 +1,4 @@
-```php
+<?php
 declare(strict_types=1);
 
 /**
@@ -24,7 +24,7 @@ class OMS_Scanner {
 	 *
 	 * @var array<string>
 	 */
-	private array $compiled_patterns = [];
+	private array $compiled_patterns = array();
 
 	/**
 	 * Constructor
@@ -47,7 +47,7 @@ class OMS_Scanner {
 	 * @return array<string> Array of compiled patterns
 	 */
 	private function compile_patterns(): array {
-		$patterns = [];
+		$patterns = array();
 
 		// Compile standard patterns.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
@@ -231,11 +231,11 @@ class OMS_Scanner {
 	/**
 	 * Log pattern match with context
 	 *
-	 * @param array<array-key, mixed>  $matches Pattern matches.
-	 * @param string $path File path.
-	 * @param string $pattern_name Name of matched pattern.
-	 * @param int    $position Current position in file.
-	 * @param string $content File content.
+	 * @param array<array-key, mixed> $matches Pattern matches.
+	 * @param string                  $path File path.
+	 * @param string                  $pattern_name Name of matched pattern.
+	 * @param int                     $position Current position in file.
+	 * @param string                  $content File content.
 	 */
 	private function log_pattern_match( array $matches, string $path, string $pattern_name, int $position, string $content ): void {
 		$match_pos = $matches[0][1];
@@ -262,7 +262,7 @@ class OMS_Scanner {
 	 * @return string Context around match.
 	 */
 	private function extract_match_context( string $content, int $match_pos ): string {
-		$start = max( 0, $match_pos - 50 );
+		$start  = max( 0, $match_pos - 50 );
 		$length = min( strlen( $content ) - $start, 100 );
 		return substr( $content, $start, $length );
 	}
@@ -352,4 +352,3 @@ class OMS_Scanner {
 		return false;
 	}
 }
-```

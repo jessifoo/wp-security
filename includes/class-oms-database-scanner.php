@@ -23,7 +23,7 @@ class OMS_Database_Scanner {
 	 *
 	 * @var string[]
 	 */
-	private array $critical_tables = [
+	private array $critical_tables = array(
 		'options',
 		'posts',
 		'postmeta',
@@ -31,14 +31,14 @@ class OMS_Database_Scanner {
 		'usermeta',
 		'comments',
 		'commentmeta',
-	];
+	);
 
 	/**
 	 * Constructor
 	 *
-	 * @param OMS_Logger           $logger  Logger instance.
-	 * @param OMS_Cache            $cache   Cache instance.
-	 * @param wpdb                 $wpdb    Database instance.
+	 * @param OMS_Logger                $logger  Logger instance.
+	 * @param OMS_Cache                 $cache   Cache instance.
+	 * @param wpdb                      $wpdb    Database instance.
 	 * @param OMS_Database_Cleaner|null $cleaner Cleaner instance (optional).
 	 */
 	public function __construct(
@@ -87,16 +87,16 @@ class OMS_Database_Scanner {
 	public function scan_database(): array {
 		if ( ! $this->wpdb instanceof wpdb ) {
 			$this->logger->error( 'WordPress database object not available for database scan' );
-			return [
+			return array(
 				'success' => false,
-				'issues'  => [],
+				'issues'  => array(),
 				'message' => 'Database object not available',
-			];
+			);
 		}
 
 		$this->logger->info( 'Starting database security scan' );
 
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Check database integrity.
@@ -117,7 +117,7 @@ class OMS_Database_Scanner {
 				$issues['modifications'] = $modification_issues;
 			}
 
-			$total_issues = count( $issues['integrity'] ?? [] ) + count( $issues['content'] ?? [] ) + count( $issues['modifications'] ?? [] );
+			$total_issues = count( $issues['integrity'] ?? array() ) + count( $issues['content'] ?? array() ) + count( $issues['modifications'] ?? array() );
 
 			if ( $total_issues > 0 ) {
 				$this->logger->warning( sprintf( 'Database scan found %d issue(s)', $total_issues ) );
@@ -125,18 +125,18 @@ class OMS_Database_Scanner {
 				$this->logger->info( 'Database scan completed - no issues found' );
 			}
 
-			return [
+			return array(
 				'success' => true,
 				'issues'  => $issues,
 				'total'   => $total_issues,
-			];
+			);
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Database scan failed: %s', esc_html( $e->getMessage() ) ) );
-			return [
+			return array(
 				'success' => false,
-				'issues'  => [],
+				'issues'  => array(),
 				'message' => $e->getMessage(),
-			];
+			);
 		}
 	}
 
@@ -146,7 +146,7 @@ class OMS_Database_Scanner {
 	 * @return array Integrity issues found.
 	 */
 	private function check_database_integrity(): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Get table prefix.
@@ -167,12 +167,12 @@ class OMS_Database_Scanner {
 				);
 
 				if ( ! $table_exists ) {
-					$issues[] = [
+					$issues[] = array(
 						'type'     => 'missing_table',
 						'table'    => $full_table_name,
 						'severity' => 'CRITICAL',
 						'message'  => sprintf( 'Critical table missing: %s', esc_html( $full_table_name ) ),
-					];
+					);
 					continue;
 				}
 
@@ -190,11 +190,11 @@ class OMS_Database_Scanner {
 			}
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Database integrity check failed: %s', esc_html( $e->getMessage() ) ) );
-			$issues[] = [
+			$issues[] = array(
 				'type'     => 'check_error',
 				'severity' => 'HIGH',
 				'message'  => sprintf( 'Integrity check error: %s', esc_html( $e->getMessage() ) ),
-			];
+			);
 		}
 
 		return $issues;
@@ -207,7 +207,7 @@ class OMS_Database_Scanner {
 	 * @return array Structure issues found.
 	 */
 	private function check_table_structure( string $table_name ): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Get expected structure from WordPress core.
@@ -231,12 +231,12 @@ class OMS_Database_Scanner {
 
 			if ( ! is_array( $actual_columns ) ) {
 				$this->logger->error( sprintf( 'Query failed for table %s: %s', $table_name, $this->wpdb->last_error ) );
-				$issues[] = [
+				$issues[] = array(
 					'type'     => 'check_error',
 					'table'    => $table_name,
 					'severity' => 'HIGH',
 					'message'  => sprintf( 'Database query failed while checking structure of %s', $table_name ),
-				];
+				);
 				return $issues;
 			}
 
@@ -245,26 +245,26 @@ class OMS_Database_Scanner {
 			// Check for missing columns.
 			foreach ( $expected_structure['columns'] as $expected_column => $expected_def ) {
 				if ( ! in_array( $expected_column, $actual_column_names, true ) ) {
-					$issues[] = [
+					$issues[] = array(
 						'type'     => 'missing_column',
 						'table'    => $table_name,
 						'column'   => $expected_column,
 						'severity' => 'HIGH',
 						'message'  => sprintf( 'Missing column %s in table %s', esc_html( $expected_column ), esc_html( $table_name ) ),
-					];
+					);
 				}
 			}
 
 			// Check for unexpected columns (potential injection).
 			foreach ( $actual_column_names as $actual_column ) {
 				if ( ! isset( $expected_structure['columns'][ $actual_column ] ) ) {
-					$issues[] = [
+					$issues[] = array(
 						'type'     => 'unexpected_column',
 						'table'    => $table_name,
 						'column'   => $actual_column,
 						'severity' => 'MEDIUM',
 						'message'  => sprintf( 'Unexpected column %s in table %s', esc_html( $actual_column ), esc_html( $table_name ) ),
-					];
+					);
 				}
 			}
 		} catch ( Exception $e ) {
@@ -281,7 +281,7 @@ class OMS_Database_Scanner {
 	 * @return array Index issues found.
 	 */
 	private function check_table_indexes( string $table_name ): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Get expected indexes from WordPress core.
@@ -308,13 +308,13 @@ class OMS_Database_Scanner {
 			// Check for missing critical indexes.
 			foreach ( $expected_indexes as $expected_index ) {
 				if ( ! in_array( $expected_index, $actual_index_names, true ) ) {
-					$issues[] = [
+					$issues[] = array(
 						'type'     => 'missing_index',
 						'table'    => $table_name,
 						'index'    => $expected_index,
 						'severity' => 'MEDIUM',
 						'message'  => sprintf( 'Missing index %s in table %s', esc_html( $expected_index ), esc_html( $table_name ) ),
-					];
+					);
 				}
 			}
 		} catch ( Exception $e ) {
@@ -330,7 +330,7 @@ class OMS_Database_Scanner {
 	 * @return array Content issues found.
 	 */
 	private function scan_database_content(): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Get database patterns from config.
@@ -348,11 +348,11 @@ class OMS_Database_Scanner {
 			}
 		} catch ( Exception $e ) {
 			$this->logger->error( sprintf( 'Database content scan failed: %s', esc_html( $e->getMessage() ) ) );
-			$issues[] = [
+			$issues[] = array(
 				'type'     => 'scan_error',
 				'severity' => 'HIGH',
 				'message'  => sprintf( 'Content scan error: %s', esc_html( $e->getMessage() ) ),
-			];
+			);
 		}
 
 		return $issues;
@@ -366,7 +366,7 @@ class OMS_Database_Scanner {
 	 * @return array Content issues found.
 	 */
 	private function scan_table_content( string $table_name, array $patterns ): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Get all text columns from the table.
@@ -408,7 +408,7 @@ class OMS_Database_Scanner {
 	 * @return array Content issues found.
 	 */
 	private function scan_column_content( string $table_name, string $column, array $patterns ): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Validate table and column names.
@@ -471,7 +471,7 @@ class OMS_Database_Scanner {
 						$severity = is_array( $pattern_data ) && isset( $pattern_data['severity'] ) ? $pattern_data['severity'] : 'MEDIUM';
 
 						if ( preg_match( $pattern, $content, $matches ) ) {
-							$issues[] = [
+							$issues[] = array(
 								'type'     => 'malicious_content',
 								'table'    => $table_name,
 								'column'   => $column,
@@ -485,7 +485,7 @@ class OMS_Database_Scanner {
 									null !== $row_id ? esc_html( (string) $row_id ) : 'unknown'
 								),
 								'match'    => isset( $matches[0] ) ? substr( $matches[0], 0, 100 ) : '',
-							];
+							);
 						}
 					}
 				}
@@ -510,7 +510,7 @@ class OMS_Database_Scanner {
 	 * @return array Modification issues found.
 	 */
 	private function check_suspicious_modifications(): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			$prefix = $this->wpdb->prefix;
@@ -540,15 +540,15 @@ class OMS_Database_Scanner {
 	 * @return array Suspicious options found.
 	 */
 	private function check_suspicious_options( string $options_table ): array {
-		$issues                  = [];
-		$suspicious_option_names = [
+		$issues                  = array();
+		$suspicious_option_names = array(
 			'%eval%',
 			'%base64%',
 			'%shell%',
 			'%backdoor%',
 			'%hack%',
 			'%malware%',
-		];
+		);
 
 		try {
 			// Validate table name.
@@ -572,14 +572,14 @@ class OMS_Database_Scanner {
 
 				if ( is_array( $options ) ) {
 					foreach ( $options as $option ) {
-						$issues[] = [
+						$issues[] = array(
 							'type'        => 'suspicious_option',
 							'table'       => $options_table,
 							'option_id'   => $option['option_id'],
 							'option_name' => $option['option_name'],
 							'severity'    => 'HIGH',
 							'message'     => sprintf( 'Suspicious option name detected: %s', esc_html( $option['option_name'] ) ),
-						];
+						);
 					}
 				}
 			}
@@ -597,16 +597,16 @@ class OMS_Database_Scanner {
 	 * @return array Suspicious user meta found.
 	 */
 	private function check_suspicious_usermeta( string $usermeta_table ): array {
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Check for suspicious meta keys.
-			$suspicious_keys = [
+			$suspicious_keys = array(
 				'%eval%',
 				'%base64%',
 				'%shell%',
 				'%backdoor%',
-			];
+			);
 
 			// Validate table name.
 			$validated_table = $this->validate_db_identifier( $usermeta_table );
@@ -629,7 +629,7 @@ class OMS_Database_Scanner {
 
 				if ( is_array( $meta ) ) {
 					foreach ( $meta as $meta_row ) {
-						$issues[] = [
+						$issues[] = array(
 							'type'     => 'suspicious_usermeta',
 							'table'    => $usermeta_table,
 							'umeta_id' => $meta_row['umeta_id'],
@@ -638,7 +638,7 @@ class OMS_Database_Scanner {
 							'meta_key' => $meta_row['meta_key'],
 							'severity' => 'HIGH',
 							'message'  => sprintf( 'Suspicious user meta key detected: %s (user: %d)', esc_html( $meta_row['meta_key'] ), $meta_row['user_id'] ),
-						];
+						);
 					}
 				}
 			}
@@ -664,30 +664,30 @@ class OMS_Database_Scanner {
 		}
 
 		// For now, return basic structure for common tables.
-		$structures = [
-			'options' => [
-				'columns' => [
-					'option_id'    => [ 'type' => 'bigint' ],
-					'option_name'  => [ 'type' => 'varchar' ],
-					'option_value' => [ 'type' => 'longtext' ],
-					'autoload'     => [ 'type' => 'varchar' ],
-				],
-			],
-			'posts'   => [
-				'columns' => [
-					'ID'           => [ 'type' => 'bigint' ],
-					'post_author'  => [ 'type' => 'bigint' ],
-					'post_content' => [ 'type' => 'longtext' ],
-					'post_title'   => [ 'type' => 'text' ],
-					'post_status'  => [ 'type' => 'varchar' ],
-				],
-			],
-		];
+		$structures = array(
+			'options' => array(
+				'columns' => array(
+					'option_id'    => array( 'type' => 'bigint' ),
+					'option_name'  => array( 'type' => 'varchar' ),
+					'option_value' => array( 'type' => 'longtext' ),
+					'autoload'     => array( 'type' => 'varchar' ),
+				),
+			),
+			'posts'   => array(
+				'columns' => array(
+					'ID'           => array( 'type' => 'bigint' ),
+					'post_author'  => array( 'type' => 'bigint' ),
+					'post_content' => array( 'type' => 'longtext' ),
+					'post_title'   => array( 'type' => 'text' ),
+					'post_status'  => array( 'type' => 'varchar' ),
+				),
+			),
+		);
 
 		// Extract table name without prefix.
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
-		$structure = isset( $structures[ $table_base ] ) ? $structures[ $table_base ] : [];
+		$structure = isset( $structures[ $table_base ] ) ? $structures[ $table_base ] : array();
 
 		// Cache for 1 hour.
 		if ( ! empty( $structure ) ) {
@@ -714,13 +714,13 @@ class OMS_Database_Scanner {
 		// Basic expected indexes for common tables.
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
 
-		$default_indexes = [
-			'options' => [ 'PRIMARY', 'option_name' ],
-			'posts'   => [ 'PRIMARY', 'post_name', 'type_status_date', 'post_author', 'post_parent' ],
-			'users'   => [ 'PRIMARY', 'user_login', 'user_nicename', 'user_email' ],
-		];
+		$default_indexes = array(
+			'options' => array( 'PRIMARY', 'option_name' ),
+			'posts'   => array( 'PRIMARY', 'post_name', 'type_status_date', 'post_author', 'post_parent' ),
+			'users'   => array( 'PRIMARY', 'user_login', 'user_nicename', 'user_email' ),
+		);
 
-		$expected = isset( $default_indexes[ $table_base ] ) ? $default_indexes[ $table_base ] : [];
+		$expected = isset( $default_indexes[ $table_base ] ) ? $default_indexes[ $table_base ] : array();
 
 		/**
 		 * Filter the expected indexes for a WordPress table.
@@ -751,7 +751,10 @@ class OMS_Database_Scanner {
 		if ( $this->cleaner ) {
 			return $this->cleaner->clean_issues( $issues );
 		}
-		return [ 'success' => false, 'message' => 'Cleaner not initialized' ];
+		return array(
+			'success' => false,
+			'message' => 'Cleaner not initialized',
+		);
 	}
 
 	/**
@@ -764,7 +767,10 @@ class OMS_Database_Scanner {
 		if ( $this->cleaner ) {
 			return $this->cleaner->restore_from_backup( $backup_id );
 		}
-		return [ 'success' => false, 'message' => 'Cleaner not initialized' ];
+		return array(
+			'success' => false,
+			'message' => 'Cleaner not initialized',
+		);
 	}
 
 	/**
@@ -776,7 +782,7 @@ class OMS_Database_Scanner {
 		if ( $this->cleaner ) {
 			return $this->cleaner->list_backups();
 		}
-		return [];
+		return array();
 	}
 
 	/**
@@ -787,7 +793,7 @@ class OMS_Database_Scanner {
 	 */
 	private function get_id_column_name( string $table_name ): string|false {
 		$table_base = str_replace( $this->wpdb->prefix, '', $table_name );
-		$id_columns = [
+		$id_columns = array(
 			'posts'       => 'ID',
 			'users'       => 'ID',
 			'comments'    => 'comment_ID',
@@ -795,7 +801,7 @@ class OMS_Database_Scanner {
 			'postmeta'    => 'meta_id',
 			'usermeta'    => 'umeta_id',
 			'commentmeta' => 'meta_id',
-		];
+		);
 		return $id_columns[ $table_base ] ?? false;
 	}
 }

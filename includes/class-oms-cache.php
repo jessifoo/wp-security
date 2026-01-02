@@ -21,14 +21,14 @@ class OMS_Cache {
 	 *
 	 * @var array
 	 */
-	private array $cache = [];
+	private array $cache = array();
 
 	/**
 	 * Cache timestamps array.
 	 *
 	 * @var array
 	 */
-	private array $cache_times = [];
+	private array $cache_times = array();
 
 	/**
 	 * Get cached value.
@@ -48,8 +48,8 @@ class OMS_Cache {
 	/**
 	 * Set cache value.
 	 *
-	 * @param string $key Cache key.
-	 * @param mixed  $value Value to cache.
+	 * @param string   $key Cache key.
+	 * @param mixed    $value Value to cache.
 	 * @param int|null $ttl Time to live in seconds (optional).
 	 * @return void
 	 */
@@ -75,7 +75,7 @@ class OMS_Cache {
 	 * @return void
 	 */
 	public function clear(): void {
-		$this->cache       = [];
-		$this->cache_times = [];
+		$this->cache       = array();
+		$this->cache_times = array();
 	}
 }

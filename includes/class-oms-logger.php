@@ -38,7 +38,7 @@ class OMS_Logger {
 	 *
 	 * @var array
 	 */
-	private array $memory_logs = [];
+	private array $memory_logs = array();
 
 	/**
 	 * Constructor
@@ -136,7 +136,7 @@ class OMS_Logger {
 	 * @return string Validated log level.
 	 */
 	private function validate_log_level( string $level ): string {
-		$valid_levels = [ 'debug', 'info', 'warning', 'error', 'critical' ];
+		$valid_levels = array( 'debug', 'info', 'warning', 'error', 'critical' );
 		$level        = strtolower( $level );
 
 		return in_array( $level, $valid_levels, true ) ? $level : 'info';
@@ -186,7 +186,7 @@ class OMS_Logger {
 	 */
 	private function log_to_wp_error_log( string $log_message, string $level ): void {
 		$should_log   = defined( 'WP_DEBUG' ) && WP_DEBUG;
-		$is_important = in_array( $level, [ 'warning', 'error', 'critical' ], true );
+		$is_important = in_array( $level, array( 'warning', 'error', 'critical' ), true );
 
 		if ( $should_log && $is_important ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log

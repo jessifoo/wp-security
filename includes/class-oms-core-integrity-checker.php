@@ -38,19 +38,19 @@ class OMS_Core_Integrity_Checker {
 		$checksums = $this->fetch_checksums();
 		if ( false === $checksums ) {
 			$this->logger->error( 'Failed to fetch WordPress core checksums.' );
-			return [
-				'safe'     => [],
-				'modified' => [],
-				'missing'  => [],
+			return array(
+				'safe'     => array(),
+				'modified' => array(),
+				'missing'  => array(),
 				'error'    => 'Failed to fetch checksums',
-			];
+			);
 		}
 
-		$results = [
-			'safe'     => [],
-			'modified' => [],
-			'missing'  => [],
-		];
+		$results = array(
+			'safe'     => array(),
+			'modified' => array(),
+			'missing'  => array(),
+		);
 
 		foreach ( $checksums as $file => $checksum ) {
 			$full_path = ABSPATH . $file;
@@ -82,14 +82,14 @@ class OMS_Core_Integrity_Checker {
 		global $wp_version;
 
 		$url = add_query_arg(
-			[
+			array(
 				'version' => $wp_version,
 				'locale'  => get_locale(),
-			],
+			),
 			self::API_URL
 		);
 
-		$response = wp_remote_get( $url, [ 'timeout' => 10 ] );
+		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
 
 		if ( is_wp_error( $response ) ) {
 			// @phpstan-ignore-next-line
