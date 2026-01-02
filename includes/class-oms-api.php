@@ -195,6 +195,7 @@ class OMS_API {
 	public function get_report(): WP_REST_Response {
 		$logs = array();
 
+		// @phpstan-ignore-next-line Method exists check for test mode.
 		if ( defined( 'OMS_TEST_MODE' ) && OMS_TEST_MODE && method_exists( $this->logger, 'get_memory_logs' ) ) {
 			$logs = $this->logger->get_memory_logs();
 		} else {

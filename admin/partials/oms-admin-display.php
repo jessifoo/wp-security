@@ -17,8 +17,9 @@
 			<h3><?php esc_html_e( 'Scanner Status', 'obfuscated-malware-scanner' ); ?></h3>
 			<div class="oms-status">
 				<?php
+				// Get scanner from container - never instantiate directly.
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables use abbreviated prefix 'oms_' for readability.
-				$oms_scanner = new Obfuscated_Malware_Scanner();
+				$oms_scanner = OMS_Container::get( Obfuscated_Malware_Scanner::class );
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template variables use abbreviated prefix 'oms_' for readability.
 				$oms_scanner_status = $oms_scanner->get_status();
 				echo '<p><strong>' . esc_html__( 'Last Scan:', 'obfuscated-malware-scanner' ) . '</strong> ' .

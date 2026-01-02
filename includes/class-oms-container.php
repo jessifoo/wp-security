@@ -178,7 +178,7 @@ final class OMS_Container {
 			);
 		}
 
-		$instance = self::$factories[ $class_name ]();
+		$instance                       = self::$factories[ $class_name ]();
 		self::$instances[ $class_name ] = $instance;
 
 		return $instance;

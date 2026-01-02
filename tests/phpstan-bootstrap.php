@@ -19,5 +19,5 @@ if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
 // Include WordPress stubs if not already loaded (handled by extension usually)
 // require_once __DIR__ . '/../vendor/php-stubs/wordpress-stubs/wordpress-stubs.php';
 
-// Include the main plugin file to load classes
+// Include the main plugin file to load classes.
 require_once dirname( __DIR__ ) . '/obfuscated-malware-scanner.php';

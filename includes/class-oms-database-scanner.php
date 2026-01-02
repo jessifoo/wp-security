@@ -85,6 +85,7 @@ class OMS_Database_Scanner {
 	 * @return array{success: bool, issues: array, total?: int, message?: string} Scan results with issues found.
 	 */
 	public function scan_database(): array {
+		// @phpstan-ignore-next-line Runtime safety check for mock environments.
 		if ( ! $this->wpdb instanceof wpdb ) {
 			$this->logger->error( 'WordPress database object not available for database scan' );
 			return array(

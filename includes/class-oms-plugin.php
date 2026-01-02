@@ -2,7 +2,10 @@
 declare(strict_types=1);
 
 /**
- * Plugin initialization class
+ * Plugin lifecycle management.
+ *
+ * Handles activation, deactivation, and installation logic.
+ * This is a static utility class - no state is needed.
  *
  * @package ObfuscatedMalwareScanner
  */
@@ -13,86 +16,116 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Plugin initialization class.
+ * Plugin lifecycle handler.
+ *
+ * Static methods for activation, deactivation, and uninstall.
+ * Following WordPress best practices for lifecycle hooks.
  */
-class OMS_Plugin {
-	/**
-	 * Plugin instance.
-	 *
-	 * @var OMS_Plugin|null
-	 */
-	private static ?OMS_Plugin $instance = null;
+final class OMS_Plugin {
 
 	/**
-	 * Scanner instance.
-	 *
-	 * @var Obfuscated_Malware_Scanner|null
+	 * Prevent instantiation.
 	 */
-	private ?Obfuscated_Malware_Scanner $scanner = null;
-
-	/**
-	 * Get plugin instance.
-	 *
-	 * @return OMS_Plugin Plugin instance.
-	 */
-	public static function get_instance(): OMS_Plugin {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
-
-	/**
-	 * Initialize plugin.
-	 *
-	 * @return void
-	 */
-	public function init(): void {
-
-		$this->scanner = new Obfuscated_Malware_Scanner();
-
-		// Initialize scanner.
-		$this->scanner->init();
-
-		// Add admin menu.
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
-	}
-
-	/**
-	 * Add admin menu.
-	 *
-	 * @return void
-	 */
-	public function add_admin_menu(): void {
-		add_menu_page(
-			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
-			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
-			'manage_options',
-			'obfuscated-malware-scanner',
-			array( $this, 'render_admin_page' ),
-			'dashicons-shield'
-		);
-	}
-
-	/**
-	 * Render admin page.
-	 *
-	 * @return void
-	 */
-	public function render_admin_page(): void {
-		include_once OMS_PLUGIN_DIR . 'admin/partials/oms-admin-display.php';
-	}
+	private function __construct() {}
 
 	/**
 	 * Plugin activation handler.
 	 *
-	 * Creates necessary directories, sets up options, and schedules cron jobs.
+	 * Called from register_activation_hook() callback.
+	 * Creates directories, schedules cron, sets default options.
 	 *
-	 * @since 1.0.0
 	 * @return void
 	 */
-	public function activate(): void {
+	public static function activate(): void {
+		// Verify minimum requirements.
+		self::check_requirements();
+
 		// Create protected directories.
+		self::create_protected_directories();
+
+		// Schedule cron job for daily cleanup.
+		if ( ! wp_next_scheduled( 'oms_daily_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'oms_daily_cleanup' );
+		}
+
+		// Initialize options with default values.
+		self::initialize_default_options();
+
+		// Flush rewrite rules for REST API.
+		flush_rewrite_rules();
+	}
+
+	/**
+	 * Plugin deactivation handler.
+	 *
+	 * Called from register_deactivation_hook() callback.
+	 * Cleans up scheduled events and temporary data.
+	 *
+	 * @return void
+	 */
+	public static function deactivate(): void {
+		// Clear scheduled cron job.
+		$timestamp = wp_next_scheduled( 'oms_daily_cleanup' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'oms_daily_cleanup' );
+		}
+
+		// Clear all OMS scheduled events.
+		wp_clear_scheduled_hook( 'oms_daily_cleanup' );
+
+		// Clear transient cache.
+		delete_transient( 'oms_core_checksums' );
+	}
+
+	/**
+	 * Check minimum requirements.
+	 *
+	 * @throws RuntimeException If requirements not met.
+	 * @return void
+	 */
+	private static function check_requirements(): void {
+		$php_version = '8.4';
+		$wp_version  = '6.5';
+
+		// @phpstan-ignore-next-line Runtime check for environments with older PHP.
+		if ( version_compare( PHP_VERSION, $php_version, '<' ) ) {
+			deactivate_plugins( plugin_basename( OMS_PLUGIN_FILE ) );
+			wp_die(
+				esc_html(
+					sprintf(
+						/* translators: %s: Required PHP version */
+						__( 'Obfuscated Malware Scanner requires PHP %s or higher.', 'obfuscated-malware-scanner' ),
+						$php_version
+					)
+				),
+				'Plugin Activation Error',
+				array( 'back_link' => true )
+			);
+		}
+
+		global $wp_version;
+		if ( version_compare( $wp_version, $wp_version, '<' ) ) {
+			deactivate_plugins( plugin_basename( OMS_PLUGIN_FILE ) );
+			wp_die(
+				esc_html(
+					sprintf(
+						/* translators: %s: Required WordPress version */
+						__( 'Obfuscated Malware Scanner requires WordPress %s or higher.', 'obfuscated-malware-scanner' ),
+						$wp_version
+					)
+				),
+				'Plugin Activation Error',
+				array( 'back_link' => true )
+			);
+		}
+	}
+
+	/**
+	 * Create protected directories with .htaccess files.
+	 *
+	 * @return void
+	 */
+	private static function create_protected_directories(): void {
 		$directories = array(
 			'oms-logs'          => 'log',
 			'oms-quarantine'    => 'quarantine',
@@ -101,27 +134,19 @@ class OMS_Plugin {
 		);
 
 		foreach ( $directories as $dir_name => $dir_type ) {
-			$this->create_protected_directory( WP_CONTENT_DIR . '/' . $dir_name, $dir_type );
+			$dir_path = WP_CONTENT_DIR . '/' . $dir_name;
+			self::create_protected_directory( $dir_path, $dir_type );
 		}
-
-		// Schedule cron job for daily cleanup.
-		if ( ! wp_next_scheduled( 'oms_daily_cleanup' ) ) {
-			wp_schedule_event( time(), 'daily', 'oms_daily_cleanup' );
-		}
-
-		// Initialize options with default values.
-		$this->initialize_default_options();
 	}
 
 	/**
 	 * Create a protected directory with .htaccess file.
 	 *
-	 * @since 1.0.0
 	 * @param string $dir_path Full path to the directory.
 	 * @param string $dir_type Type of directory for error logging.
 	 * @return void
 	 */
-	private function create_protected_directory( string $dir_path, string $dir_type ): void {
+	private static function create_protected_directory( string $dir_path, string $dir_type ): void {
 		if ( file_exists( $dir_path ) ) {
 			return;
 		}
@@ -130,22 +155,46 @@ class OMS_Plugin {
 
 		$htaccess_file = $dir_path . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
+			// Create .htaccess that works with both Apache and Apache 2.4+.
+			$htaccess_content = <<<'HTACCESS'
+# Deny direct access to files in this directory
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order deny,allow
+  Deny from all
+</IfModule>
+HTACCESS;
+
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-			$result = file_put_contents( $htaccess_file, "Order deny,allow\nDeny from all\nRequire all denied\n" );
+			$result = file_put_contents( $htaccess_file, $htaccess_content );
 			if ( false === $result ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'OMS Plugin: Failed to create .htaccess file for ' . $dir_type . ' directory: ' . esc_html( $htaccess_file ) );
+				error_log(
+					sprintf(
+						'OMS Plugin: Failed to create .htaccess file for %s directory: %s',
+						$dir_type,
+						esc_html( $htaccess_file )
+					)
+				);
 			}
+		}
+
+		// Also create index.php to prevent directory listing.
+		$index_file = $dir_path . '/index.php';
+		if ( ! file_exists( $index_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
 		}
 	}
 
 	/**
 	 * Initialize default plugin options.
 	 *
-	 * @since 1.0.0
 	 * @return void
 	 */
-	private function initialize_default_options(): void {
+	private static function initialize_default_options(): void {
 		$default_options = array(
 			'oms_last_scan'           => 'never',
 			'oms_files_scanned'       => 0,
@@ -154,28 +203,13 @@ class OMS_Plugin {
 			'oms_scan_schedule'       => 'daily',
 			'oms_auto_quarantine'     => true,
 			'oms_email_notifications' => true,
+			'oms_version'             => OMS_VERSION,
 		);
 
 		foreach ( $default_options as $option_name => $default_value ) {
 			if ( false === get_option( $option_name ) ) {
 				add_option( $option_name, $default_value );
 			}
-		}
-	}
-
-	/**
-	 * Plugin deactivation handler.
-	 *
-	 * Cleans up scheduled events and temporary data.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public function deactivate(): void {
-		// Clear scheduled cron job.
-		$timestamp = wp_next_scheduled( 'oms_daily_cleanup' );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'oms_daily_cleanup' );
 		}
 	}
 }

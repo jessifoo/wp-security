@@ -308,23 +308,15 @@ class OMS_File_Security_Policy {
 
 		// Perform content checks.
 		$content_check = $this->filesystem->check_file_content( $path );
-		// Check if strict types are satisfied.
-		if ( ! is_array( $content_check ) ) {
-			return array(
-				'valid'  => false,
-				'reason' => 'File content check returned invalid type',
-			);
-		}
 
 		if ( ! $content_check['safe'] ) {
 			// If it's a theme file, we need to be more careful.
 			if ( $is_theme_file ) {
 				return $this->handle_theme_file_with_suspicious_content( $path, $content_check, $relative_path );
 			}
-			$reason = $content_check['reason'] ?? 'File content validation failed';
 			return array(
 				'valid'  => false,
-				'reason' => $reason,
+				'reason' => $content_check['reason'],
 			);
 		}
 

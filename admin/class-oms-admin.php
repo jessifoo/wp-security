@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The admin-specific functionality of the plugin.
  *
  * Defines the plugin name, version, and hooks for the admin area.
+ * All dependencies are injected via constructor.
  *
  * @package    ObfuscatedMalwareScanner
  * @subpackage ObfuscatedMalwareScanner/admin
@@ -24,12 +25,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OMS_Admin {
 
 	/**
-	 * Initialize the class and set its properties.
+	 * Initialize the class with dependencies.
 	 *
-	 * @param string $plugin_name The name of this plugin.
-	 * @param string $version     The version of this plugin.
+	 * @param string                     $plugin_name The name of this plugin.
+	 * @param string                     $version     The version of this plugin.
+	 * @param Obfuscated_Malware_Scanner $scanner     The scanner instance.
 	 */
-	public function __construct( private readonly string $plugin_name, private readonly string $version ) {}
+	public function __construct(
+		private readonly string $plugin_name,
+		private readonly string $version,
+		private readonly Obfuscated_Malware_Scanner $scanner,
+	) {}
+
+	/**
+	 * Initialize admin hooks.
+	 *
+	 * Called from the main plugin bootstrap.
+	 *
+	 * @return void
+	 */
+	public function init(): void {
+		// Admin menu.
+		add_action( 'admin_menu', array( $this, 'add_options_page' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+
+		// Assets.
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+
+		// Manual scan handler.
+		add_action( 'admin_init', array( $this, 'handle_manual_scan' ) );
+	}
 
 	/**
 	 * Register the stylesheets for the admin area.
@@ -39,7 +65,7 @@ class OMS_Admin {
 	public function enqueue_styles(): void {
 		// Only load on plugin admin pages.
 		$screen = get_current_screen();
-		if ( ! $screen || ( false === strpos( $screen->id, $this->plugin_name ) && 'settings_page_' . $this->plugin_name !== $screen->id ) ) {
+		if ( ! $screen || false === strpos( $screen->id, $this->plugin_name ) ) {
 			return;
 		}
 
@@ -60,7 +86,7 @@ class OMS_Admin {
 	public function enqueue_scripts(): void {
 		// Only load on plugin admin pages.
 		$screen = get_current_screen();
-		if ( ! $screen || ( false === strpos( $screen->id, $this->plugin_name ) && 'settings_page_' . $this->plugin_name !== $screen->id ) ) {
+		if ( ! $screen || false === strpos( $screen->id, $this->plugin_name ) ) {
 			return;
 		}
 
@@ -69,12 +95,14 @@ class OMS_Admin {
 			plugin_dir_url( __FILE__ ) . 'js/oms-admin.js',
 			array( 'jquery' ),
 			$this->version,
-			false
+			true
 		);
 	}
 
 	/**
-	 * Add an options page under the Settings submenu
+	 * Add an options page under the Settings submenu.
+	 *
+	 * @return void
 	 */
 	public function add_options_page(): void {
 		add_options_page(
@@ -87,7 +115,9 @@ class OMS_Admin {
 	}
 
 	/**
-	 * Render the options page for plugin
+	 * Render the options page for plugin.
+	 *
+	 * @return void
 	 */
 	public function display_options_page(): void {
 		include_once 'partials/oms-admin-display.php';
@@ -97,6 +127,7 @@ class OMS_Admin {
 	 * Register plugin settings using WordPress Settings API.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
 	public function register_settings(): void {
 		// Register settings.
@@ -168,6 +199,7 @@ class OMS_Admin {
 	 * Render main settings section description.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
 	public function render_main_section(): void {
 		echo '<p>' . esc_html__( 'Configure automatic malware scanning and cleanup.', 'obfuscated-malware-scanner' ) . '</p>';
@@ -177,6 +209,7 @@ class OMS_Admin {
 	 * Render scan schedule field.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
 	public function render_scan_schedule_field(): void {
 		$value = get_option( 'oms_scan_schedule', 'daily' );
@@ -194,6 +227,7 @@ class OMS_Admin {
 	 * Render auto quarantine field.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
 	public function render_auto_quarantine_field(): void {
 		$value = get_option( 'oms_auto_quarantine', true );
@@ -210,6 +244,7 @@ class OMS_Admin {
 	 * Render email notifications field.
 	 *
 	 * @since 1.0.0
+	 * @return void
 	 */
 	public function render_email_notifications_field(): void {
 		$value = get_option( 'oms_email_notifications', true );
@@ -228,16 +263,23 @@ class OMS_Admin {
 	 * @since 1.0.0
 	 * @SuppressWarnings("PHPMD.ExitExpression")
 	 * Exit required after wp_safe_redirect per WordPress standards.
+	 * @return void
 	 */
 	public function handle_manual_scan(): void {
+		// Check if manual scan was requested.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified below.
+		if ( ! isset( $_POST['oms_manual_scan'] ) ) {
+			return;
+		}
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Unauthorized', 'obfuscated-malware-scanner' ) );
 		}
 
 		check_admin_referer( 'oms_manual_scan' );
 
-		$scanner = new Obfuscated_Malware_Scanner();
-		$scanner->run_full_cleanup();
+		// Use injected scanner instance - no instantiation needed.
+		$this->scanner->run_full_cleanup();
 
 		update_option( 'oms_last_scan', current_time( 'mysql' ) );
 

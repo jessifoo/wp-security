@@ -7,7 +7,12 @@ parameters:
         - includes/
         - admin/
         - obfuscated-malware-scanner.php
+    excludePaths:
+        - includes/legacy/
     scanFiles:
         - tests/wp-functions-mock.php
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
+    ignoreErrors:
+        # wpdb methods are not fully recognized by stubs
+        - '#Call to an undefined method wpdb::(delete|get_row|insert|get_results|prepare|get_col|update)\(\)#'

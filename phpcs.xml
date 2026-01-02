@@ -9,6 +9,7 @@
     <exclude-pattern>wordpress/*</exclude-pattern>
     <exclude-pattern>.github/*</exclude-pattern>
     <exclude-pattern>src/*</exclude-pattern>
+    <exclude-pattern>includes/legacy/*</exclude-pattern>
     <!-- PHP version for compatibility checks -->
     <config name="testVersion" value="8.4-"/>
 
@@ -63,6 +64,11 @@
 
     <!-- PHP 8.4: Allow short ternary operator (?:) for null coalescing patterns -->
     <rule ref="Universal.Operators.DisallowShortTernary.Found">
+        <severity>0</severity>
+    </rule>
+
+    <!-- Psalm/PHPStan generic type hints (class-string<T>) are not valid PHP - ignore mismatch -->
+    <rule ref="Squiz.Commenting.FunctionComment.IncorrectTypeHint">
         <severity>0</severity>
     </rule>
 

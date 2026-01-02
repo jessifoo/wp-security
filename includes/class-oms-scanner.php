@@ -36,6 +36,8 @@ class OMS_Scanner {
 	public function __construct(
 		private readonly OMS_Logger $logger,
 		private readonly OMS_Rate_Limiter $rate_limiter,
+		// phpcs:ignore Generic.Commenting -- PHPStan directive.
+		/** @phpstan-ignore property.onlyWritten */
 		private readonly OMS_Cache $cache
 	) {
 		$this->compiled_patterns = $this->compile_patterns();
@@ -54,7 +56,7 @@ class OMS_Scanner {
 			if ( @preg_match( '#' . $pattern . '#i', '' ) !== false ) {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
-				$this->logger->log( 'Invalid pattern: ' . $pattern, 'error', 'scanner' );
+				$this->logger->error( 'Invalid pattern: ' . $pattern );
 			}
 		}
 
@@ -64,7 +66,7 @@ class OMS_Scanner {
 			if ( @preg_match( '#' . $pattern . '#i', '' ) !== false ) {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
-				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern, 'error', 'scanner' );
+				$this->logger->error( 'Invalid obfuscation pattern: ' . $pattern );
 			}
 		}
 
@@ -146,7 +148,7 @@ class OMS_Scanner {
 
 		$filesize = filesize( $path );
 		if ( $filesize > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
-			$this->logger->log( 'File too large to scan: ' . $path, 'warning', 'scanner' );
+			$this->logger->warning( 'File too large to scan: ' . $path );
 			return false;
 		}
 
@@ -205,7 +207,7 @@ class OMS_Scanner {
 	 * Apply rate limiting with configurable threshold
 	 */
 	private function apply_rate_limiting(): void {
-		if ( $this->rate_limiter->should_limit() ) {
+		if ( $this->rate_limiter->should_throttle() ) {
 			usleep( (int) ( OMS_Config::SCAN_CONFIG['batch_pause'] * 1000 ) );
 		}
 	}
@@ -241,16 +243,14 @@ class OMS_Scanner {
 		$match_pos = $matches[0][1];
 		$context   = $this->extract_match_context( $content, $match_pos );
 
-		$this->logger->log(
+		$this->logger->error(
 			sprintf(
 				'Malware pattern detected in %s at position %d. Pattern: %s. Context: %s',
 				$path,
 				$position + $match_pos,
 				$pattern_name,
 				$context
-			),
-			'critical',
-			'scanner'
+			)
 		);
 	}
 
@@ -302,7 +302,7 @@ class OMS_Scanner {
 		if ( $file->getSize() === 0 && ! in_array( $file->getFilename(), OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
 			// Check if it's a critical file that shouldn't be empty.
 			if ( in_array( $file->getFilename(), OMS_Config::CRITICAL_FILES, true ) ) {
-				$this->logger->log( 'Critical file is zero bytes: ' . $path, 'critical', 'scanner' );
+				$this->logger->error( 'Critical file is zero bytes: ' . $path );
 				return true;
 			}
 		}
@@ -321,7 +321,7 @@ class OMS_Scanner {
 
 		// World writable?
 		if ( ( $perms & 0x0002 ) ) { // 0002 is world writable bit (S_IWOTH).
-			$this->logger->log( 'File is world writable: ' . $path, 'warning', 'scanner' );
+			$this->logger->warning( 'File is world writable: ' . $path );
 			return true;
 		}
 

@@ -74,6 +74,7 @@ class OMS_Database_Cleaner {
 	 */
 	public function clean_issues( array $issues ): array {
 		// Use local property instead of global.
+		// @phpstan-ignore-next-line Runtime safety check for mock environments.
 		if ( ! $this->wpdb instanceof wpdb ) {
 			$this->logger->error( 'WordPress database object not available for cleanup' );
 			return array(
