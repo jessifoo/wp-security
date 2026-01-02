@@ -9,10 +9,25 @@
     <exclude-pattern>wordpress/*</exclude-pattern>
     <exclude-pattern>.github/*</exclude-pattern>
     <exclude-pattern>src/*</exclude-pattern>
+    <!-- PHP version for compatibility checks -->
     <config name="testVersion" value="8.4-"/>
+
+    <!-- Minimum WordPress version for deprecated function checks -->
+    <config name="minimum_wp_version" value="6.5"/>
+
+    <!-- Use WordPress Coding Standards (NOT PSR-12) -->
     <rule ref="WordPress"/>
 
-    <!-- PHP 8.4: Allow short array syntax (modern PHP standard) -->
+    <!--
+        Array Syntax Decision:
+        WPCS traditionally requires array() but many modern WP plugins allow [].
+        For PHP 8.4 projects, short array syntax is acceptable.
+        Choose ONE approach and be consistent:
+        - Option A: Allow [] (modern PHP) - uncomment below
+        - Option B: Require array() (traditional WPCS) - leave commented
+        
+        Currently: ALLOWING short array syntax for PHP 8.4 compatibility
+    -->
     <rule ref="Generic.Arrays.DisallowShortArraySyntax">
         <severity>0</severity>
     </rule>
@@ -100,6 +115,7 @@
     <!-- Error suppression needed for regex validation -->
     <rule ref="WordPress.PHP.NoSilencedErrors">
         <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
+        <exclude-pattern>includes/class-oms-scanner.php</exclude-pattern>
     </rule>
 
     <!-- Test files follow PHPUnit conventions, not WordPress conventions -->
@@ -196,6 +212,10 @@
     </rule>
     <!-- Tests may redefine classes for mocking purposes -->
     <rule ref="Generic.Classes.DuplicateClassName">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+    <!-- Tests intentionally override WordPress globals for mocking -->
+    <rule ref="WordPress.WP.GlobalVariablesOverride.Prohibited">
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
 </ruleset>

@@ -132,14 +132,14 @@ class OMS_Scanner {
 	 */
 	public function contains_malware( string $path ): bool {
 		if ( ! is_readable( $path ) ) {
-			throw new OMS_Exception( 'File is not readable: ' . $path );
+			throw new OMS_Exception( 'File is not readable: ' . esc_html( $path ) );
 		}
 
 		// Quick check for obvious binary files.
 		$finfo = new finfo( FILEINFO_MIME_TYPE );
 		$mime  = $finfo->file( $path );
 
-		if ( strpos( $mime, 'text/' ) === false && $mime !== 'application/x-php' && $mime !== 'application/json' ) {
+		if ( false === strpos( $mime, 'text/' ) && 'application/x-php' !== $mime && 'application/json' !== $mime ) {
 			// Skip likely binary files unless explicitly PHP.
 			return false;
 		}
@@ -166,7 +166,7 @@ class OMS_Scanner {
 	private function scan_file_chunks( string $path, int $chunk_size ): bool {
 		$handle = fopen( $path, 'rb' );
 		if ( false === $handle ) {
-			throw new OMS_Exception( 'Could not open file: ' . $path );
+			throw new OMS_Exception( 'Could not open file: ' . esc_html( $path ) );
 		}
 
 		$position     = 0;
@@ -337,15 +337,14 @@ class OMS_Scanner {
 	 */
 	private function check_modification_time( string $path, SplFileInfo $file ): bool {
 		$mtime = $file->getMTime();
-		$hour  = (int) date( 'G', $mtime );
+		$hour  = (int) gmdate( 'G', $mtime );
 
 		// Check night hours.
 		$night_start = OMS_Config::SUSPICIOUS_TIMES['night_hours'][0];
 		$night_end   = OMS_Config::SUSPICIOUS_TIMES['night_hours'][1];
 
 		if ( $hour >= $night_start && $hour <= $night_end ) {
-			// This alone isn't critical, but worth logging if verbose.
-			// $this->logger->log('File modified during night hours: ' . $path, 'info', 'scanner');
+			// This alone isn't critical, but worth logging if verbose mode is enabled.
 			return false;
 		}
 
