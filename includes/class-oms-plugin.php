@@ -24,11 +24,39 @@ class OMS_Plugin {
 	private static ?OMS_Plugin $instance = null;
 
 	/**
-	 * Scanner instance.
+	 * Kernel instance.
 	 *
-	 * @var Obfuscated_Malware_Scanner|null
+	 * @var OMS\Core\Kernel|null
 	 */
-	private ?Obfuscated_Malware_Scanner $scanner = null;
+	private ?OMS\Core\Kernel $kernel = null;
+
+	/**
+	 * Initialize plugin.
+	 *
+	 * Boot the Kernel and load Service Providers.
+	 *
+	 * @return void
+	 */
+	public function init(): void {
+		try {
+			// Boot the Kernel with strict Service Providers.
+			$this->kernel = new OMS\Core\Kernel( [
+				OMS\Providers\CoreProvider::class,
+				OMS\Providers\DatabaseProvider::class,
+				OMS\Providers\SecurityProvider::class,
+				OMS\Providers\AdminProvider::class,
+			] );
+
+			$this->kernel->run();
+
+		} catch ( Exception $e ) {
+			// In production, we log this stealthily.
+			// "Happy little accidents" shouldn't crash the site.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'OMS Kernel Panic: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+		}
+	}
 
 	/**
 	 * Get plugin instance.
@@ -40,47 +68,6 @@ class OMS_Plugin {
 			self::$instance = new self();
 		}
 		return self::$instance;
-	}
-
-	/**
-	 * Initialize plugin.
-	 *
-	 * @return void
-	 */
-	public function init(): void {
-
-		$this->scanner = new Obfuscated_Malware_Scanner();
-
-		// Initialize scanner.
-		$this->scanner->init();
-
-		// Add admin menu.
-		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
-	}
-
-	/**
-	 * Add admin menu.
-	 *
-	 * @return void
-	 */
-	public function add_admin_menu(): void {
-		add_menu_page(
-			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
-			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
-			'manage_options',
-			'obfuscated-malware-scanner',
-			[ $this, 'render_admin_page' ],
-			'dashicons-shield'
-		);
-	}
-
-	/**
-	 * Render admin page.
-	 *
-	 * @return void
-	 */
-	public function render_admin_page(): void {
-		include_once OMS_PLUGIN_DIR . 'admin/partials/oms-admin-display.php';
 	}
 
 	/**

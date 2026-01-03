@@ -1,0 +1,121 @@
+<?php
+declare(strict_types=1);
+
+namespace OMS\Core;
+
+use ReflectionClass;
+use ReflectionNamedType;
+use Exception;
+
+/**
+ * A Strict Dependency Injection Container.
+ *
+ * This class is responsible for managing class dependencies and performing
+ * automatic wiring of services. It enforces strict typing and centralized
+ * configuration.
+ *
+ * @package OMS\Core
+ */
+class Container {
+	/**
+	 * specialized registry for singleton instances.
+	 *
+	 * @var array<string, object>
+	 */
+	private array $instances = [];
+
+	/**
+	 * Registry for service definitions/factories.
+	 *
+	 * @var array<string, callable>
+	 */
+	private array $definitions = [];
+
+	/**
+	 * Bind a service to a factory.
+	 *
+	 * @param string   $id       The service identifier (usually class/interface name).
+	 * @param callable $concrete A factory function returning the instance.
+	 * @return void
+	 */
+	public function bind( string $id, callable $concrete ): void {
+		$this->definitions[ $id ] = $concrete;
+	}
+
+	/**
+	 * Bind a service as a singleton.
+	 *
+	 * The factory will only be executed once.
+	 *
+	 * @param string   $id       The service identifier.
+	 * @param callable $concrete A factory function.
+	 * @return void
+	 */
+	public function singleton( string $id, callable $concrete ): void {
+		$this->definitions[ $id ] = function ( Container $c ) use ( $concrete, $id ) {
+			if ( ! isset( $this->instances[ $id ] ) ) {
+				$this->instances[ $id ] = $concrete( $c );
+			}
+			return $this->instances[ $id ];
+		};
+	}
+
+	/**
+	 * Resolve a service instance.
+	 *
+	 * @param string $id The service identifier.
+	 * @return object The resolved service.
+	 * @throws Exception If resolution fails.
+	 */
+	public function get( string $id ): object {
+		// 1. Check if we have a definition for it
+		if ( isset( $this->definitions[ $id ] ) ) {
+			$concrete = $this->definitions[ $id ];
+			return $concrete( $this );
+		}
+
+		// 2. If no definition, try to auto-wire it (Reflection)
+		return $this->resolve( $id );
+	}
+
+	/**
+	 * Auto-wire a class using Reflection.
+	 *
+	 * @param string $class_name The class name to instantiate.
+	 * @return object The instantiated class.
+	 * @throws Exception If the class cannot be instantiated or dependencies are missing.
+	 */
+	private function resolve( string $class_name ): object {
+		if ( ! class_exists( $class_name ) ) {
+			throw new Exception( "Service not found: $class_name" );
+		}
+
+		$reflector = new ReflectionClass( $class_name );
+
+		if ( ! $reflector->isInstantiable() ) {
+			throw new Exception( "Class is not instantiable: $class_name" );
+		}
+
+		$constructor = $reflector->getConstructor();
+
+		// If no constructor, simple instantiation
+		if ( null === $constructor ) {
+			return new $class_name();
+		}
+
+		// Resolve dependencies
+		$dependencies = [];
+		foreach ( $constructor->getParameters() as $parameter ) {
+			$type = $parameter->getType();
+
+			if ( ! $type instanceof ReflectionNamedType || $type->isBuiltin() ) {
+				throw new Exception( "Cannot auto-resolve non-class dependency '{$parameter->getName()}' in $class_name" );
+			}
+
+			// Recursive resolution
+			$dependencies[] = $this->get( $type->getName() );
+		}
+
+		return $reflector->newInstanceArgs( $dependencies );
+	}
+}
