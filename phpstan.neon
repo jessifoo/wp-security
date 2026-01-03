@@ -2,6 +2,7 @@ includes:
     - vendor/szepeviktor/phpstan-wordpress/extension.neon
 parameters:
     level: 5
+    phpVersion: 80400
     paths:
         - includes/
         - admin/
@@ -9,4 +10,4 @@ parameters:
     scanFiles:
         - tests/wp-functions-mock.php
     bootstrapFiles:
-        - obfuscated-malware-scanner.php
+        - tests/phpstan-bootstrap.php

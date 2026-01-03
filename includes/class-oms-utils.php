@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Utility functions for the Obfuscated Malware Scanner
  *
@@ -20,7 +22,7 @@ class OMS_Utils {
 	 * @param string $url The URL to sanitize.
 	 * @return string The sanitized URL.
 	 */
-	public static function sanitize_url( $url ) {
+	public static function sanitize_url( string $url ): string {
 		return esc_url_raw( $url );
 	}
 
@@ -31,7 +33,7 @@ class OMS_Utils {
 	 * @return string The sanitized path.
 	 * @throws InvalidArgumentException If path is invalid or contains path traversal.
 	 */
-	public static function sanitize_path( $path ) {
+	public static function sanitize_path( string $path ): string {
 		// Normalize path.
 		$path = wp_normalize_path( $path );
 
@@ -57,7 +59,7 @@ class OMS_Utils {
 	 * @param string $path Absolute path to get relative path for.
 	 * @return string Relative path from WordPress root.
 	 */
-	public static function get_relative_path( $path ) {
+	public static function get_relative_path( string $path ): string {
 		$path    = wp_normalize_path( $path );
 		$wp_root = wp_normalize_path( ABSPATH );
 
@@ -75,21 +77,21 @@ class OMS_Utils {
 	 * @param string $path The path to check.
 	 * @return bool True if path is safe, false otherwise.
 	 */
-	public static function is_path_safe( $path ) {
+	public static function is_path_safe( string $path ): bool {
 		// Check for null bytes.
 		if ( false !== strpos( $path, "\0" ) ) {
 			return false;
 		}
 
 		// Normalize and decode before traversal checks.
-		$decoded    = rawurldecode( (string) $path );
+		$decoded    = rawurldecode( $path );
 		$normalized = wp_normalize_path( $decoded );
 
 		// Disallow traversal by checking path segments strictly.
 		$parts = array_values(
 			array_filter(
 				explode( '/', $normalized ),
-				static function ( $part ) {
+				static function ( string $part ): bool {
 					return '' !== $part;
 				}
 			)
@@ -97,7 +99,7 @@ class OMS_Utils {
 		if ( in_array( '..', $parts, true ) ) {
 			return false;
 		}
-		$stack = array();
+		$stack = [];
 
 		foreach ( $parts as $part ) {
 			if ( '.' === $part ) {
@@ -131,41 +133,41 @@ class OMS_Utils {
 	 * Check file content for malicious patterns
 	 *
 	 * @param string $file_path Path to the file to check.
-	 * @return array Array with 'safe' boolean and 'reason' string.
+	 * @return array{safe: bool, reason: string} Array with 'safe' boolean and 'reason' string.
 	 */
-	public static function check_file_content( $file_path ) {
+	public static function check_file_content( string $file_path ): array {
 		if ( ! is_readable( $file_path ) ) {
-			return array(
+			return [
 				'safe'   => false,
 				'reason' => 'File is not readable',
-			);
+			];
 		}
 
 		$content = file_get_contents( $file_path );
 		if ( false === $content ) {
-			return array(
+			return [
 				'safe'   => false,
 				'reason' => 'Could not read file content',
-			);
+			];
 		}
 
 		// Check for malicious patterns from OMS_Config.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
 			if ( preg_match( '#' . $pattern . '#i', $content ) ) {
-				return array(
+				return [
 					'safe'   => false,
 					'reason' => 'File contains malicious code pattern',
-				);
+				];
 			}
 		}
 
 		// Check for obfuscation patterns from OMS_Config.
 		foreach ( OMS_Config::OBFUSCATION_PATTERNS as $pattern_data ) {
 			if ( preg_match( '#' . $pattern_data['pattern'] . '#i', $content ) ) {
-				return array(
+				return [
 					'safe'   => false,
 					'reason' => $pattern_data['description'],
-				);
+				];
 			}
 		}
 
@@ -173,16 +175,16 @@ class OMS_Utils {
 		$special_chars = preg_match_all( '/[^a-zA-Z0-9\s]/', $content );
 		$total_chars   = strlen( $content );
 		if ( $total_chars > 0 && ( $special_chars / $total_chars ) > 0.3 ) {
-			return array(
+			return [
 				'safe'   => false,
 				'reason' => 'File appears to be obfuscated (high special character ratio)',
-			);
+			];
 		}
 
-		return array(
+		return [
 			'safe'   => true,
 			'reason' => 'File content appears safe',
-		);
+		];
 	}
 
 	/**
@@ -205,14 +207,14 @@ class OMS_Utils {
 	 *     @type bool   $paragraph_wrap    Whether to wrap content in <p> tags. Default true.
 	 * }
 	 */
-	public static function display_admin_notice( $message, $args = array() ) {
-		$defaults = array(
+	public static function display_admin_notice( string $message, array $args = [] ): void {
+		$defaults = [
 			'type'               => 'info',
 			'id'                 => '',
-			'additional_classes' => array(),
+			'additional_classes' => [],
 			'dismissible'        => false,
 			'paragraph_wrap'     => true,
-		);
+		];
 
 		$args = wp_parse_args( $args, $defaults );
 
@@ -223,7 +225,7 @@ class OMS_Utils {
 		}
 
 		// Fallback for WordPress < 6.4.
-		$classes = array( 'notice', 'notice-' . esc_attr( $args['type'] ) );
+		$classes = [ 'notice', 'notice-' . esc_attr( $args['type'] ) ];
 		if ( ! empty( $args['additional_classes'] ) ) {
 			$classes = array_merge( $classes, array_map( 'esc_attr', (array) $args['additional_classes'] ) );
 		}

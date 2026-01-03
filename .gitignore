@@ -47,9 +47,6 @@ wordpress/
 # Build files
 /dist/
 /build/
-/zsh-autosuggestions/
-/zsh-completions/
-/zsh-syntax-highlighting/
 
 # Environment files
 .env

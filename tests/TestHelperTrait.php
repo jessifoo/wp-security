@@ -132,8 +132,7 @@ trait TestHelperTrait {
 
 		foreach ( $expectations as $method => $expectation ) {
 			$logger->expects( $expectation )
-				->method( $method )
-				->willReturn( null );
+				->method( $method );
 		}
 
 		return $logger;

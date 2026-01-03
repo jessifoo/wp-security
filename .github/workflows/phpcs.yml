@@ -28,7 +28,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           extensions: mbstring, xml, curl, json
           coverage: none
           tools: composer, phpcs
@@ -36,7 +36,7 @@ jobs:
       - name: Verify PHP Version
         run: |
           php -v
-          php -r "if (version_compare(PHP_VERSION, '8.1.0', '<')) { echo 'ERROR: PHP version ' . PHP_VERSION . ' is less than 8.1.0'; exit(1); }"
+          php -r "if (version_compare(PHP_VERSION, '8.4.0', '<')) { echo 'ERROR: PHP version ' . PHP_VERSION . ' is less than 8.4.0'; exit(1); }"
           echo "✅ PHP version check passed: $(php -r 'echo PHP_VERSION;')"
 
       - name: Get Composer Cache Directory
@@ -48,9 +48,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php8.1-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php8.4-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-php8.1-composer-
+            ${{ runner.os }}-php8.4-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --ansi
