@@ -96,7 +96,7 @@ class OMS_APITest extends TestCase {
 	}
 
 	public function testGetReport() {
-		$expected_logs = array( "Line 1\n", "Line 2" );
+		$expected_logs = array( "Line 1\n", 'Line 2' );
 
 		// Configure logger mock to return expected memory logs
 		$this->logger->method( 'get_memory_logs' )

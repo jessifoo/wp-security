@@ -38,7 +38,7 @@ class UploadMonitorService {
 			return;
 		}
 
-		$filename = (string) $meta_value;
+		$filename   = (string) $meta_value;
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['basedir'] . '/' . $filename;
 

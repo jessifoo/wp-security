@@ -40,12 +40,14 @@ class OMS_Plugin {
 	public function init(): void {
 		try {
 			// Boot the Kernel with strict Service Providers.
-			$this->kernel = new OMS\Core\Kernel( [
-				OMS\Providers\CoreProvider::class,
-				OMS\Providers\DatabaseProvider::class,
-				OMS\Providers\SecurityProvider::class,
-				OMS\Providers\AdminProvider::class,
-			] );
+			$this->kernel = new OMS\Core\Kernel(
+				array(
+					OMS\Providers\CoreProvider::class,
+					OMS\Providers\DatabaseProvider::class,
+					OMS\Providers\SecurityProvider::class,
+					OMS\Providers\AdminProvider::class,
+				)
+			);
 
 			$this->kernel->run();
 
@@ -80,12 +82,12 @@ class OMS_Plugin {
 	 */
 	public function activate(): void {
 		// Create protected directories.
-		$directories = [
+		$directories = array(
 			'oms-logs'          => 'log',
 			'oms-quarantine'    => 'quarantine',
 			'oms-theme-backups' => 'backup',
 			'oms-db-backups'    => 'database backup',
-		];
+		);
 
 		foreach ( $directories as $dir_name => $dir_type ) {
 			$this->create_protected_directory( WP_CONTENT_DIR . '/' . $dir_name, $dir_type );
@@ -133,15 +135,15 @@ class OMS_Plugin {
 	 * @return void
 	 */
 	private function initialize_default_options(): void {
-		$default_options = [
+		$default_options = array(
 			'oms_last_scan'           => 'never',
 			'oms_files_scanned'       => 0,
 			'oms_issues_found'        => 0,
-			'oms_detected_issues'     => [],
+			'oms_detected_issues'     => array(),
 			'oms_scan_schedule'       => 'daily',
 			'oms_auto_quarantine'     => true,
 			'oms_email_notifications' => true,
-		];
+		);
 
 		foreach ( $default_options as $option_name => $default_value ) {
 			if ( false === get_option( $option_name ) ) {

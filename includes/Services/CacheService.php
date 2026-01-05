@@ -16,21 +16,21 @@ class CacheService {
 	 *
 	 * @var array<string, mixed>
 	 */
-	private array $cache = [];
+	private array $cache = array();
 
 	/**
 	 * Cache expiry times.
 	 *
 	 * @var array<string, int>
 	 */
-	private array $expiry = [];
+	private array $expiry = array();
 
 	/**
 	 * Cache creation times (for LRU).
 	 *
 	 * @var array<string, int>
 	 */
-	private array $created_at = [];
+	private array $created_at = array();
 
 	/**
 	 * Constructor.
@@ -74,7 +74,7 @@ class CacheService {
 			$this->evict_oldest();
 		}
 
-		$this->cache[ $key ] = $value;
+		$this->cache[ $key ]      = $value;
 		$this->created_at[ $key ] = time();
 
 		// Calculate expiry
@@ -82,9 +82,9 @@ class CacheService {
 		if ( $actual_ttl > 0 ) {
 			$this->expiry[ $key ] = time() + $actual_ttl;
 		} elseif ( $actual_ttl < 0 ) {
-             // Negative TTL means already expired
-             $this->expiry[ $key ] = time() - 1;
-        }
+			// Negative TTL means already expired
+			$this->expiry[ $key ] = time() - 1;
+		}
 		// If ttl is 0 or null (and default is not used), maybe indefinite?
 		// For now we used default in line 80.
 	}
@@ -102,9 +102,9 @@ class CacheService {
 	 * Clear all.
 	 */
 	public function clear(): void {
-		$this->cache      = [];
-		$this->expiry     = [];
-		$this->created_at = [];
+		$this->cache      = array();
+		$this->expiry     = array();
+		$this->created_at = array();
 	}
 
 	/**

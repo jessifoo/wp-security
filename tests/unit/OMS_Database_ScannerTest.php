@@ -30,27 +30,31 @@ class OMS_Database_ScannerTest extends TestCase {
 			->getMock();
 
 		// Simple prepare mock
-		$this->wpdb->method( 'prepare' )->willReturnCallback( function( $query, ...$args ) {
-			$query = str_replace( array( '%s', '%i' ), array( "'%s'", '%s' ), $query );
-			return vsprintf( $query, $args );
-		} );
+		$this->wpdb->method( 'prepare' )->willReturnCallback(
+			function ( $query, ...$args ) {
+				$query = str_replace( array( '%s', '%i' ), array( "'%s'", '%s' ), $query );
+				return vsprintf( $query, $args );
+			}
+		);
 
 		// Smart get_results
-		$this->wpdb->method( 'get_results' )->willReturnCallback( function( $query ) {
-			// Structure or content queries - return empty to pass checks safely or simulate no malware
-			return [];
-		} );
+		$this->wpdb->method( 'get_results' )->willReturnCallback(
+			function ( $query ) {
+				// Structure or content queries - return empty to pass checks safely or simulate no malware
+				return array();
+			}
+		);
 
 		// Smart get_var (table existence)
 		$this->wpdb->method( 'get_var' )->willReturn( 1 ); // Always exists
 
 		// Smart get_col (columns)
-		$this->wpdb->method( 'get_col' )->willReturn( ['test_column'] ); // Always one column
+		$this->wpdb->method( 'get_col' )->willReturn( array( 'test_column' ) ); // Always one column
 
 		// Mock Logger and Cache
-		$this->logger       = $this->createMock( OMS_Logger::class );
-		$this->cache        = $this->createMock( OMS_Cache::class );
-		$this->cleaner      = $this->createMock( OMS_Database_Cleaner::class );
+		$this->logger  = $this->createMock( OMS_Logger::class );
+		$this->cache   = $this->createMock( OMS_Cache::class );
+		$this->cleaner = $this->createMock( OMS_Database_Cleaner::class );
 
 		// scanner needs the mock
 		$this->scanner = new OMS_Database_Scanner( $this->logger, $this->cache, $this->wpdb, $this->cleaner );
@@ -73,7 +77,12 @@ class OMS_Database_ScannerTest extends TestCase {
 	public function testCleanDatabaseContent() {
 		// Mock cleaner success
 		$this->cleaner->method( 'clean_issues' )
-			->willReturn( array( 'success' => true, 'cleaned' => 1 ) );
+			->willReturn(
+				array(
+					'success' => true,
+					'cleaned' => 1,
+				)
+			);
 
 		$issues = array(
 			array(

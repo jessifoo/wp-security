@@ -22,14 +22,14 @@ class Container {
 	 *
 	 * @var array<string, object>
 	 */
-	private array $instances = [];
+	private array $instances = array();
 
 	/**
 	 * Registry for service definitions/factories.
 	 *
 	 * @var array<string, callable>
 	 */
-	private array $definitions = [];
+	private array $definitions = array();
 
 	/**
 	 * Bind a service to a factory.
@@ -104,7 +104,7 @@ class Container {
 		}
 
 		// Resolve dependencies
-		$dependencies = [];
+		$dependencies = array();
 		foreach ( $constructor->getParameters() as $parameter ) {
 			$type = $parameter->getType();
 

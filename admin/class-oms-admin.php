@@ -46,7 +46,7 @@ class OMS_Admin {
 		wp_enqueue_style(
 			$this->plugin_name,
 			plugin_dir_url( __FILE__ ) . 'css/oms-admin.css',
-			[],
+			array(),
 			$this->version,
 			'all'
 		);
@@ -67,7 +67,7 @@ class OMS_Admin {
 		wp_enqueue_script(
 			$this->plugin_name,
 			plugin_dir_url( __FILE__ ) . 'js/oms-admin.js',
-			[ 'jquery' ],
+			array( 'jquery' ),
 			$this->version,
 			false
 		);
@@ -82,7 +82,7 @@ class OMS_Admin {
 			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
 			'manage_options',
 			$this->plugin_name,
-			[ $this, 'display_options_page' ]
+			array( $this, 'display_options_page' )
 		);
 	}
 
@@ -103,38 +103,38 @@ class OMS_Admin {
 		register_setting(
 			'oms_options',
 			'oms_scan_schedule',
-			[
+			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 				'default'           => 'daily',
-			]
+			)
 		);
 
 		register_setting(
 			'oms_options',
 			'oms_auto_quarantine',
-			[
+			array(
 				'type'              => 'boolean',
-				'sanitize_callback' => [ $this, 'sanitize_boolean' ],
+				'sanitize_callback' => array( $this, 'sanitize_boolean' ),
 				'default'           => true,
-			]
+			)
 		);
 
 		register_setting(
 			'oms_options',
 			'oms_email_notifications',
-			[
+			array(
 				'type'              => 'boolean',
-				'sanitize_callback' => [ $this, 'sanitize_boolean' ],
+				'sanitize_callback' => array( $this, 'sanitize_boolean' ),
 				'default'           => true,
-			]
+			)
 		);
 
 		// Add settings section.
 		add_settings_section(
 			'oms_main_section',
 			__( 'Scanner Settings', 'obfuscated-malware-scanner' ),
-			[ $this, 'render_main_section' ],
+			array( $this, 'render_main_section' ),
 			'oms_options'
 		);
 
@@ -142,7 +142,7 @@ class OMS_Admin {
 		add_settings_field(
 			'oms_scan_schedule',
 			__( 'Scan Schedule', 'obfuscated-malware-scanner' ),
-			[ $this, 'render_scan_schedule_field' ],
+			array( $this, 'render_scan_schedule_field' ),
 			'oms_options',
 			'oms_main_section'
 		);
@@ -150,7 +150,7 @@ class OMS_Admin {
 		add_settings_field(
 			'oms_auto_quarantine',
 			__( 'Auto Quarantine', 'obfuscated-malware-scanner' ),
-			[ $this, 'render_auto_quarantine_field' ],
+			array( $this, 'render_auto_quarantine_field' ),
 			'oms_options',
 			'oms_main_section'
 		);
@@ -158,7 +158,7 @@ class OMS_Admin {
 		add_settings_field(
 			'oms_email_notifications',
 			__( 'Email Notifications', 'obfuscated-malware-scanner' ),
-			[ $this, 'render_email_notifications_field' ],
+			array( $this, 'render_email_notifications_field' ),
 			'oms_options',
 			'oms_main_section'
 		);

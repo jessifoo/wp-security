@@ -36,25 +36,25 @@ class DatabaseScannerService implements DatabaseScannerInterface {
 	 */
 	public function scan(): array {
 		$this->logger->info( 'Starting database scan...' );
-		$issues = [];
+		$issues = array();
 
 		try {
 			// Placeholder for actual scanning logic
 			// 1. Scan Content
 			// 2. Scan Integrity
 
-			return [
+			return array(
 				'success' => true,
 				'issues'  => $issues,
 				'total'   => count( $issues ),
-			];
+			);
 		} catch ( Exception $e ) {
 			$this->logger->error( 'Database scan failed: ' . $e->getMessage() );
-			return [
+			return array(
 				'success' => false,
-				'issues'  => [],
+				'issues'  => array(),
 				'message' => $e->getMessage(),
-			];
+			);
 		}
 	}
 }

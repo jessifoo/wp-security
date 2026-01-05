@@ -1,11 +1,11 @@
 <?php
-declare(strict_types=1);
-
 /**
  * OMS Exception Class
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -37,6 +37,7 @@ class OMS_Exception extends Exception {
 	 * @throws Exception Always throws the exception.
 	 */
 	public function handleException( Exception $e, string $context = '' ): never {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Exception handling requires error logging.
 		error_log( sprintf( 'OMS Exception in %s: %s', esc_html( $context ), esc_html( $e->getMessage() ) ) );
 		throw $e;
 	}

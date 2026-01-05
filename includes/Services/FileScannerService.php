@@ -18,7 +18,7 @@ class FileScannerService implements FileScannerInterface {
 	 *
 	 * @var array<string>
 	 */
-	private const MALICIOUS_PATTERNS = [
+	private const MALICIOUS_PATTERNS = array(
 		'eval\(base64_decode',
 		'shell_exec',
 		'passthru',
@@ -27,7 +27,7 @@ class FileScannerService implements FileScannerInterface {
 		'base64_decode\(',
 		'edoc_46esab', // Reversed base64_decode.
 		'gniutcer_etal_fni', // Reversed inf_late_rcuiting.
-	];
+	);
 
 	/**
 	 * Constructor.
@@ -49,37 +49,37 @@ class FileScannerService implements FileScannerInterface {
 	public function scan_file( string $file_path ): array {
 		if ( ! $this->filesystem->is_readable( $file_path ) ) {
 			$this->logger->warning( "File is not readable: $file_path" );
-			return [
+			return array(
 				'safe'   => false,
-				'issues' => [ 'unreadable' ],
+				'issues' => array( 'unreadable' ),
 				'reason' => 'File is not readable',
-			];
+			);
 		}
 
 		$content = $this->filesystem->get_contents( $file_path );
 		if ( false === $content ) {
-			return [
+			return array(
 				'safe'   => false,
-				'issues' => [ 'read_error' ],
+				'issues' => array( 'read_error' ),
 				'reason' => 'Could not read file content',
-			];
+			);
 		}
 
 		foreach ( self::MALICIOUS_PATTERNS as $pattern ) {
 			if ( preg_match( '#' . $pattern . '#i', $content ) ) {
 				$this->logger->warning( "Malicious pattern found in $file_path: $pattern" );
-				return [
+				return array(
 					'safe'   => false,
-					'issues' => [ 'malware_detected' ],
+					'issues' => array( 'malware_detected' ),
 					'reason' => "File contains malicious code pattern: $pattern",
-				];
+				);
 			}
 		}
 
-		return [
+		return array(
 			'safe'   => true,
-			'issues' => [],
+			'issues' => array(),
 			'reason' => 'File content appears safe',
-		];
+		);
 	}
 }

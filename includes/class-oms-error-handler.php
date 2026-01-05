@@ -1,11 +1,11 @@
 <?php
-declare(strict_types=1);
-
 /**
  * Error Handler class for the Obfuscated Malware Scanner
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {

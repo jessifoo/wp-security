@@ -43,48 +43,48 @@ class FilesystemService {
 		return file_get_contents( $path );
 	}
 
-    /**
-     * Get file size.
-     *
-     * @param string $path Path to check.
-     * @return int|false Size or false on failure.
-     */
-    public function size( string $path ): int|false {
-        return filesize( $path );
-    }
+	/**
+	 * Get file size.
+	 *
+	 * @param string $path Path to check.
+	 * @return int|false Size or false on failure.
+	 */
+	public function size( string $path ): int|false {
+		return filesize( $path );
+	}
 
-    /**
-     * Open file.
-     *
-     * @param string $path Path to file.
-     * @param string $mode Mode.
-     * @return resource|false Handle or false.
-     */
-    public function fopen( string $path, string $mode ) {
+	/**
+	 * Open file.
+	 *
+	 * @param string $path Path to file.
+	 * @param string $mode Mode.
+	 * @return resource|false Handle or false.
+	 */
+	public function fopen( string $path, string $mode ) {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-        return fopen( $path, $mode );
-    }
+		return fopen( $path, $mode );
+	}
 
-    /**
-     * Read file.
-     *
-     * @param resource $stream Stream.
-     * @param int $length Length.
-     * @return string|false Content.
-     */
-    public function fread( $stream, int $length ) {
+	/**
+	 * Read file.
+	 *
+	 * @param resource $stream Stream.
+	 * @param int      $length Length.
+	 * @return string|false Content.
+	 */
+	public function fread( $stream, int $length ) {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
-        return fread( $stream, $length );
-    }
+		return fread( $stream, $length );
+	}
 
-    /**
-     * Close file.
-     *
-     * @param resource $stream Stream.
-     * @return bool Result.
-     */
-    public function fclose( $stream ): bool {
+	/**
+	 * Close file.
+	 *
+	 * @param resource $stream Stream.
+	 * @return bool Result.
+	 */
+	public function fclose( $stream ): bool {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-        return fclose( $stream );
-    }
+		return fclose( $stream );
+	}
 }

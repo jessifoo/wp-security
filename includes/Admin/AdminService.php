@@ -58,7 +58,7 @@ class AdminService {
 			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
 			'manage_options',
 			'obfuscated-malware-scanner',
-			[ $this, 'render_settings_page' ]
+			array( $this, 'render_settings_page' )
 		);
 	}
 

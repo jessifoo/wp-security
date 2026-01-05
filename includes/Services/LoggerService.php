@@ -24,7 +24,7 @@ class LoggerService {
 	 *
 	 * @var array<string>
 	 */
-	private array $memory_logs = [];
+	private array $memory_logs = array();
 
 	/**
 	 * Log file path.
@@ -139,7 +139,7 @@ class LoggerService {
 	 * @return string Valid level.
 	 */
 	private function validate_log_level( string $level ): string {
-		$valid = [ 'debug', 'info', 'warning', 'error', 'critical' ];
+		$valid = array( 'debug', 'info', 'warning', 'error', 'critical' );
 		$level = strtolower( $level );
 		return in_array( $level, $valid, true ) ? strtoupper( $level ) : 'INFO';
 	}
@@ -169,7 +169,7 @@ class LoggerService {
 		}
 
 		// Write to WP Error Log if urgent
-		if ( in_array( $level, [ 'ERROR', 'CRITICAL', 'WARNING' ], true ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( in_array( $level, array( 'ERROR', 'CRITICAL', 'WARNING' ), true ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( $message );
 		}

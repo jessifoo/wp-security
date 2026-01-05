@@ -1,6 +1,4 @@
-```php
-declare(strict_types=1);
-
+<?php
 /**
  * Scanner class for malware detection
  *
@@ -9,6 +7,8 @@ declare(strict_types=1);
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,7 +24,7 @@ class OMS_Scanner {
 	 *
 	 * @var array<string>
 	 */
-	private array $compiled_patterns = [];
+	private array $compiled_patterns = array();
 
 	/**
 	 * Constructor
@@ -47,24 +47,30 @@ class OMS_Scanner {
 	 * @return array<string> Array of compiled patterns
 	 */
 	private function compile_patterns(): array {
-		$patterns = [];
+		$patterns = array();
 
 		// Compile standard patterns.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
-			if ( @preg_match( '#' . $pattern . '#i', '' ) !== false ) {
+			// Validate regex pattern without error suppression.
+			$test_result = preg_match( '#' . $pattern . '#i', '' );
+			if ( false !== $test_result ) {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
-				$this->logger->log( 'Invalid pattern: ' . $pattern, 'error', 'scanner' );
+				$error = preg_last_error();
+				$this->logger->log( 'Invalid pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error', 'scanner' );
 			}
 		}
 
 		// Compile obfuscation patterns.
 		foreach ( OMS_Config::OBFUSCATION_PATTERNS as $pattern_config ) {
 			$pattern = $pattern_config['pattern'];
-			if ( @preg_match( '#' . $pattern . '#i', '' ) !== false ) {
+			// Validate regex pattern without error suppression.
+			$test_result = preg_match( '#' . $pattern . '#i', '' );
+			if ( false !== $test_result ) {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
-				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern, 'error', 'scanner' );
+				$error = preg_last_error();
+				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error', 'scanner' );
 			}
 		}
 
@@ -132,18 +138,19 @@ class OMS_Scanner {
 	 */
 	public function contains_malware( string $path ): bool {
 		if ( ! is_readable( $path ) ) {
-			throw new OMS_Exception( 'File is not readable: ' . $path );
+			throw new OMS_Exception( 'File is not readable: ' . esc_html( $path ) );
 		}
 
 		// Quick check for obvious binary files.
 		$finfo = new finfo( FILEINFO_MIME_TYPE );
 		$mime  = $finfo->file( $path );
 
-		if ( strpos( $mime, 'text/' ) === false && $mime !== 'application/x-php' && $mime !== 'application/json' ) {
+		if ( false === strpos( $mime, 'text/' ) && 'application/x-php' !== $mime && 'application/json' !== $mime ) {
 			// Skip likely binary files unless explicitly PHP.
 			return false;
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filesize -- Direct file size check required for malware scanning.
 		$filesize = filesize( $path );
 		if ( $filesize > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
 			$this->logger->log( 'File too large to scan: ' . $path, 'warning', 'scanner' );
@@ -164,9 +171,10 @@ class OMS_Scanner {
 	 * @throws OMS_Exception If file cannot be read.
 	 */
 	private function scan_file_chunks( string $path, int $chunk_size ): bool {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct file access required for malware scanning.
 		$handle = fopen( $path, 'rb' );
 		if ( false === $handle ) {
-			throw new OMS_Exception( 'Could not open file: ' . $path );
+			throw new OMS_Exception( 'Could not open file: ' . esc_html( $path ) );
 		}
 
 		$position     = 0;
@@ -176,6 +184,7 @@ class OMS_Scanner {
 			while ( ! feof( $handle ) ) {
 				$this->apply_rate_limiting();
 
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Direct file reading required for chunked malware scanning.
 				$content = fread( $handle, $chunk_size );
 				if ( false === $content ) {
 					break;
@@ -195,6 +204,7 @@ class OMS_Scanner {
 				}
 			}
 		} finally {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing file handle opened with fopen.
 			fclose( $handle );
 		}
 
@@ -231,11 +241,11 @@ class OMS_Scanner {
 	/**
 	 * Log pattern match with context
 	 *
-	 * @param array<array-key, mixed>  $matches Pattern matches.
-	 * @param string $path File path.
-	 * @param string $pattern_name Name of matched pattern.
-	 * @param int    $position Current position in file.
-	 * @param string $content File content.
+	 * @param array<array-key, mixed> $matches Pattern matches.
+	 * @param string                  $path File path.
+	 * @param string                  $pattern_name Name of matched pattern.
+	 * @param int                     $position Current position in file.
+	 * @param string                  $content File content.
 	 */
 	private function log_pattern_match( array $matches, string $path, string $pattern_name, int $position, string $content ): void {
 		$match_pos = $matches[0][1];
@@ -262,7 +272,7 @@ class OMS_Scanner {
 	 * @return string Context around match.
 	 */
 	private function extract_match_context( string $content, int $match_pos ): string {
-		$start = max( 0, $match_pos - 50 );
+		$start  = max( 0, $match_pos - 50 );
 		$length = min( strlen( $content ) - $start, 100 );
 		return substr( $content, $start, $length );
 	}
@@ -337,7 +347,8 @@ class OMS_Scanner {
 	 */
 	private function check_modification_time( string $path, SplFileInfo $file ): bool {
 		$mtime = $file->getMTime();
-		$hour  = (int) date( 'G', $mtime );
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- Date formatting needed for time-based security analysis.
+		$hour = (int) date( 'G', $mtime );
 
 		// Check night hours.
 		$night_start = OMS_Config::SUSPICIOUS_TIMES['night_hours'][0];
@@ -345,11 +356,10 @@ class OMS_Scanner {
 
 		if ( $hour >= $night_start && $hour <= $night_end ) {
 			// This alone isn't critical, but worth logging if verbose.
-			// $this->logger->log('File modified during night hours: ' . $path, 'info', 'scanner');
+			// $this->logger->log('File modified during night hours: ' . $path, 'info', 'scanner');.
 			return false;
 		}
 
 		return false;
 	}
 }
-```
