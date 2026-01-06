@@ -1,4 +1,12 @@
 <?php
+/**
+ * Admin Provider.
+ *
+ * Registers admin services.
+ *
+ * @package OMS\Providers
+ */
+
 declare(strict_types=1);
 
 namespace OMS\Providers;

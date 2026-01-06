@@ -1,4 +1,12 @@
 <?php
+/**
+ * Security Provider.
+ *
+ * Registers security scanning services.
+ *
+ * @package OMS\Providers
+ */
+
 declare(strict_types=1);
 
 namespace OMS\Providers;

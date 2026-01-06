@@ -1,11 +1,11 @@
 <?php
-declare(strict_types=1);
-
 /**
  * API Handler for Centralized Management
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Direct access is not allowed.' );
@@ -203,7 +203,7 @@ class OMS_API {
 
 			if ( file_exists( $log_file ) ) {
 				$file_contents = file( $log_file );
-				$logs = array_slice( false !== $file_contents ? $file_contents : array(), -50 );
+				$logs          = array_slice( false !== $file_contents ? $file_contents : array(), -50 );
 			}
 		}
 

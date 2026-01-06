@@ -1,12 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Core;
-
-use ReflectionClass;
-use ReflectionNamedType;
-use Exception;
-
 /**
  * A Strict Dependency Injection Container.
  *
@@ -16,6 +8,14 @@ use Exception;
  *
  * @package OMS\Core
  */
+
+declare(strict_types=1);
+
+namespace OMS\Core;
+
+use ReflectionClass;
+use ReflectionNamedType;
+use Exception;
 class Container {
 	/**
 	 * specialized registry for singleton instances.

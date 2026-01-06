@@ -1,10 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Services;
-
-use OMS\Interfaces\FileScannerInterface;
-
 /**
  * File Scanner Service.
  *
@@ -12,6 +6,12 @@ use OMS\Interfaces\FileScannerInterface;
  *
  * @package OMS\Services
  */
+
+declare(strict_types=1);
+
+namespace OMS\Services;
+
+use OMS\Interfaces\FileScannerInterface;
 class FileScannerService implements FileScannerInterface {
 	/**
 	 * Malicious patterns to scan for.

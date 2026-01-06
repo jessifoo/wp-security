@@ -1,8 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Services;
-
 /**
  * Filesystem Service.
  *
@@ -10,6 +6,11 @@ namespace OMS\Services;
  *
  * @package OMS\Services
  */
+
+declare(strict_types=1);
+
+namespace OMS\Services;
+
 class FilesystemService {
 	/**
 	 * Check if file exists.

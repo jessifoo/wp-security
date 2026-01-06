@@ -16,6 +16,19 @@
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
     </rule>
     <!-- 
+        Modern WordPress development (6.9+) supports PSR-4 namespaced classes.
+        Namespaced classes in Services/, Core/, Providers/, Admin/, Interfaces/ 
+        follow PSR-4 naming (PascalCase filenames matching class names).
+        Non-namespaced classes must follow WordPress conventions (lowercase-hyphenated).
+    -->
+    <rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
+        <exclude-pattern>includes/Services/*</exclude-pattern>
+        <exclude-pattern>includes/Core/*</exclude-pattern>
+        <exclude-pattern>includes/Providers/*</exclude-pattern>
+        <exclude-pattern>includes/Admin/*</exclude-pattern>
+        <exclude-pattern>includes/Interfaces/*</exclude-pattern>
+    </rule>
+    <!-- 
         Note: All coding standards violations in production code should be fixed
         with inline phpcs:ignore comments and proper justifications, not blanket exceptions.
         Test files are excluded below as they follow PHPUnit conventions.

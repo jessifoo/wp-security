@@ -1,8 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Core;
-
 /**
  * Interface ServiceProvider
  *
@@ -11,6 +7,11 @@ namespace OMS\Core;
  *
  * @package OMS\Core
  */
+
+declare(strict_types=1);
+
+namespace OMS\Core;
+
 interface ServiceProvider {
 	/**
 	 * Register services into the container.

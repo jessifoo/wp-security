@@ -1,4 +1,10 @@
 <?php
+/**
+ * Register Core Services.
+ *
+ * @package OMS\Providers
+ */
+
 declare(strict_types=1);
 
 namespace OMS\Providers;
@@ -7,12 +13,6 @@ use OMS\Core\ServiceProvider;
 use OMS\Core\Container;
 use OMS\Services\LoggerService;
 use OMS\Services\CacheService;
-
-/**
- * Register Core Services.
- *
- * @package OMS\Providers
- */
 class CoreProvider implements ServiceProvider {
 
 	/**

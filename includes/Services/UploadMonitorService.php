@@ -1,15 +1,16 @@
 <?php
+/**
+ * Upload Monitor Service.
+ *
+ * Monitors uploads and triggers scans.
+ *
+ * @package OMS\Services
+ */
+
 declare(strict_types=1);
 
 namespace OMS\Services;
 
-/**
- * Upload Monitor Service.
- *
- * monitors uploads and triggers scans.
- *
- * @package OMS\Services
- */
 class UploadMonitorService {
 
 	/**
@@ -33,7 +34,7 @@ class UploadMonitorService {
 	 * @return void
 	 */
 	public function check_uploaded_file( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ): void {
-		// Only check attachment metadata
+		// Only check attachment metadata.
 		if ( '_wp_attached_file' !== $meta_key ) {
 			return;
 		}

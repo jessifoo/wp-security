@@ -1,4 +1,12 @@
 <?php
+/**
+ * Database Scanner Service.
+ *
+ * Scans the database for malware and integrity issues.
+ *
+ * @package OMS\Services
+ */
+
 declare(strict_types=1);
 
 namespace OMS\Services;
@@ -39,9 +47,9 @@ class DatabaseScannerService implements DatabaseScannerInterface {
 		$issues = array();
 
 		try {
-			// Placeholder for actual scanning logic
-			// 1. Scan Content
-			// 2. Scan Integrity
+			// Placeholder for actual scanning logic.
+			// 1. Scan Content.
+			// 2. Scan Integrity.
 
 			return array(
 				'success' => true,

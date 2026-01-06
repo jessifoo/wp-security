@@ -1,12 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Admin;
-
-use OMS\Services\DatabaseScannerService;
-use OMS\Services\FileScannerService;
-use OMS\Services\LoggerService;
-
 /**
  * Admin Service (Controller).
  *
@@ -14,6 +6,14 @@ use OMS\Services\LoggerService;
  *
  * @package OMS\Admin
  */
+
+declare(strict_types=1);
+
+namespace OMS\Admin;
+
+use OMS\Services\DatabaseScannerService;
+use OMS\Services\FileScannerService;
+use OMS\Services\LoggerService;
 class AdminService {
 
 	/**
