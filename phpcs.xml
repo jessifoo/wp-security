@@ -9,44 +9,30 @@
     <exclude-pattern>wordpress/*</exclude-pattern>
     <exclude-pattern>.github/*</exclude-pattern>
     <exclude-pattern>src/*</exclude-pattern>
+    <config name="testVersion" value="8.4-"/>
     <rule ref="WordPress"/>
     <!-- Allow class-file-security-policy.php naming (legacy compatibility) -->
     <rule ref="WordPress.Files.FileName">
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
     </rule>
-    <!-- Allow direct FS operations only in scanner/logger where necessary -->
-    <rule ref="WordPress.WP.AlternativeFunctions">
-        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
-        <exclude-pattern>includes/class-oms-scanner.php</exclude-pattern>
-        <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
-        <exclude-pattern>includes/class-file-security-policy.php</exclude-pattern>
+    <!-- 
+        Modern WordPress development (6.9+) supports PSR-4 namespaced classes.
+        Namespaced classes in Services/, Core/, Providers/, Admin/, Interfaces/ 
+        follow PSR-4 naming (PascalCase filenames matching class names).
+        Non-namespaced classes must follow WordPress conventions (lowercase-hyphenated).
+    -->
+    <rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
+        <exclude-pattern>includes/Services/*</exclude-pattern>
+        <exclude-pattern>includes/Core/*</exclude-pattern>
+        <exclude-pattern>includes/Providers/*</exclude-pattern>
+        <exclude-pattern>includes/Admin/*</exclude-pattern>
+        <exclude-pattern>includes/Interfaces/*</exclude-pattern>
     </rule>
-    <!-- Allow development functions only in scanner/logger -->
-    <rule ref="WordPress.PHP.DevelopmentFunctions">
-        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
-        <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
-        <exclude-pattern>includes/class-oms-exception.php</exclude-pattern>
-        <exclude-pattern>tests/TestHelperTrait.php</exclude-pattern>
-    </rule>
-    <!-- file_get_contents used for local file reading in scanner context -->
-    <rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
-        <exclude-pattern>includes/class-oms-utils.php</exclude-pattern>
-        <exclude-pattern>includes/class-file-security-policy.php</exclude-pattern>
-        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
-        <exclude-pattern>includes/class-oms-filesystem.php</exclude-pattern>
-    </rule>
-    <!-- ini_set used for security hardening in scanner -->
-    <rule ref="WordPress.PHP.IniSet.Risky">
-        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
-    </rule>
-    <!-- Direct DB queries for logging are acceptable -->
-    <rule ref="WordPress.DB.DirectDatabaseQuery">
-        <exclude-pattern>includes/class-oms-logger.php</exclude-pattern>
-    </rule>
-    <!-- Error suppression needed for regex validation -->
-    <rule ref="WordPress.PHP.NoSilencedErrors">
-        <exclude-pattern>includes/class-obfuscated-malware-scanner.php</exclude-pattern>
-    </rule>
+    <!-- 
+        Note: All coding standards violations in production code should be fixed
+        with inline phpcs:ignore comments and proper justifications, not blanket exceptions.
+        Test files are excluded below as they follow PHPUnit conventions.
+    -->
 
     <!-- Test files follow PHPUnit conventions, not WordPress conventions -->
     <!-- Allow CamelCase filenames for PHPUnit test classes -->

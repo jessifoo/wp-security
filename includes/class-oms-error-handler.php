@@ -5,6 +5,8 @@
  * @package ObfuscatedMalwareScanner
  */
 
+declare(strict_types=1);
+
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Direct access is not allowed.' );
@@ -15,20 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OMS_Error_Handler {
 	/**
-	 * Logger instance.
-	 *
-	 * @var OMS_Logger
-	 */
-	private $logger;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param OMS_Logger $logger Logger instance.
 	 */
-	public function __construct( OMS_Logger $logger ) {
-		$this->logger = $logger;
-	}
+	public function __construct( private readonly OMS_Logger $logger ) {}
 
 	/**
 	 * Handle exception.
@@ -37,7 +30,7 @@ class OMS_Error_Handler {
 	 * @param string    $context Context message.
 	 * @return void
 	 */
-	public function handle_exception( Exception $e, $context = '' ) {
+	public function handle_exception( Exception $e, string $context = '' ): void {
 		$message = $e->getMessage();
 		if ( ! empty( $context ) ) {
 			$message = $context . ': ' . $message;
@@ -58,7 +51,7 @@ class OMS_Error_Handler {
 	 * @param string $level Error level.
 	 * @return void
 	 */
-	public function handle_error( $message, $level = 'error' ) {
+	public function handle_error( string $message, string $level = 'error' ): void {
 		$this->logger->log( $message, $level );
 	}
 }

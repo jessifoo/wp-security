@@ -13,7 +13,8 @@ class wpdb {
 	public function __construct( $user, $password, $name, $host ) {}
 
 	public function prepare( $query, ...$args ) {
-		$this->prepared_query = vsprintf( str_replace( '%s', "'%s'", $query ), $args );
+		$query                = str_replace( array( '%s', '%i' ), array( "'%s'", '%s' ), $query );
+		$this->prepared_query = vsprintf( $query, $args );
 		return $this->prepared_query;
 	}
 

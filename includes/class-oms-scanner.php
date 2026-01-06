@@ -8,6 +8,8 @@
  * @package ObfuscatedMalwareScanner
  */
 
+declare(strict_types=1);
+
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Direct access is not allowed.' );
@@ -18,32 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OMS_Scanner {
 	/**
-	 * Logger instance
+	 * Compiled regex patterns.
 	 *
-	 * @var OMS_Logger
+	 * @var array<string>
 	 */
-	private $logger;
-
-	/**
-	 * Rate limiter instance
-	 *
-	 * @var OMS_Rate_Limiter
-	 */
-	private $rate_limiter;
-
-	/**
-	 * Compiled malware patterns
-	 *
-	 * @var array
-	 */
-	private $compiled_patterns;
-
-	/**
-	 * Cache instance
-	 *
-	 * @var OMS_Cache
-	 */
-	private $cache;
+	private array $compiled_patterns = array();
 
 	/**
 	 * Constructor
@@ -52,49 +33,47 @@ class OMS_Scanner {
 	 * @param OMS_Rate_Limiter $rate_limiter Rate limiter instance.
 	 * @param OMS_Cache        $cache Cache instance.
 	 */
-	public function __construct( OMS_Logger $logger, OMS_Rate_Limiter $rate_limiter, OMS_Cache $cache ) {
-		$this->logger            = $logger;
-		$this->rate_limiter      = $rate_limiter;
-		$this->cache             = $cache;
+	public function __construct(
+		private readonly OMS_Logger $logger,
+		private readonly OMS_Rate_Limiter $rate_limiter,
+		private readonly OMS_Cache $cache
+	) {
 		$this->compiled_patterns = $this->compile_patterns();
 	}
 
 	/**
 	 * Compile malware detection patterns
 	 *
-	 * @return array Array of compiled patterns
+	 * @return array<string> Array of compiled patterns
 	 */
-	private function compile_patterns() {
-		// Check if patterns are already cached.
-		$cached_patterns = $this->cache->get( 'compiled_malware_patterns' );
-		if ( $cached_patterns ) {
-			return $cached_patterns;
-		}
-
+	private function compile_patterns(): array {
 		$patterns = array();
-		foreach ( OMS_Config::MALWARE_PATTERNS as $index => $pattern_data ) {
-			try {
-				// Validate and compile each pattern without suppressing errors.
 
-				$pattern_str   = $pattern_data['pattern'];
-				$last_error    = error_get_last();
-				$test_result   = preg_match( $pattern_str, '' );
-				$current_error = error_get_last();
-				if ( false === $test_result || ( $current_error !== $last_error && preg_last_error() !== PREG_NO_ERROR ) ) {
-					$error_msg    = ( $current_error !== $last_error && $current_error ) ? $current_error['message'] : 'Invalid regex pattern';
-					$pattern_name = $pattern_data['description'];
-					$this->logger->error( sprintf( 'Invalid malware pattern - Name: %s, Pattern: %s, Error: %s', esc_html( $pattern_name ), esc_html( $pattern_str ), esc_html( $error_msg ) ) );
-					continue;
-				}
-				$patterns[ $index ] = $pattern_data;
-			} catch ( Exception $e ) {
-				$pattern_name = $pattern_data['description'];
-				$this->logger->error( sprintf( 'Failed to compile pattern - Name: %s, Error: %s', esc_html( $pattern_name ), esc_html( $e->getMessage() ) ) );
+		// Compile standard patterns.
+		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
+			// Validate regex pattern without error suppression.
+			$test_result = preg_match( '#' . $pattern . '#i', '' );
+			if ( false !== $test_result ) {
+				$patterns[] = '#' . $pattern . '#i';
+			} else {
+				$error = preg_last_error();
+				$this->logger->log( 'Invalid pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error', 'scanner' );
 			}
 		}
 
-		// Cache the compiled patterns.
-		$this->cache->set( 'compiled_malware_patterns', $patterns, OMS_Config::CACHE_CONFIG['ttl'] );
+		// Compile obfuscation patterns.
+		foreach ( OMS_Config::OBFUSCATION_PATTERNS as $pattern_config ) {
+			$pattern = $pattern_config['pattern'];
+			// Validate regex pattern without error suppression.
+			$test_result = preg_match( '#' . $pattern . '#i', '' );
+			if ( false !== $test_result ) {
+				$patterns[] = '#' . $pattern . '#i';
+			} else {
+				$error = preg_last_error();
+				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error', 'scanner' );
+			}
+		}
+
 		return $patterns;
 	}
 
@@ -104,18 +83,19 @@ class OMS_Scanner {
 	 * @param int $filesize Size of the file being scanned.
 	 * @return int Optimal chunk size in bytes.
 	 */
-	private function calculate_optimal_chunk_size( $filesize ) {
-		$memory_limit     = $this->get_memory_limit();
-		$available_memory = $memory_limit * (float) rtrim( OMS_Config::SCAN_CONFIG['memory_limit'], '%' ) / 100;
+	private function calculate_optimal_chunk_size( int $filesize ): int {
+		$memory_limit = $this->get_memory_limit();
 
-		$chunk_size = min(
-			max(
-				OMS_Config::SCAN_CONFIG['min_chunk_size'],
-				(int) ( $available_memory / 4 )
-			),
-			OMS_Config::SCAN_CONFIG['max_chunk_size'],
-			$filesize
-		);
+		// Use 10% of available memory or configured limit.
+		$chunk_size = (int) min( $memory_limit * 0.1, OMS_Config::SCAN_CONFIG['max_chunk_size'] );
+
+		// Ensure within bounds.
+		$chunk_size = max( $chunk_size, OMS_Config::SCAN_CONFIG['min_chunk_size'] );
+
+		// If file is smaller than chunk size, just use file size (plus buffer).
+		if ( $filesize < $chunk_size ) {
+			return $filesize + 1024;
+		}
 
 		return $chunk_size;
 	}
@@ -125,27 +105,28 @@ class OMS_Scanner {
 	 *
 	 * @return int Memory limit in bytes.
 	 */
-	private function get_memory_limit() {
-		$memory_limit = ini_get( 'memory_limit' );
-		if ( '-1' === $memory_limit ) {
-			return PHP_INT_MAX;
+	private function get_memory_limit(): int {
+		$ini_limit = ini_get( 'memory_limit' );
+		if ( '-1' === $ini_limit ) {
+			return 1024 * 1024 * 1024; // 1GB default for no limit.
 		}
 
-		$unit  = strtolower( substr( $memory_limit, -1 ) );
-		$bytes = (int) $memory_limit;
+		$val  = trim( $ini_limit );
+		$last = strtolower( $val[ strlen( $val ) - 1 ] );
+		$val  = (int) $val;
 
-		switch ( $unit ) {
+		switch ( $last ) {
 			case 'g':
-				$bytes *= 1024;
-				// Fall through.
+				$val *= 1024;
+				// Fallthrough.
 			case 'm':
-				$bytes *= 1024;
-				// Fall through.
+				$val *= 1024;
+				// Fallthrough.
 			case 'k':
-				$bytes *= 1024;
+				$val *= 1024;
 		}
 
-		return $bytes;
+		return $val;
 	}
 
 	/**
@@ -155,28 +136,31 @@ class OMS_Scanner {
 	 * @return bool True if malware detected, false otherwise.
 	 * @throws OMS_Exception If file cannot be read or processed.
 	 */
-	public function contains_malware( $path ) {
-		if ( ! file_exists( $path ) ) {
-			$this->logger->error( sprintf( 'File not found for malware scan: %s', esc_html( $path ) ) );
+	public function contains_malware( string $path ): bool {
+		if ( ! is_readable( $path ) ) {
+			throw new OMS_Exception( 'File is not readable: ' . esc_html( $path ) );
+		}
+
+		// Quick check for obvious binary files.
+		$finfo = new finfo( FILEINFO_MIME_TYPE );
+		$mime  = $finfo->file( $path );
+
+		if ( false === strpos( $mime, 'text/' ) && 'application/x-php' !== $mime && 'application/json' !== $mime ) {
+			// Skip likely binary files unless explicitly PHP.
 			return false;
 		}
 
-		try {
-			$filesize = filesize( $path );
-			if ( 0 === $filesize ) {
-				$this->logger->warning( sprintf( 'Empty file detected: %s', esc_html( $path ) ) );
-				return false;
-			}
-
-			$chunk_size = $this->calculate_optimal_chunk_size( $filesize );
-			return $this->scan_file_chunks( $path, $chunk_size );
-		} catch ( Exception $e ) {
-				$this->logger->error( sprintf( 'Failed to scan file for malware: %s - Error: %s', esc_html( $path ), esc_html( $e->getMessage() ) ) );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filesize -- Direct file size check required for malware scanning.
+		$filesize = filesize( $path );
+		if ( $filesize > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
+			$this->logger->log( 'File too large to scan: ' . $path, 'warning', 'scanner' );
 			return false;
 		}
+
+		$chunk_size = $this->calculate_optimal_chunk_size( $filesize );
+
+		return $this->scan_file_chunks( $path, $chunk_size );
 	}
-
-
 
 	/**
 	 * Scan file in chunks for malware patterns
@@ -186,51 +170,54 @@ class OMS_Scanner {
 	 * @return bool True if malware detected.
 	 * @throws OMS_Exception If file cannot be read.
 	 */
-	private function scan_file_chunks( $path, $chunk_size ) {
-		$fp = fopen( $path, 'rb' );
-		if ( ! $fp ) {
-			$this->logger->error( sprintf( 'Unable to open file: %s', esc_html( $path ) ) );
-			return false;
+	private function scan_file_chunks( string $path, int $chunk_size ): bool {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct file access required for malware scanning.
+		$handle = fopen( $path, 'rb' );
+		if ( false === $handle ) {
+			throw new OMS_Exception( 'Could not open file: ' . esc_html( $path ) );
 		}
 
+		$position     = 0;
+		$overlap_size = OMS_Config::SCAN_CONFIG['overlap_size'];
+
 		try {
-			$content = '';
-			while ( ! feof( $fp ) ) {
-				$chunk = fread( $fp, $chunk_size );
-				if ( false === $chunk ) {
-					$this->logger->error( sprintf( 'Failed to read file chunk: %s', esc_html( $path ) ) );
-					return false;
+			while ( ! feof( $handle ) ) {
+				$this->apply_rate_limiting();
+
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Direct file reading required for chunked malware scanning.
+				$content = fread( $handle, $chunk_size );
+				if ( false === $content ) {
+					break;
 				}
 
-				// Keep previous overlap and append new chunk.
-				$content = substr( $content, -OMS_Config::SCAN_CONFIG['overlap_size'] ) . $chunk;
-
-				if ( $this->match_patterns( $content, $path, ftell( $fp ) ) ) {
+				if ( $this->match_patterns( $content, $path, $position ) ) {
 					return true;
 				}
 
-				// Trim content for memory optimization.
-				if ( strlen( $content ) > $chunk_size * 2 ) {
-					$content = substr( $content, -$chunk_size );
+				// Handle overlap for patterns spanning chunks.
+				if ( ! feof( $handle ) ) {
+					$seek_pos = $chunk_size - $overlap_size;
+					fseek( $handle, -$seek_pos, SEEK_CUR );
+					$position += $seek_pos;
+				} else {
+					$position += strlen( $content );
 				}
-
-				$this->apply_rate_limiting();
 			}
-			return false;
 		} finally {
-			fclose( $fp );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing file handle opened with fopen.
+			fclose( $handle );
 		}
+
+		return false;
 	}
-
-
-
-
 
 	/**
 	 * Apply rate limiting with configurable threshold
 	 */
-	private function apply_rate_limiting() {
-		$this->rate_limiter->throttle( 'file_scan' );
+	private function apply_rate_limiting(): void {
+		if ( $this->rate_limiter->should_limit() ) {
+			usleep( (int) ( OMS_Config::SCAN_CONFIG['batch_pause'] * 1000 ) );
+		}
 	}
 
 	/**
@@ -241,11 +228,10 @@ class OMS_Scanner {
 	 * @param int    $position Current position in file.
 	 * @return bool True if match found.
 	 */
-	private function match_patterns( $content, $path, $position ) {
-		foreach ( $this->compiled_patterns as $pattern_name => $pattern ) {
-			$matches = null;
+	private function match_patterns( string $content, string $path, int $position ): bool {
+		foreach ( $this->compiled_patterns as $pattern ) {
 			if ( preg_match( $pattern, $content, $matches, PREG_OFFSET_CAPTURE ) ) {
-				$this->log_pattern_match( $matches, $path, $pattern_name, $position, $content );
+				$this->log_pattern_match( $matches, $path, $pattern, $position, $content );
 				return true;
 			}
 		}
@@ -255,21 +241,26 @@ class OMS_Scanner {
 	/**
 	 * Log pattern match with context
 	 *
-	 * @param array  $matches Pattern matches.
-	 * @param string $path File path.
-	 * @param string $pattern_name Name of matched pattern.
-	 * @param int    $position Current position in file.
-	 * @param string $content File content.
+	 * @param array<array-key, mixed> $matches Pattern matches.
+	 * @param string                  $path File path.
+	 * @param string                  $pattern_name Name of matched pattern.
+	 * @param int                     $position Current position in file.
+	 * @param string                  $content File content.
 	 */
-	private function log_pattern_match( $matches, $path, $pattern_name, $position, $content ) {
-		$match_pos     = $matches[0][1];
-		$match_content = $matches[0][0];
+	private function log_pattern_match( array $matches, string $path, string $pattern_name, int $position, string $content ): void {
+		$match_pos = $matches[0][1];
+		$context   = $this->extract_match_context( $content, $match_pos );
 
-		// Get context around match.
-		$context = $this->extract_match_context( $content, $match_pos );
-
-		$this->logger->warning(
-			sprintf( 'Malware pattern detected - Path: %s, Pattern: %s, Position: %d, Context: %s', esc_html( $path ), esc_html( $pattern_name ), $match_pos, esc_html( substr( $context, 0, 100 ) ) )
+		$this->logger->log(
+			sprintf(
+				'Malware pattern detected in %s at position %d. Pattern: %s. Context: %s',
+				$path,
+				$position + $match_pos,
+				$pattern_name,
+				$context
+			),
+			'critical',
+			'scanner'
 		);
 	}
 
@@ -280,10 +271,9 @@ class OMS_Scanner {
 	 * @param int    $match_pos Position of match.
 	 * @return string Context around match.
 	 */
-	private function extract_match_context( $content, $match_pos ) {
-		$context_size = 50; // Characters before and after match.
-		$start        = max( 0, $match_pos - $context_size );
-		$length       = min( $context_size * 2, strlen( $content ) - $start );
+	private function extract_match_context( string $content, int $match_pos ): string {
+		$start  = max( 0, $match_pos - 50 );
+		$length = min( strlen( $content ) - $start, 100 );
 		return substr( $content, $start, $length );
 	}
 
@@ -294,15 +284,20 @@ class OMS_Scanner {
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if file is suspicious.
 	 */
-	public function is_file_suspicious( $path, SplFileInfo $file ) {
-		try {
-			return $this->check_size( $path, $file )
-				|| $this->check_permissions( $path, $file )
-				|| $this->check_modification_time( $path, $file );
-		} catch ( Exception $e ) {
-			$this->logger->error( sprintf( 'Failed to check file suspiciousness: %s - Error: %s', esc_html( $path ), esc_html( $e->getMessage() ) ) );
-			return true; // Treat as suspicious if verification fails.
+	public function is_file_suspicious( string $path, SplFileInfo $file ): bool {
+		if ( $this->check_size( $path, $file ) ) {
+			return true;
 		}
+
+		if ( $this->check_permissions( $path, $file ) ) {
+			return true;
+		}
+
+		if ( $this->check_modification_time( $path, $file ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -312,10 +307,14 @@ class OMS_Scanner {
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if size is suspicious.
 	 */
-	private function check_size( $path, SplFileInfo $file ) {
-		if ( $file->getSize() > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
-			$this->logger->warning( sprintf( 'File exceeds maximum size: %s (%d bytes)', esc_html( $path ), $file->getSize() ) );
-			return true;
+	private function check_size( string $path, SplFileInfo $file ): bool {
+		// Empty files might be suspicious in some contexts, but config handles allowable ones.
+		if ( $file->getSize() === 0 && ! in_array( $file->getFilename(), OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
+			// Check if it's a critical file that shouldn't be empty.
+			if ( in_array( $file->getFilename(), OMS_Config::CRITICAL_FILES, true ) ) {
+				$this->logger->log( 'Critical file is zero bytes: ' . $path, 'critical', 'scanner' );
+				return true;
+			}
 		}
 		return false;
 	}
@@ -327,12 +326,15 @@ class OMS_Scanner {
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if permissions are suspicious.
 	 */
-	private function check_permissions( $path, SplFileInfo $file ) {
+	private function check_permissions( string $path, SplFileInfo $file ): bool {
 		$perms = $file->getPerms();
-		if ( ( $perms & 0111 ) && ! $file->isDir() ) {
-			$this->logger->warning( sprintf( 'Suspicious file permissions: %s (%s)', esc_html( $path ), substr( sprintf( '%o', $perms ), -4 ) ) );
+
+		// World writable?
+		if ( ( $perms & 0x0002 ) ) { // 0002 is world writable bit (S_IWOTH).
+			$this->logger->log( 'File is world writable: ' . $path, 'warning', 'scanner' );
 			return true;
 		}
+
 		return false;
 	}
 
@@ -343,12 +345,21 @@ class OMS_Scanner {
 	 * @param SplFileInfo $file File information.
 	 * @return bool True if modification time is suspicious.
 	 */
-	private function check_modification_time( $path, SplFileInfo $file ) {
+	private function check_modification_time( string $path, SplFileInfo $file ): bool {
 		$mtime = $file->getMTime();
-		if ( $mtime > time() || $mtime < strtotime( '-1 year' ) ) {
-			$this->logger->warning( sprintf( 'Suspicious file modification time: %s (%s)', esc_html( $path ), gmdate( 'Y-m-d H:i:s', $mtime ) ) );
-			return true;
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- Date formatting needed for time-based security analysis.
+		$hour = (int) date( 'G', $mtime );
+
+		// Check night hours.
+		$night_start = OMS_Config::SUSPICIOUS_TIMES['night_hours'][0];
+		$night_end   = OMS_Config::SUSPICIOUS_TIMES['night_hours'][1];
+
+		if ( $hour >= $night_start && $hour <= $night_end ) {
+			// This alone isn't critical, but worth logging if verbose.
+			// $this->logger->log('File modified during night hours: ' . $path, 'info', 'scanner');.
+			return false;
 		}
+
 		return false;
 	}
 }

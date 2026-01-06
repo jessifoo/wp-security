@@ -1,7 +1,7 @@
 # Obfuscated Malware Scanner
 
 ## Description
-A real-time WordPress security plugin designed for small sites that need immediate malware prevention and cleanup, with special handling for Elementor and Astra themes. The plugin:
+A top of the line WordPress security plugin designed for immediate malware prevention and cleanup, with special handling for Elementor and Astra themes. The plugin:
 - Preserves custom theme content during cleanup
 - Prevents malicious file uploads
 - Monitors and blocks unauthorized file changes

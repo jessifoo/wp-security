@@ -1,0 +1,9 @@
+# Ensure vendor/ is never committed even if accidentally added
+/vendor/ export-ignore
+vendor/ export-ignore
+
+# Ensure WordPress core files are never committed
+/wordpress/ export-ignore
+wordpress/ export-ignore
+wp-admin/ export-ignore
+wp-includes/ export-ignore

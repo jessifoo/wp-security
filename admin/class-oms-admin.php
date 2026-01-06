@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -22,38 +24,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OMS_Admin {
 
 	/**
-	 * The ID of this plugin.
-	 *
-	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
-	 */
-	private $plugin_name;
-
-	/**
-	 * The version of this plugin.
-	 *
-	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
-	 */
-	private $version;
-
-	/**
 	 * Initialize the class and set its properties.
 	 *
 	 * @param string $plugin_name The name of this plugin.
-	 * @param string $version The version of this plugin.
+	 * @param string $version     The version of this plugin.
 	 */
-	public function __construct( $plugin_name, $version ) {
-		$this->plugin_name = $plugin_name;
-		$this->version     = $version;
-	}
+	public function __construct( private readonly string $plugin_name, private readonly string $version ) {}
 
 	/**
 	 * Register the stylesheets for the admin area.
 	 *
 	 * @since 1.0.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles(): void {
 		// Only load on plugin admin pages.
 		$screen = get_current_screen();
 		if ( ! $screen || ( false === strpos( $screen->id, $this->plugin_name ) && 'settings_page_' . $this->plugin_name !== $screen->id ) ) {
@@ -74,7 +57,7 @@ class OMS_Admin {
 	 *
 	 * @since 1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts(): void {
 		// Only load on plugin admin pages.
 		$screen = get_current_screen();
 		if ( ! $screen || ( false === strpos( $screen->id, $this->plugin_name ) && 'settings_page_' . $this->plugin_name !== $screen->id ) ) {
@@ -93,7 +76,7 @@ class OMS_Admin {
 	/**
 	 * Add an options page under the Settings submenu
 	 */
-	public function add_options_page() {
+	public function add_options_page(): void {
 		add_options_page(
 			__( 'Obfuscated Malware Scanner Settings', 'obfuscated-malware-scanner' ),
 			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
@@ -106,7 +89,7 @@ class OMS_Admin {
 	/**
 	 * Render the options page for plugin
 	 */
-	public function display_options_page() {
+	public function display_options_page(): void {
 		include_once 'partials/oms-admin-display.php';
 	}
 
@@ -115,7 +98,7 @@ class OMS_Admin {
 	 *
 	 * @since 1.0.0
 	 */
-	public function register_settings() {
+	public function register_settings(): void {
 		// Register settings.
 		register_setting(
 			'oms_options',
@@ -186,7 +169,7 @@ class OMS_Admin {
 	 *
 	 * @since 1.0.0
 	 */
-	public function render_main_section() {
+	public function render_main_section(): void {
 		echo '<p>' . esc_html__( 'Configure automatic malware scanning and cleanup.', 'obfuscated-malware-scanner' ) . '</p>';
 	}
 
@@ -195,7 +178,7 @@ class OMS_Admin {
 	 *
 	 * @since 1.0.0
 	 */
-	public function render_scan_schedule_field() {
+	public function render_scan_schedule_field(): void {
 		$value = get_option( 'oms_scan_schedule', 'daily' );
 		?>
 		<select name="oms_scan_schedule" id="oms_scan_schedule">
@@ -212,7 +195,7 @@ class OMS_Admin {
 	 *
 	 * @since 1.0.0
 	 */
-	public function render_auto_quarantine_field() {
+	public function render_auto_quarantine_field(): void {
 		$value = get_option( 'oms_auto_quarantine', true );
 		?>
 		<label>
@@ -228,7 +211,7 @@ class OMS_Admin {
 	 *
 	 * @since 1.0.0
 	 */
-	public function render_email_notifications_field() {
+	public function render_email_notifications_field(): void {
 		$value = get_option( 'oms_email_notifications', true );
 		?>
 		<label>
@@ -243,9 +226,10 @@ class OMS_Admin {
 	 * Handle manual scan action.
 	 *
 	 * @since 1.0.0
-	 * @SuppressWarnings(PHPMD.ExitExpression) Exit required after wp_safe_redirect per WordPress standards.
+	 * @SuppressWarnings("PHPMD.ExitExpression")
+	 * Exit required after wp_safe_redirect per WordPress standards.
 	 */
-	public function handle_manual_scan() {
+	public function handle_manual_scan(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Unauthorized', 'obfuscated-malware-scanner' ) );
 		}
@@ -268,7 +252,7 @@ class OMS_Admin {
 	 * @param mixed $value Value to sanitize.
 	 * @return bool Sanitized boolean value.
 	 */
-	public function sanitize_boolean( $value ) {
+	public function sanitize_boolean( mixed $value ): bool {
 		return filter_var( $value, FILTER_VALIDATE_BOOLEAN );
 	}
 }

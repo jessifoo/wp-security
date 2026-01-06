@@ -5,6 +5,8 @@
  * @package ObfuscatedMalwareScanner
  */
 
+declare(strict_types=1);
+
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Direct access is not allowed.' );
@@ -18,9 +20,9 @@ class OMS_Filesystem {
 	 * Check file content for malicious patterns
 	 *
 	 * @param string $file_path Path to the file to check.
-	 * @return array Array with 'safe' boolean and 'reason' string.
+	 * @return array{safe: bool, reason: string} Array with 'safe' boolean and 'reason' string.
 	 */
-	public function check_file_content( $file_path ) {
+	public function check_file_content( string $file_path ): array {
 		if ( ! is_readable( $file_path ) ) {
 			return array(
 				'safe'   => false,
@@ -28,6 +30,7 @@ class OMS_Filesystem {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Direct file reading required for malware pattern detection on local files.
 		$content = file_get_contents( $file_path );
 		if ( false === $content ) {
 			return array(
@@ -78,7 +81,7 @@ class OMS_Filesystem {
 	 * @param string $path Path to check.
 	 * @return bool True if file exists.
 	 */
-	public function file_exists( $path ) {
+	public function file_exists( string $path ): bool {
 		return file_exists( $path );
 	}
 
@@ -88,7 +91,7 @@ class OMS_Filesystem {
 	 * @param string $path Path to check.
 	 * @return int|false File permissions or false on failure.
 	 */
-	public function fileperms( $path ) {
+	public function fileperms( string $path ): int|false {
 		return fileperms( $path );
 	}
 }

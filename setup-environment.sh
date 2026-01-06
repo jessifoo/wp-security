@@ -15,26 +15,26 @@ if ! grep -q "ondrej/php" /etc/apt/sources.list.d/* 2>/dev/null; then
     sudo apt-get update -qq
 fi
 
-# Install PHP 8.2 and extensions
-if ! command -v php8.2 &> /dev/null; then
-    echo "📦 Installing PHP 8.2..."
+# Install PHP 8.4 and extensions
+if ! command -v php8.4 &> /dev/null; then
+    echo "📦 Installing PHP 8.4..."
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        php8.2 \
-        php8.2-cli \
-        php8.2-common \
-        php8.2-mbstring \
-        php8.2-xml \
-        php8.2-curl \
-        php8.2-zip \
-        php8.2-gd \
-        php8.2-mysql \
-        php8.2-mysqli
+        php8.4 \
+        php8.4-cli \
+        php8.4-common \
+        php8.4-mbstring \
+        php8.4-xml \
+        php8.4-curl \
+        php8.4-zip \
+        php8.4-gd \
+        php8.4-mysql \
+        php8.4-mysqli
 fi
 
 # Set PHP in PATH
 export PATH="/usr/bin:$PATH"
 if ! command -v php &> /dev/null; then
-    sudo ln -sf /usr/bin/php8.2 /usr/bin/php || true
+    sudo ln -sf /usr/bin/php8.4 /usr/bin/php || true
 fi
 
 # Verify PHP installation

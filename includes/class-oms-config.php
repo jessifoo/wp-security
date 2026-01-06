@@ -20,7 +20,7 @@ class OMS_Config {
 	/**
 	 * Malware pattern severity levels.
 	 */
-	const SEVERITY_LEVELS = array(
+	public const array SEVERITY_LEVELS = array(
 		'CRITICAL' => 5,  // Immediate action required.
 		'HIGH'     => 4,  // Likely malicious.
 		'MEDIUM'   => 3,  // Suspicious, needs context.
@@ -31,7 +31,7 @@ class OMS_Config {
 	/**
 	 * Advanced obfuscation detection patterns.
 	 */
-	const OBFUSCATION_PATTERNS = array(
+	public const array OBFUSCATION_PATTERNS = array(
 		// Variable function calls.
 		array(
 			'pattern'     => '\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s*=\s*[\'"](?:eval|assert|base64_decode|gzinflate|str_rot13|gzuncompress|strrev|substr|chr|ord|include|require|file|curl|wget|system)[\'"];\s*\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*\s*\(',

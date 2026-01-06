@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Utility functions for the Obfuscated Malware Scanner
  *
@@ -20,7 +22,7 @@ class OMS_Utils {
 	 * @param string $url The URL to sanitize.
 	 * @return string The sanitized URL.
 	 */
-	public static function sanitize_url( $url ) {
+	public static function sanitize_url( string $url ): string {
 		return esc_url_raw( $url );
 	}
 
@@ -31,7 +33,7 @@ class OMS_Utils {
 	 * @return string The sanitized path.
 	 * @throws InvalidArgumentException If path is invalid or contains path traversal.
 	 */
-	public static function sanitize_path( $path ) {
+	public static function sanitize_path( string $path ): string {
 		// Normalize path.
 		$path = wp_normalize_path( $path );
 
@@ -57,7 +59,7 @@ class OMS_Utils {
 	 * @param string $path Absolute path to get relative path for.
 	 * @return string Relative path from WordPress root.
 	 */
-	public static function get_relative_path( $path ) {
+	public static function get_relative_path( string $path ): string {
 		$path    = wp_normalize_path( $path );
 		$wp_root = wp_normalize_path( ABSPATH );
 
@@ -75,21 +77,21 @@ class OMS_Utils {
 	 * @param string $path The path to check.
 	 * @return bool True if path is safe, false otherwise.
 	 */
-	public static function is_path_safe( $path ) {
+	public static function is_path_safe( string $path ): bool {
 		// Check for null bytes.
 		if ( false !== strpos( $path, "\0" ) ) {
 			return false;
 		}
 
 		// Normalize and decode before traversal checks.
-		$decoded    = rawurldecode( (string) $path );
+		$decoded    = rawurldecode( $path );
 		$normalized = wp_normalize_path( $decoded );
 
 		// Disallow traversal by checking path segments strictly.
 		$parts = array_values(
 			array_filter(
 				explode( '/', $normalized ),
-				static function ( $part ) {
+				static function ( string $part ): bool {
 					return '' !== $part;
 				}
 			)
@@ -131,9 +133,9 @@ class OMS_Utils {
 	 * Check file content for malicious patterns
 	 *
 	 * @param string $file_path Path to the file to check.
-	 * @return array Array with 'safe' boolean and 'reason' string.
+	 * @return array{safe: bool, reason: string} Array with 'safe' boolean and 'reason' string.
 	 */
-	public static function check_file_content( $file_path ) {
+	public static function check_file_content( string $file_path ): array {
 		if ( ! is_readable( $file_path ) ) {
 			return array(
 				'safe'   => false,
@@ -141,6 +143,7 @@ class OMS_Utils {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Direct file reading required for malware pattern detection on local files.
 		$content = file_get_contents( $file_path );
 		if ( false === $content ) {
 			return array(
@@ -205,7 +208,7 @@ class OMS_Utils {
 	 *     @type bool   $paragraph_wrap    Whether to wrap content in <p> tags. Default true.
 	 * }
 	 */
-	public static function display_admin_notice( $message, $args = array() ) {
+	public static function display_admin_notice( string $message, array $args = array() ): void {
 		$defaults = array(
 			'type'               => 'info',
 			'id'                 => '',
