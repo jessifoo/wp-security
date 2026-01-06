@@ -29,7 +29,8 @@
             "OMS\\": "includes/"
         },
         "classmap": [
-            "admin/"
+            "admin/",
+            "includes/"
         ]
     },
     "autoload-dev": {
