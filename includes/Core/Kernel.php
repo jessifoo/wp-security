@@ -1,8 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Core;
-
 /**
  * The Kernel.
  *
@@ -11,6 +7,11 @@ namespace OMS\Core;
  *
  * @package OMS\Core
  */
+
+declare(strict_types=1);
+
+namespace OMS\Core;
+
 class Kernel {
 	/**
 	 * The DI Container.
@@ -24,7 +25,7 @@ class Kernel {
 	 *
 	 * @var string[]
 	 */
-	private array $providers = [];
+	private array $providers = array();
 
 	/**
 	 * Constructor.
@@ -48,7 +49,7 @@ class Kernel {
 		// Phase 1: Registration
 		// We instantiate all providers and let them tell the container what they provide.
 		// We keep the instances so we don't have to re-instantiate them for boot.
-		$provider_instances = [];
+		$provider_instances = array();
 
 		foreach ( $this->providers as $provider_class ) {
 			/** @var ServiceProvider $provider */

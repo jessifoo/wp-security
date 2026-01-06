@@ -1,12 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Core;
-
-use ReflectionClass;
-use ReflectionNamedType;
-use Exception;
-
 /**
  * A Strict Dependency Injection Container.
  *
@@ -16,20 +8,28 @@ use Exception;
  *
  * @package OMS\Core
  */
+
+declare(strict_types=1);
+
+namespace OMS\Core;
+
+use ReflectionClass;
+use ReflectionNamedType;
+use Exception;
 class Container {
 	/**
 	 * specialized registry for singleton instances.
 	 *
 	 * @var array<string, object>
 	 */
-	private array $instances = [];
+	private array $instances = array();
 
 	/**
 	 * Registry for service definitions/factories.
 	 *
 	 * @var array<string, callable>
 	 */
-	private array $definitions = [];
+	private array $definitions = array();
 
 	/**
 	 * Bind a service to a factory.
@@ -104,7 +104,7 @@ class Container {
 		}
 
 		// Resolve dependencies
-		$dependencies = [];
+		$dependencies = array();
 		foreach ( $constructor->getParameters() as $parameter ) {
 			$type = $parameter->getType();
 

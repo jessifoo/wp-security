@@ -1,12 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Admin;
-
-use OMS\Services\DatabaseScannerService;
-use OMS\Services\FileScannerService;
-use OMS\Services\LoggerService;
-
 /**
  * Admin Service (Controller).
  *
@@ -14,6 +6,14 @@ use OMS\Services\LoggerService;
  *
  * @package OMS\Admin
  */
+
+declare(strict_types=1);
+
+namespace OMS\Admin;
+
+use OMS\Services\DatabaseScannerService;
+use OMS\Services\FileScannerService;
+use OMS\Services\LoggerService;
 class AdminService {
 
 	/**
@@ -58,7 +58,7 @@ class AdminService {
 			__( 'Malware Scanner', 'obfuscated-malware-scanner' ),
 			'manage_options',
 			'obfuscated-malware-scanner',
-			[ $this, 'render_settings_page' ]
+			array( $this, 'render_settings_page' )
 		);
 	}
 

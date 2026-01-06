@@ -1,8 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Services;
-
 /**
  * Logger Service.
  *
@@ -10,6 +6,11 @@ namespace OMS\Services;
  *
  * @package OMS\Services
  */
+
+declare(strict_types=1);
+
+namespace OMS\Services;
+
 class LoggerService {
 	/**
 	 * Log levels
@@ -24,7 +25,7 @@ class LoggerService {
 	 *
 	 * @var array<string>
 	 */
-	private array $memory_logs = [];
+	private array $memory_logs = array();
 
 	/**
 	 * Log file path.
@@ -139,7 +140,7 @@ class LoggerService {
 	 * @return string Valid level.
 	 */
 	private function validate_log_level( string $level ): string {
-		$valid = [ 'debug', 'info', 'warning', 'error', 'critical' ];
+		$valid = array( 'debug', 'info', 'warning', 'error', 'critical' );
 		$level = strtolower( $level );
 		return in_array( $level, $valid, true ) ? strtoupper( $level ) : 'INFO';
 	}
@@ -152,7 +153,8 @@ class LoggerService {
 	 * @return string The formatted line.
 	 */
 	private function format_log_message( string $message, string $level ): string {
-		$timestamp = function_exists( 'current_time' ) ? current_time( 'mysql' ) : date( 'Y-m-d H:i:s' );
+		// Use WordPress time function for timezone-aware timestamps.
+		$timestamp = function_exists( 'current_time' ) ? current_time( 'mysql' ) : gmdate( 'Y-m-d H:i:s' );
 		return sprintf( '[%s] [%s] %s', $timestamp, $level, $message );
 	}
 
@@ -168,13 +170,13 @@ class LoggerService {
 			return;
 		}
 
-		// Write to WP Error Log if urgent
-		if ( in_array( $level, [ 'ERROR', 'CRITICAL', 'WARNING' ], true ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		// Write to WP Error Log if urgent.
+		if ( in_array( $level, array( 'ERROR', 'CRITICAL', 'WARNING' ), true ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( $message );
 		}
 
-		// Write to file
+		// Write to file.
 		if ( $this->log_file ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			file_put_contents( $this->log_file, $message . PHP_EOL, FILE_APPEND | LOCK_EX );

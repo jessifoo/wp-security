@@ -1,8 +1,4 @@
 <?php
-declare(strict_types=1);
-
-namespace OMS\Interfaces;
-
 /**
  * Interface DatabaseScannerInterface
  *
@@ -10,6 +6,11 @@ namespace OMS\Interfaces;
  *
  * @package OMS\Interfaces
  */
+
+declare(strict_types=1);
+
+namespace OMS\Interfaces;
+
 interface DatabaseScannerInterface {
 	/**
 	 * Scan the database for security issues.

@@ -1,11 +1,11 @@
 <?php
-declare(strict_types=1);
-
 /**
  * Filesystem wrapper for the Obfuscated Malware Scanner
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,37 +24,38 @@ class OMS_Filesystem {
 	 */
 	public function check_file_content( string $file_path ): array {
 		if ( ! is_readable( $file_path ) ) {
-			return [
+			return array(
 				'safe'   => false,
 				'reason' => 'File is not readable',
-			];
+			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Direct file reading required for malware pattern detection on local files.
 		$content = file_get_contents( $file_path );
 		if ( false === $content ) {
-			return [
+			return array(
 				'safe'   => false,
 				'reason' => 'Could not read file content',
-			];
+			);
 		}
 
 		// Check for malicious patterns from OMS_Config.
 		foreach ( OMS_Config::MALICIOUS_PATTERNS as $pattern ) {
 			if ( preg_match( '#' . $pattern . '#i', $content ) ) {
-				return [
+				return array(
 					'safe'   => false,
 					'reason' => 'File contains malicious code pattern',
-				];
+				);
 			}
 		}
 
 		// Check for obfuscation patterns from OMS_Config.
 		foreach ( OMS_Config::OBFUSCATION_PATTERNS as $pattern_data ) {
 			if ( preg_match( '#' . $pattern_data['pattern'] . '#i', $content ) ) {
-				return [
+				return array(
 					'safe'   => false,
 					'reason' => $pattern_data['description'],
-				];
+				);
 			}
 		}
 
@@ -62,16 +63,16 @@ class OMS_Filesystem {
 		$special_chars = preg_match_all( '/[^a-zA-Z0-9\s]/', $content );
 		$total_chars   = strlen( $content );
 		if ( $total_chars > 0 && ( $special_chars / $total_chars ) > 0.3 ) {
-			return [
+			return array(
 				'safe'   => false,
 				'reason' => 'File appears to be obfuscated (high special character ratio)',
-			];
+			);
 		}
 
-		return [
+		return array(
 			'safe'   => true,
 			'reason' => 'File content appears safe',
-		];
+		);
 	}
 
 	/**

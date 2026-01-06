@@ -1,11 +1,11 @@
 <?php
-declare(strict_types=1);
-
 /**
  * API Handler for Centralized Management
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Direct access is not allowed.' );
@@ -33,7 +33,7 @@ class OMS_API {
 	 * @return void
 	 */
 	public function init(): void {
-		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
 	/**
@@ -48,44 +48,44 @@ class OMS_API {
 		register_rest_route(
 			$namespace,
 			'/register',
-			[
+			array(
 				'methods'             => 'POST',
-				'callback'            => [ $this, 'handle_registration' ],
+				'callback'            => array( $this, 'handle_registration' ),
 				'permission_callback' => '__return_true', // Open endpoint for initial handshake.
-			]
+			)
 		);
 
 		// Get Status.
 		register_rest_route(
 			$namespace,
 			'/status',
-			[
+			array(
 				'methods'             => 'GET',
-				'callback'            => [ $this, 'get_status' ],
-				'permission_callback' => [ $this, 'check_api_permission' ],
-			]
+				'callback'            => array( $this, 'get_status' ),
+				'permission_callback' => array( $this, 'check_api_permission' ),
+			)
 		);
 
 		// Trigger Scan.
 		register_rest_route(
 			$namespace,
 			'/scan',
-			[
+			array(
 				'methods'             => 'POST',
-				'callback'            => [ $this, 'trigger_scan' ],
-				'permission_callback' => [ $this, 'check_api_permission' ],
-			]
+				'callback'            => array( $this, 'trigger_scan' ),
+				'permission_callback' => array( $this, 'check_api_permission' ),
+			)
 		);
 
 		// Get Report.
 		register_rest_route(
 			$namespace,
 			'/report',
-			[
+			array(
 				'methods'             => 'GET',
-				'callback'            => [ $this, 'get_report' ],
-				'permission_callback' => [ $this, 'check_api_permission' ],
-			]
+				'callback'            => array( $this, 'get_report' ),
+				'permission_callback' => array( $this, 'check_api_permission' ),
+			)
 		);
 	}
 
@@ -98,12 +98,12 @@ class OMS_API {
 	public function check_api_permission( WP_REST_Request $request ): bool|WP_Error {
 		$api_key = $request->get_header( 'X-OMS-API-Key' );
 		if ( ! $api_key ) {
-			return new WP_Error( 'rest_forbidden', 'Missing API Key', [ 'status' => 401 ] );
+			return new WP_Error( 'rest_forbidden', 'Missing API Key', array( 'status' => 401 ) );
 		}
 
 		$stored_key = get_option( 'oms_api_key' );
 		if ( ! $stored_key || ! hash_equals( (string) $stored_key, (string) $api_key ) ) {
-			return new WP_Error( 'rest_forbidden', 'Invalid API Key', [ 'status' => 403 ] );
+			return new WP_Error( 'rest_forbidden', 'Invalid API Key', array( 'status' => 403 ) );
 		}
 
 		return true;
@@ -119,12 +119,12 @@ class OMS_API {
 		$params = $request->get_json_params();
 
 		if ( empty( $params['master_key'] ) || empty( $params['dashboard_url'] ) ) {
-			return new WP_REST_Response( [ 'error' => 'Missing parameters' ], 400 );
+			return new WP_REST_Response( array( 'error' => 'Missing parameters' ), 400 );
 		}
 
 		if ( ! hash_equals( OMS_Config::OMS_LINKING_KEY, (string) $params['master_key'] ) ) {
 			$this->logger->warning( 'Invalid master key provided for registration from: ' . esc_html( $params['dashboard_url'] ) );
-			return new WP_REST_Response( [ 'error' => 'Invalid master key' ], 403 );
+			return new WP_REST_Response( array( 'error' => 'Invalid master key' ), 403 );
 		}
 
 		// Generate a new API key for this site.
@@ -135,11 +135,11 @@ class OMS_API {
 		$this->logger->info( 'Site registered with master dashboard: ' . $params['dashboard_url'] );
 
 		return new WP_REST_Response(
-			[
+			array(
 				'success'  => true,
 				'api_key'  => $new_api_key,
 				'site_url' => get_site_url(),
-			],
+			),
 			200
 		);
 	}
@@ -151,12 +151,12 @@ class OMS_API {
 	 */
 	public function get_status(): WP_REST_Response {
 		$last_scan = get_option( 'oms_last_scan_time' );
-		$status    = [
+		$status    = array(
 			'version'     => '1.0.0',
 			'last_scan'   => $last_scan ? gmdate( 'c', (int) $last_scan ) : null,
 			'php_version' => phpversion(),
 			'wp_version'  => get_bloginfo( 'version' ),
-		];
+		);
 
 		return new WP_REST_Response( $status, 200 );
 	}
@@ -170,18 +170,18 @@ class OMS_API {
 		try {
 			$this->scanner->run_full_cleanup();
 			return new WP_REST_Response(
-				[
+				array(
 					'success' => true,
 					'message' => 'Scan completed',
-				],
+				),
 				200
 			);
 		} catch ( Exception $e ) {
 			return new WP_REST_Response(
-				[
+				array(
 					'success' => false,
 					'error'   => $e->getMessage(),
-				],
+				),
 				500
 			);
 		}
@@ -193,7 +193,7 @@ class OMS_API {
 	 * @return WP_REST_Response Response object.
 	 */
 	public function get_report(): WP_REST_Response {
-		$logs = [];
+		$logs = array();
 
 		if ( defined( 'OMS_TEST_MODE' ) && OMS_TEST_MODE && method_exists( $this->logger, 'get_memory_logs' ) ) {
 			$logs = $this->logger->get_memory_logs();
@@ -202,10 +202,11 @@ class OMS_API {
 			$log_file = $log_path . '/security.log';
 
 			if ( file_exists( $log_file ) ) {
-				$logs = array_slice( file( $log_file ) ?: [], -50 );
+				$file_contents = file( $log_file );
+				$logs          = array_slice( false !== $file_contents ? $file_contents : array(), -50 );
 			}
 		}
 
-		return new WP_REST_Response( [ 'logs' => $logs ], 200 );
+		return new WP_REST_Response( array( 'logs' => $logs ), 200 );
 	}
 }

@@ -11,13 +11,13 @@ use OMS\Services\CacheService;
 
 class CoreProviderTest extends TestCase {
 
-    public function test_registers_core_services(): void {
-        $container = new Container();
-        $provider = new CoreProvider();
+	public function test_registers_core_services(): void {
+		$container = new Container();
+		$provider  = new CoreProvider();
 
-        $provider->register($container);
+		$provider->register( $container );
 
-        $this->assertInstanceOf(LoggerService::class, $container->get(LoggerService::class));
-        $this->assertInstanceOf(CacheService::class, $container->get(CacheService::class));
-    }
+		$this->assertInstanceOf( LoggerService::class, $container->get( LoggerService::class ) );
+		$this->assertInstanceOf( CacheService::class, $container->get( CacheService::class ) );
+	}
 }

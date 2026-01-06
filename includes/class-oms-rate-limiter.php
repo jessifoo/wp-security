@@ -1,11 +1,11 @@
 <?php
-declare(strict_types=1);
-
 /**
  * OMS Rate Limiter Class
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare(strict_types=1);
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,7 +21,7 @@ class OMS_Rate_Limiter {
 	 *
 	 * @var array
 	 */
-	private array $last_request_time = [];
+	private array $last_request_time = array();
 
 	/**
 	 * Constructor
