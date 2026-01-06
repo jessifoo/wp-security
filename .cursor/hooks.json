@@ -3,12 +3,8 @@
   "hooks": {
     "beforeSubmitPrompt": [
       {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.cursor/session-start.sh"
-          }
-        ]
+        "type": "command",
+        "command": "\"$CLAUDE_PROJECT_DIR\"/.cursor/session-start.sh"
       }
     ]
   }
