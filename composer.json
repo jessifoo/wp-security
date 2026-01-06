@@ -26,7 +26,11 @@
     },
     "autoload": {
         "psr-4": {
-            "OMS\\": "includes/"
+            "OMS\\Core\\": "includes/Core/",
+            "OMS\\Services\\": "includes/Services/",
+            "OMS\\Providers\\": "includes/Providers/",
+            "OMS\\Admin\\": "includes/Admin/",
+            "OMS\\Interfaces\\": "includes/Interfaces/"
         },
         "classmap": [
             "admin/",
