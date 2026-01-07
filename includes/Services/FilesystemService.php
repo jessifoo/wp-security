@@ -7,11 +7,19 @@
  * @package OMS\Services
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Services;
 
+/**
+ * Filesystem Service class.
+ *
+ * Provides a testable wrapper around native PHP filesystem functions.
+ *
+ * @package OMS\Services
+ */
 class FilesystemService {
+
 	/**
 	 * Check if file exists.
 	 *
@@ -62,7 +70,7 @@ class FilesystemService {
 	 * @return resource|false Handle or false.
 	 */
 	public function fopen( string $path, string $mode ) {
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		return fopen( $path, $mode );
 	}
 
@@ -74,7 +82,7 @@ class FilesystemService {
 	 * @return string|false Content.
 	 */
 	public function fread( $stream, int $length ) {
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 		return fread( $stream, $length );
 	}
 
@@ -85,7 +93,7 @@ class FilesystemService {
 	 * @return bool Result.
 	 */
 	public function fclose( $stream ): bool {
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		return fclose( $stream );
 	}
 }

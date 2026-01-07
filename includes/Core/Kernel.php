@@ -8,11 +8,19 @@
  * @package OMS\Core
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Core;
 
+/**
+ * Application Kernel class.
+ *
+ * Bootstraps the application by registering and booting service providers.
+ *
+ * @package OMS\Core
+ */
 class Kernel {
+
 	/**
 	 * The DI Container.
 	 *
@@ -40,26 +48,28 @@ class Kernel {
 	/**
 	 * Run the application.
 	 *
-	 * 1. Register all services (Wiring).
-	 * 2. Boot all services (Hooks).
+	 * Registers all services (wiring) then boots all services (hooks).
 	 *
 	 * @return void
 	 */
 	public function run(): void {
-		// Phase 1: Registration
-		// We instantiate all providers and let them tell the container what they provide.
-		// We keep the instances so we don't have to re-instantiate them for boot.
+		// Phase 1: Registration.
+		// Instantiate all providers and let them tell the container what they provide.
 		$provider_instances = array();
 
 		foreach ( $this->providers as $provider_class ) {
-			/** @var ServiceProvider $provider */
+			/**
+			 * Service provider instance.
+			 *
+			 * @var ServiceProvider $provider
+			 */
 			$provider = new $provider_class();
 			$provider->register( $this->container );
 			$provider_instances[] = $provider;
 		}
 
-		// Phase 2: Boot
-		// Now that all services are known to the container, we can safe start them.
+		// Phase 2: Boot.
+		// Now that all services are known to the container, we can safely start them.
 		foreach ( $provider_instances as $provider ) {
 			$provider->boot( $this->container );
 		}

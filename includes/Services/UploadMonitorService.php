@@ -7,11 +7,32 @@
  * @package OMS\Services
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Services;
 
+/**
+ * Upload Monitor Service class.
+ *
+ * Monitors file uploads and triggers security scans.
+ *
+ * @package OMS\Services
+ */
 class UploadMonitorService {
+
+	/**
+	 * File scanner service.
+	 *
+	 * @var FileScannerService
+	 */
+	private FileScannerService $scanner;
+
+	/**
+	 * Logger service.
+	 *
+	 * @var LoggerService
+	 */
+	private LoggerService $logger;
 
 	/**
 	 * Constructor.
@@ -20,9 +41,12 @@ class UploadMonitorService {
 	 * @param LoggerService      $logger  Logger service.
 	 */
 	public function __construct(
-		private FileScannerService $scanner,
-		private LoggerService $logger
-	) {}
+		FileScannerService $scanner,
+		LoggerService $logger
+	) {
+		$this->scanner = $scanner;
+		$this->logger  = $logger;
+	}
 
 	/**
 	 * Check uploaded file when metadata is added.
@@ -43,13 +67,13 @@ class UploadMonitorService {
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['basedir'] . '/' . $filename;
 
-		// Run the scan
+		// Run the scan.
 		$result = $this->scanner->scan_file( $file_path );
 
 		if ( ! $result['safe'] ) {
-			$this->logger->warning( "Malware detected in upload (Post ID: $post_id): " . ( $result['reason'] ?? 'Unknown reason' ) );
-			// In a real scenario, we might quarantine here or delete the post meta/attachment
-			// For now, we just log as per the refactor scope (reproducing logic but cleaner).
+			$reason = isset( $result['reason'] ) ? $result['reason'] : 'Unknown reason';
+			$this->logger->warning( "Malware detected in upload (Post ID: $post_id): " . $reason );
+			// In production, we might quarantine here or delete the attachment.
 		}
 	}
 }

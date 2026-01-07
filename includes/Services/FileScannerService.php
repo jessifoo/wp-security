@@ -7,12 +7,21 @@
  * @package OMS\Services
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Services;
 
 use OMS\Interfaces\FileScannerInterface;
+
+/**
+ * File Scanner Service class.
+ *
+ * Provides file scanning functionality to detect malicious patterns.
+ *
+ * @package OMS\Services
+ */
 class FileScannerService implements FileScannerInterface {
+
 	/**
 	 * Malicious patterns to scan for.
 	 *
@@ -30,21 +39,38 @@ class FileScannerService implements FileScannerInterface {
 	);
 
 	/**
+	 * Filesystem service.
+	 *
+	 * @var FilesystemService
+	 */
+	private FilesystemService $filesystem;
+
+	/**
+	 * Logger service.
+	 *
+	 * @var LoggerService
+	 */
+	private LoggerService $logger;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param FilesystemService $filesystem Filesystem service.
 	 * @param LoggerService     $logger     Logger service.
 	 */
 	public function __construct(
-		private FilesystemService $filesystem,
-		private LoggerService $logger
-	) {}
+		FilesystemService $filesystem,
+		LoggerService $logger
+	) {
+		$this->filesystem = $filesystem;
+		$this->logger     = $logger;
+	}
 
 	/**
 	 * Scan a file for malware.
 	 *
 	 * @param string $file_path Absolute path to the file.
-	 * @return array{safe: bool, issues: array, reason?: string}
+	 * @return array{safe: bool, issues: array<string>, reason?: string}
 	 */
 	public function scan_file( string $file_path ): array {
 		if ( ! $this->filesystem->is_readable( $file_path ) ) {

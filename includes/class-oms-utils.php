@@ -1,11 +1,13 @@
 <?php
-declare(strict_types=1);
-
 /**
- * Utility functions for the Obfuscated Malware Scanner
+ * Utility functions for the Obfuscated Malware Scanner.
+ *
+ * Provides common utility methods for path validation and sanitization.
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare( strict_types=1 );
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {

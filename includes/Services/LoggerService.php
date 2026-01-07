@@ -7,18 +7,46 @@
  * @package OMS\Services
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Services;
 
+/**
+ * Logger Service class.
+ *
+ * Provides logging functionality with multiple output destinations.
+ *
+ * @package OMS\Services
+ */
 class LoggerService {
+
 	/**
-	 * Log levels
+	 * Error log level.
+	 *
+	 * @var string
 	 */
-	public const string ERROR   = 'ERROR';
+	public const string ERROR = 'ERROR';
+
+	/**
+	 * Warning log level.
+	 *
+	 * @var string
+	 */
 	public const string WARNING = 'WARNING';
-	public const string INFO    = 'INFO';
-	public const string DEBUG   = 'DEBUG';
+
+	/**
+	 * Info log level.
+	 *
+	 * @var string
+	 */
+	public const string INFO = 'INFO';
+
+	/**
+	 * Debug log level.
+	 *
+	 * @var string
+	 */
+	public const string DEBUG = 'DEBUG';
 
 	/**
 	 * In-memory logs for testing.
@@ -35,14 +63,23 @@ class LoggerService {
 	private ?string $log_file;
 
 	/**
+	 * Whether to run in test mode (no file usage).
+	 *
+	 * @var bool
+	 */
+	private bool $test_mode;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string|null $log_path  Path to the log directory.
 	 * @param bool        $test_mode Whether to run in test mode (no file usage).
 	 */
-	public function __construct( ?string $log_path = null, private bool $test_mode = false ) {
-		// Fallback to global constant if passed (for backward compat during refactor)
-		// or if strictly testing without params.
+	public function __construct( ?string $log_path = null, bool $test_mode = false ) {
+		$this->test_mode = $test_mode;
+		$this->log_file  = null;
+
+		// Fallback to global constant if passed (for backward compat during refactor).
 		if ( defined( 'OMS_TEST_MODE' ) && OMS_TEST_MODE ) {
 			$this->test_mode = true;
 		}
@@ -59,6 +96,8 @@ class LoggerService {
 
 	/**
 	 * Initialize log directory.
+	 *
+	 * @return void
 	 */
 	private function init_log_dir(): void {
 		if ( ! $this->log_file ) {
@@ -86,6 +125,7 @@ class LoggerService {
 	 * Log an info message.
 	 *
 	 * @param string $message The message.
+	 * @return void
 	 */
 	public function info( string $message ): void {
 		$this->log( $message, self::INFO );
@@ -95,6 +135,7 @@ class LoggerService {
 	 * Log an error message.
 	 *
 	 * @param string $message The message.
+	 * @return void
 	 */
 	public function error( string $message ): void {
 		$this->log( $message, self::ERROR );
@@ -104,6 +145,7 @@ class LoggerService {
 	 * Log a warning message.
 	 *
 	 * @param string $message The message.
+	 * @return void
 	 */
 	public function warning( string $message ): void {
 		$this->log( $message, self::WARNING );
@@ -113,6 +155,7 @@ class LoggerService {
 	 * Log a debug message.
 	 *
 	 * @param string $message The message.
+	 * @return void
 	 */
 	public function debug( string $message ): void {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -125,6 +168,7 @@ class LoggerService {
 	 *
 	 * @param string $message The message.
 	 * @param string $level   The log level.
+	 * @return void
 	 */
 	public function log( string $message, string $level = 'info' ): void {
 		$level       = $this->validate_log_level( $level );
@@ -163,6 +207,7 @@ class LoggerService {
 	 *
 	 * @param string $message Formatted message.
 	 * @param string $level   Level.
+	 * @return void
 	 */
 	private function write( string $message, string $level ): void {
 		if ( $this->test_mode ) {

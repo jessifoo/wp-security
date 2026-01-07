@@ -9,16 +9,25 @@
  * @package OMS\Core
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Core;
 
 use ReflectionClass;
 use ReflectionNamedType;
 use Exception;
+
+/**
+ * Dependency Injection Container class.
+ *
+ * Manages service instances and provides automatic dependency resolution.
+ *
+ * @package OMS\Core
+ */
 class Container {
+
 	/**
-	 * specialized registry for singleton instances.
+	 * Specialized registry for singleton instances.
 	 *
 	 * @var array<string, object>
 	 */
@@ -68,13 +77,13 @@ class Container {
 	 * @throws Exception If resolution fails.
 	 */
 	public function get( string $id ): object {
-		// 1. Check if we have a definition for it
+		// Check if we have a definition for it.
 		if ( isset( $this->definitions[ $id ] ) ) {
 			$concrete = $this->definitions[ $id ];
 			return $concrete( $this );
 		}
 
-		// 2. If no definition, try to auto-wire it (Reflection)
+		// If no definition, try to auto-wire it (Reflection).
 		return $this->resolve( $id );
 	}
 
@@ -87,32 +96,33 @@ class Container {
 	 */
 	private function resolve( string $class_name ): object {
 		if ( ! class_exists( $class_name ) ) {
-			throw new Exception( "Service not found: $class_name" );
+			throw new Exception( esc_html( "Service not found: $class_name" ) );
 		}
 
 		$reflector = new ReflectionClass( $class_name );
 
 		if ( ! $reflector->isInstantiable() ) {
-			throw new Exception( "Class is not instantiable: $class_name" );
+			throw new Exception( esc_html( "Class is not instantiable: $class_name" ) );
 		}
 
 		$constructor = $reflector->getConstructor();
 
-		// If no constructor, simple instantiation
+		// If no constructor, simple instantiation.
 		if ( null === $constructor ) {
 			return new $class_name();
 		}
 
-		// Resolve dependencies
+		// Resolve dependencies.
 		$dependencies = array();
 		foreach ( $constructor->getParameters() as $parameter ) {
 			$type = $parameter->getType();
 
 			if ( ! $type instanceof ReflectionNamedType || $type->isBuiltin() ) {
-				throw new Exception( "Cannot auto-resolve non-class dependency '{$parameter->getName()}' in $class_name" );
+				$param_name = $parameter->getName();
+				throw new Exception( esc_html( "Cannot auto-resolve non-class dependency '$param_name' in $class_name" ) );
 			}
 
-			// Recursive resolution
+			// Recursive resolution.
 			$dependencies[] = $this->get( $type->getName() );
 		}
 

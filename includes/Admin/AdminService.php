@@ -7,14 +7,43 @@
  * @package OMS\Admin
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Admin;
 
 use OMS\Services\DatabaseScannerService;
 use OMS\Services\FileScannerService;
 use OMS\Services\LoggerService;
+
+/**
+ * Admin Service class.
+ *
+ * Manages admin interface and handles user interactions.
+ *
+ * @package OMS\Admin
+ */
 class AdminService {
+
+	/**
+	 * Database scanner service.
+	 *
+	 * @var DatabaseScannerService
+	 */
+	private DatabaseScannerService $db_scanner;
+
+	/**
+	 * File scanner service.
+	 *
+	 * @var FileScannerService
+	 */
+	private FileScannerService $file_scanner;
+
+	/**
+	 * Logger service.
+	 *
+	 * @var LoggerService
+	 */
+	private LoggerService $logger;
 
 	/**
 	 * Constructor.
@@ -24,10 +53,14 @@ class AdminService {
 	 * @param LoggerService          $logger       Logger.
 	 */
 	public function __construct(
-		private DatabaseScannerService $db_scanner,
-		private FileScannerService $file_scanner,
-		private LoggerService $logger
-	) {}
+		DatabaseScannerService $db_scanner,
+		FileScannerService $file_scanner,
+		LoggerService $logger
+	) {
+		$this->db_scanner   = $db_scanner;
+		$this->file_scanner = $file_scanner;
+		$this->logger       = $logger;
+	}
 
 	/**
 	 * Execute a manual scan.
@@ -37,20 +70,20 @@ class AdminService {
 	public function execute_manual_scan(): bool {
 		$this->logger->info( 'Starting manual scan from Admin Interface...' );
 
-		// 1. Database Scan
+		// Perform database scan.
 		$db_result = $this->db_scanner->scan();
-		$this->logger->info( 'Manual DB Scan Result: ' . ( $db_result['success'] ? 'Success' : 'Failed' ) );
+		$this->logger->info( 'Manual scan - Database result: ' . ( $db_result['success'] ? 'Success' : 'Failed' ) );
 
-		// 2. File Scan (Simplified for now - we need an iterator or specific targets)
-		// For this refactor, we acknowledge the capability exists.
-		// Future: Inject a specific 'SystemScanner' service that iterates files.
-		$this->logger->info( 'Manual scan details recorded.' );
+		// File scan capability exists but requires specific targets.
+		$this->logger->info( 'Manual scan completed.' );
 
 		return true;
 	}
 
 	/**
 	 * Add admin menu.
+	 *
+	 * @return void
 	 */
 	public function add_admin_menu(): void {
 		add_options_page(
@@ -64,9 +97,10 @@ class AdminService {
 
 	/**
 	 * Render settings page.
+	 *
+	 * @return void
 	 */
 	public function render_settings_page(): void {
-		// In a real MVC, we'd include a view file.
 		echo '<div class="wrap"><h1>' . esc_html__( 'Malware Scanner', 'obfuscated-malware-scanner' ) . '</h1>';
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';

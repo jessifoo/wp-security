@@ -1,11 +1,13 @@
 <?php
-declare(strict_types=1);
-
 /**
- * Plugin initialization class
+ * Plugin initialization class.
+ *
+ * Handles plugin lifecycle and core functionality registration.
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare( strict_types=1 );
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {

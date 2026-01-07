@@ -57,7 +57,7 @@ class OMS_Scanner {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
 				$error = preg_last_error();
-				$this->logger->log( 'Invalid pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error', 'scanner' );
+				$this->logger->log( 'Invalid pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error' );
 			}
 		}
 
@@ -70,7 +70,7 @@ class OMS_Scanner {
 				$patterns[] = '#' . $pattern . '#i';
 			} else {
 				$error = preg_last_error();
-				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error', 'scanner' );
+				$this->logger->log( 'Invalid obfuscation pattern: ' . $pattern . ' (error code: ' . $error . ')', 'error' );
 			}
 		}
 
@@ -153,7 +153,7 @@ class OMS_Scanner {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filesize -- Direct file size check required for malware scanning.
 		$filesize = filesize( $path );
 		if ( $filesize > OMS_Config::SCAN_CONFIG['max_file_size'] ) {
-			$this->logger->log( 'File too large to scan: ' . $path, 'warning', 'scanner' );
+			$this->logger->log( 'File too large to scan: ' . $path, 'warning' );
 			return false;
 		}
 
@@ -215,7 +215,7 @@ class OMS_Scanner {
 	 * Apply rate limiting with configurable threshold
 	 */
 	private function apply_rate_limiting(): void {
-		if ( $this->rate_limiter->should_limit() ) {
+		if ( $this->rate_limiter->should_throttle() ) {
 			usleep( (int) ( OMS_Config::SCAN_CONFIG['batch_pause'] * 1000 ) );
 		}
 	}
@@ -259,8 +259,7 @@ class OMS_Scanner {
 				$pattern_name,
 				$context
 			),
-			'critical',
-			'scanner'
+			'critical'
 		);
 	}
 
@@ -312,7 +311,7 @@ class OMS_Scanner {
 		if ( $file->getSize() === 0 && ! in_array( $file->getFilename(), OMS_Config::ALLOWED_EMPTY_FILES, true ) ) {
 			// Check if it's a critical file that shouldn't be empty.
 			if ( in_array( $file->getFilename(), OMS_Config::CRITICAL_FILES, true ) ) {
-				$this->logger->log( 'Critical file is zero bytes: ' . $path, 'critical', 'scanner' );
+				$this->logger->log( 'Critical file is zero bytes: ' . $path, 'critical' );
 				return true;
 			}
 		}
@@ -331,7 +330,7 @@ class OMS_Scanner {
 
 		// World writable?
 		if ( ( $perms & 0x0002 ) ) { // 0002 is world writable bit (S_IWOTH).
-			$this->logger->log( 'File is world writable: ' . $path, 'warning', 'scanner' );
+			$this->logger->log( 'File is world writable: ' . $path, 'warning' );
 			return true;
 		}
 

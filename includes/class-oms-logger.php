@@ -1,11 +1,13 @@
 <?php
-declare(strict_types=1);
-
 /**
- * Logger class for the Obfuscated Malware Scanner
+ * Logger class for the Obfuscated Malware Scanner.
+ *
+ * Handles logging operations and log file management.
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare( strict_types=1 );
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
