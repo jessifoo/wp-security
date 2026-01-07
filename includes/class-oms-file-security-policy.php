@@ -152,9 +152,13 @@ class OMS_File_Security_Policy {
 	 */
 	public function validate_file( string $path, array $options = array() ): array {
 		try {
-			// Verify nonce if provided.
-			if ( isset( $options['nonce'] ) && ! wp_verify_nonce( (string) $options['nonce'], 'oms_file_validation' ) ) {
-				throw new OMS_Security_Exception( 'Invalid security token' );
+			// Verify nonce if provided - use separate checks for proper validation.
+			$nonce_provided = isset( $options['nonce'] ) && '' !== $options['nonce'];
+			if ( $nonce_provided ) {
+				$nonce_valid = wp_verify_nonce( (string) $options['nonce'], 'oms_file_validation' );
+				if ( ! $nonce_valid ) {
+					throw new OMS_Security_Exception( 'Invalid security token' );
+				}
 			}
 
 			// 1. Basic file checks.
