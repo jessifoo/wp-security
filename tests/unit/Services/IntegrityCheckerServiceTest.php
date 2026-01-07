@@ -9,111 +9,106 @@ use OMS\Services\IntegrityCheckerService;
 use OMS\Services\LoggerService;
 use WordPressMocksTrait;
 
-require_once dirname(__DIR__, 2) . '/WordPressMocksTrait.php';
+require_once dirname( __DIR__, 2 ) . '/WordPressMocksTrait.php';
 
-class IntegrityCheckerServiceTest extends TestCase
-{
-    use \WordPressMocksTrait;
+class IntegrityCheckerServiceTest extends TestCase {
 
-    private $logger;
-    private $service;
-    private $test_dir;
+	use \WordPressMocksTrait;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->setup_wordpress_mocks();
+	private $logger;
+	private $service;
+	private $test_dir;
 
-        $this->logger = $this->createMock(LoggerService::class);
-        $this->service = new IntegrityCheckerService($this->logger);
+	protected function setUp(): void {
+		parent::setUp();
+		$this->setup_wordpress_mocks();
 
-        // Ensure test directory exists
-        $this->test_dir = sys_get_temp_dir() . '/wordpress';
-        if (! file_exists($this->test_dir)) {
-            mkdir($this->test_dir, 0777, true);
-        }
+		$this->logger  = $this->createMock( LoggerService::class );
+		$this->service = new IntegrityCheckerService( $this->logger );
 
-        // Mock ABSPATH
-        if (! defined('ABSPATH')) {
-            define('ABSPATH', $this->test_dir . '/');
-        }
-    }
+		// Ensure test directory exists
+		$this->test_dir = sys_get_temp_dir() . '/wordpress';
+		if ( ! file_exists( $this->test_dir ) ) {
+			mkdir( $this->test_dir, 0777, true );
+		}
 
-    protected function tearDown(): void
-    {
-        $this->rrmdir($this->test_dir);
-        $this->teardown_wordpress_mocks();
-        parent::tearDown();
-    }
+		// Mock ABSPATH
+		if ( ! defined( 'ABSPATH' ) ) {
+			define( 'ABSPATH', $this->test_dir . '/' );
+		}
+	}
 
-    private function rrmdir($dir)
-    {
-        if (is_dir($dir)) {
-            $objects = scandir($dir);
-            foreach ($objects as $object) {
-                if ('.' !== $object && '..' !== $object) {
-                    if (is_dir($dir . '/' . $object)) {
-                        $this->rrmdir($dir . '/' . $object);
-                    } else {
-                        unlink($dir . '/' . $object);
-                    }
-                }
-            }
-            rmdir($dir);
-        }
-    }
+	protected function tearDown(): void {
+		$this->rrmdir( $this->test_dir );
+		$this->teardown_wordpress_mocks();
+		parent::tearDown();
+	}
 
-    public function test_verify_core_files_success()
-    {
-        // Create dummy files
-        $sample_content = 'sample content';
-        $index_content  = 'index content';
+	private function rrmdir( $dir ) {
+		if ( is_dir( $dir ) ) {
+			$objects = scandir( $dir );
+			foreach ( $objects as $object ) {
+				if ( '.' !== $object && '..' !== $object ) {
+					if ( is_dir( $dir . '/' . $object ) ) {
+						$this->rrmdir( $dir . '/' . $object );
+					} else {
+						unlink( $dir . '/' . $object );
+					}
+				}
+			}
+			rmdir( $dir );
+		}
+	}
 
-        file_put_contents($this->test_dir . '/wp-config-sample.php', $sample_content);
-        file_put_contents($this->test_dir . '/index.php', $index_content);
+	public function test_verify_core_files_success() {
+		// Create dummy files
+		$sample_content = 'sample content';
+		$index_content  = 'index content';
 
-        $checksums = [
-            'checksums' => [
-                'wp-config-sample.php' => md5($sample_content),
-                'index.php'            => md5($index_content),
-            ],
-        ];
+		file_put_contents( $this->test_dir . '/wp-config-sample.php', $sample_content );
+		file_put_contents( $this->test_dir . '/index.php', $index_content );
 
-        // Mock wp_remote_get via global available in mock file or just assume helper does it.
-        // Since we use WordPressMocksTrait, we need to ensure it supports response mocking.
-        // We'll rely on the global mock variable mechanism used in existing test.
-        global $wp_remote_get_mock;
-        $wp_remote_get_mock = [
-            'response' => ['code' => 200],
-            'body'     => json_encode($checksums),
-        ];
+		$checksums = array(
+			'checksums' => array(
+				'wp-config-sample.php' => md5( $sample_content ),
+				'index.php'            => md5( $index_content ),
+			),
+		);
 
-        $results = $this->service->verify_core_files();
+		// Mock wp_remote_get via global available in mock file or just assume helper does it.
+		// Since we use WordPressMocksTrait, we need to ensure it supports response mocking.
+		// We'll rely on the global mock variable mechanism used in existing test.
+		global $wp_remote_get_mock;
+		$wp_remote_get_mock = array(
+			'response' => array( 'code' => 200 ),
+			'body'     => json_encode( $checksums ),
+		);
 
-        $this->assertIsArray($results);
-        $this->assertCount(2, $results['safe']);
-        $this->assertEmpty($results['modified']);
-    }
+		$results = $this->service->verify_core_files();
 
-    public function test_verify_core_files_mismatch()
-    {
-        $sample_content = 'modified content';
-        file_put_contents($this->test_dir . '/wp-config-sample.php', $sample_content);
+		$this->assertIsArray( $results );
+		$this->assertCount( 2, $results['safe'] );
+		$this->assertEmpty( $results['modified'] );
+	}
 
-        $checksums = [
-            'checksums' => [
-                'wp-config-sample.php' => md5('original'),
-            ],
-        ];
+	public function test_verify_core_files_mismatch() {
+		$sample_content = 'modified content';
+		file_put_contents( $this->test_dir . '/wp-config-sample.php', $sample_content );
 
-        global $wp_remote_get_mock;
-        $wp_remote_get_mock = [
-            'response' => ['code' => 200],
-            'body'     => json_encode($checksums),
-        ];
+		$checksums = array(
+			'checksums' => array(
+				'wp-config-sample.php' => md5( 'original' ),
+			),
+		);
 
-        $results = $this->service->verify_core_files();
+		global $wp_remote_get_mock;
+		$wp_remote_get_mock = array(
+			'response' => array( 'code' => 200 ),
+			'body'     => json_encode( $checksums ),
+		);
 
-        $this->assertContains('wp-config-sample.php', $results['modified']);
-    }
+		$results = $this->service->verify_core_files();
+
+		$this->assertContains( 'wp-config-sample.php', $results['modified'] );
+	}
 }

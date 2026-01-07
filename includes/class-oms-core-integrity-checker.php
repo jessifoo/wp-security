@@ -1,54 +1,40 @@
 <?php
 /**
- * Integrity Checker Service.
+ * Core Integrity Checker.
  *
- * Verifies the integrity of WordPress core files against official checksums.
+ * Verifies WordPress core files against official checksums.
  *
- * @package OMS\Services
+ * @package ObfuscatedMalwareScanner
  */
 
 declare( strict_types=1 );
 
-namespace OMS\Services;
-
-use OMS\Interfaces\IntegrityCheckerInterface;
+// If this file is called directly, abort.
+if ( ! defined( 'ABSPATH' ) ) {
+	die( 'Direct access is not allowed.' );
+}
 
 /**
- * Service IntegrityCheckerService
- *
- * Verifies the integrity of WordPress core files against official checksums.
- *
- * @package OMS\Services
+ * Class OMS_Core_Integrity_Checker
  */
-class IntegrityCheckerService implements IntegrityCheckerInterface {
+class OMS_Core_Integrity_Checker {
 
 	/**
 	 * WordPress API URL for checksums.
-	 *
-	 * @var string
 	 */
-	public const API_URL = 'https://api.wordpress.org/core/checksums/1.0/';
-
-	/**
-	 * Logger instance.
-	 *
-	 * @var LoggerService
-	 */
-	private LoggerService $logger;
+	public const string API_URL = 'https://api.wordpress.org/core/checksums/1.0/';
 
 	/**
 	 * Constructor.
 	 *
-	 * @param LoggerService $logger Logger instance.
+	 * @param OMS_Logger $logger Logger instance.
 	 */
-	public function __construct( LoggerService $logger ) {
-		$this->logger = $logger;
-	}
+	public function __construct( private readonly OMS_Logger $logger ) {}
 
 	/**
 	 * Verify core files against official checksums.
 	 *
-	 * @return array{safe: string[], modified: string[], missing: string[], error?: string} Verification results.
+	 * @return array{safe: string[], modified: string[], missing: string[], error?: string} Verfication results.
 	 */
 	public function verify_core_files(): array {
 		$checksums = $this->fetch_checksums();
@@ -76,11 +62,12 @@ class IntegrityCheckerService implements IntegrityCheckerInterface {
 				continue;
 			}
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_md5_file
 			$local_checksum = md5_file( $full_path );
 			if ( $local_checksum === $checksum ) {
 				$results['safe'][] = $file;
 			} else {
+				// Check if it's a known safe modification (e.g., wp-config-sample.php might be modified by some hosts).
+				// For now, we treat any mismatch as modified.
 				$results['modified'][] = $file;
 			}
 		}
@@ -91,7 +78,7 @@ class IntegrityCheckerService implements IntegrityCheckerInterface {
 	/**
 	 * Fetch checksums from WordPress API.
 	 *
-	 * @return array<string, string>|false Array of checksums or false on failure.
+	 * @return array|false Array of checksums or false on failure.
 	 */
 	private function fetch_checksums(): array|false {
 		global $wp_version;
@@ -104,10 +91,10 @@ class IntegrityCheckerService implements IntegrityCheckerInterface {
 			self::API_URL
 		);
 
-		// phpcs:ignore WordPress.VIP.RestrictedFunctions.wp_remote_get_wp_remote_get
 		$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
 
 		if ( is_wp_error( $response ) ) {
+			// @phpstan-ignore-next-line
 			$this->logger->error( 'Error fetching checksums: ' . $response->get_error_message() );
 			return false;
 		}
@@ -132,8 +119,8 @@ class IntegrityCheckerService implements IntegrityCheckerInterface {
 	/**
 	 * Check if a file is a verified core file.
 	 *
-	 * @param string   $path       Absolute path to file.
-	 * @param string[] $safe_files Array of safe relative paths.
+	 * @param string $path Absolute path to file.
+	 * @param array  $safe_files Array of safe relative paths from verify_core_files().
 	 * @return bool True if file is a verified core file.
 	 */
 	public function is_verified_core_file( string $path, array $safe_files ): bool {

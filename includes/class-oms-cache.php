@@ -1,11 +1,13 @@
 <?php
-declare(strict_types=1);
-
 /**
- * Cache handler for malware scanner
+ * Cache handler for malware scanner.
+ *
+ * Provides caching functionality with TTL support.
  *
  * @package ObfuscatedMalwareScanner
  */
+
+declare( strict_types=1 );
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {

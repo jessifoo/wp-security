@@ -1,12 +1,14 @@
 <?php
-declare(strict_types=1);
-
 /**
  * The admin-specific functionality of the plugin.
+ *
+ * Defines the plugin name, version, and hooks for the admin area.
  *
  * @package    ObfuscatedMalwareScanner
  * @subpackage ObfuscatedMalwareScanner/admin
  */
+
+declare( strict_types=1 );
 
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {

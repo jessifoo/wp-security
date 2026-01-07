@@ -56,10 +56,12 @@ trait WordPressMocksTrait {
 			define( 'OBJECT', 'OBJECT' );
 		}
 
-		// Define global variables for mocks
+		// Define global variables for mocks.
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required for test mocking.
 		global $wp_verify_nonce_mock, $wp_check_filetype_mock, $wpdb;
 
 		if ( ! isset( $wpdb ) ) {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required for test mocking.
 			$wpdb = new wpdb( 'user', 'pass', 'db', 'host' );
 		}
 

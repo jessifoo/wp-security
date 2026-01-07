@@ -7,7 +7,7 @@
  * @package OMS\Providers
  */
 
-declare(strict_types=1);
+declare( strict_types=1 );
 
 namespace OMS\Providers;
 
@@ -18,8 +18,21 @@ use OMS\Services\DatabaseScannerService;
 use OMS\Services\FileScannerService;
 use OMS\Services\LoggerService;
 
+/**
+ * Admin Service Provider class.
+ *
+ * Registers and boots admin-related services.
+ *
+ * @package OMS\Providers
+ */
 class AdminProvider implements ServiceProvider {
 
+	/**
+	 * Register services.
+	 *
+	 * @param Container $container The DI Container.
+	 * @return void
+	 */
 	public function register( Container $container ): void {
 		$container->singleton(
 			AdminService::class,
@@ -33,6 +46,12 @@ class AdminProvider implements ServiceProvider {
 		);
 	}
 
+	/**
+	 * Boot services.
+	 *
+	 * @param Container $container The DI Container.
+	 * @return void
+	 */
 	public function boot( Container $container ): void {
 		if ( ! is_admin() ) {
 			return;
@@ -40,24 +59,17 @@ class AdminProvider implements ServiceProvider {
 
 		$admin = $container->get( AdminService::class );
 
-		// Add Menu
+		// Add admin menu.
 		add_action( 'admin_menu', array( $admin, 'add_admin_menu' ) );
 
-		// Handle Manual Scan (admin-post.php)
+		// Handle manual scan (admin-post.php).
 		add_action(
 			'admin_post_oms_manual_scan',
 			function () use ( $admin ) {
-				// Security check should be inside the service method or here
-				// Verify nonce here for early exit?
-				// Service handles logic.
-				// check_admin_referer('oms_manual_scan');
-				// We'll let the service handle the execution logic, but nonce checks usually happen early.
-				// For this refactor, let's assume the service handles the full flow or we wrap it.
-
 				check_admin_referer( 'oms_manual_scan' );
 
 				if ( $admin->execute_manual_scan() ) {
-					wp_redirect( admin_url( 'options-general.php?page=obfuscated-malware-scanner&scan=complete' ) );
+					wp_safe_redirect( admin_url( 'options-general.php?page=obfuscated-malware-scanner&scan=complete' ) );
 					exit;
 				}
 			}

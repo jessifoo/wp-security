@@ -203,6 +203,7 @@ trait TestHelperTrait {
 					}
 				}
 			} catch ( \Exception $e ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Test helper debug output.
 				error_log(
 					sprintf(
 						'Error while removing %s: %s',
@@ -229,6 +230,7 @@ trait TestHelperTrait {
 			try {
 				$this->removeDirectory( $this->tempDir );
 			} catch ( \Exception $e ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Test helper debug output.
 				error_log(
 					sprintf(
 						'Failed to clean up test environment: %s',
