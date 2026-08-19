@@ -153,7 +153,7 @@ class OMS_Database_Cleaner {
 
 			return array(
 				'success'  => false,
-				'message'  => $e->getMessage(),
+				'message'  => 'Database cleanup failed. Check logs for details.',
 				'rollback' => true,
 			);
 		}
@@ -212,9 +212,10 @@ class OMS_Database_Cleaner {
 		);
 
 		if ( false === $deleted ) {
+			$this->logger->error( sprintf( 'Database delete failed for table %s: %s', esc_html( $table_name ), esc_html( $wpdb->last_error ) ) );
 			return array(
 				'success' => false,
-				'message' => sprintf( 'Database delete failed: %s', $wpdb->last_error ),
+				'message' => 'Database delete failed. Check logs for details.',
 			);
 		}
 
@@ -448,6 +449,13 @@ class OMS_Database_Cleaner {
 	 * @return array Result with restore count.
 	 */
 	public function restore_from_backup( $backup_id ) {
+		if ( ! is_string( $backup_id ) || ! preg_match( '/^cleanup_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}_[a-zA-Z0-9]{6}$/', $backup_id ) ) {
+			return array(
+				'success' => false,
+				'message' => 'Invalid backup ID format',
+			);
+		}
+
 		$backups = get_transient( 'oms_cleanup_backup_' . $backup_id );
 
 		if ( false === $backups || ! is_array( $backups ) ) {
@@ -517,19 +525,13 @@ class OMS_Database_Cleaner {
 	private function is_allowed_table( $table_name ) {
 		global $wpdb;
 
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		if ( 0 === strpos( $table_name, $wpdb->prefix ) ) {
+			$table_base = substr( $table_name, strlen( $wpdb->prefix ) );
+		} else {
+			$table_base = $table_name;
+		}
 
-		/**
-		 * Filter the list of tables allowed for cleanup operations.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array  $allowed_tables List of allowed table base names.
-		 * @param string $table_name     The full table name being checked.
-		 */
-		$allowed = apply_filters( 'oms_allowed_cleanup_tables', $this->allowed_tables, $table_name );
-
-		return in_array( $table_base, $allowed, true );
+		return in_array( $table_base, $this->allowed_tables, true );
 	}
 
 	/**
@@ -541,7 +543,11 @@ class OMS_Database_Cleaner {
 	private function get_id_column( $table_name ) {
 		global $wpdb;
 
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		if ( 0 === strpos( $table_name, $wpdb->prefix ) ) {
+			$table_base = substr( $table_name, strlen( $wpdb->prefix ) );
+		} else {
+			$table_base = $table_name;
+		}
 
 		$id_columns = array(
 			'posts'       => 'ID',
@@ -555,13 +561,6 @@ class OMS_Database_Cleaner {
 			'links'       => 'link_id',
 		);
 
-		/**
-		 * Filter the mapping of table names to their ID columns.
-		 *
-		 * @param array  $id_columns The array of table => id_column mappings.
-		 * @param string $table_name The full name of the table being processed.
-		 */
-		$id_columns = apply_filters( 'oms_table_id_columns', $id_columns, $table_name );
 		return isset( $id_columns[ $table_base ] ) ? $id_columns[ $table_base ] : false;
 	}
 }
