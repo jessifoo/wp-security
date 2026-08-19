@@ -13,7 +13,25 @@ class wpdb {
 	public function __construct( $user, $password, $name, $host ) {}
 
 	public function prepare( $query, ...$args ) {
-		$this->prepared_query = vsprintf( str_replace( '%s', "'%s'", $query ), $args );
+		$placeholders         = array( '%s', '%d', '%f', '%i' );
+		$index                = 0;
+		$result               = preg_replace_callback(
+			'/%[sdfi]/',
+			function ( $match ) use ( $args, &$index ) {
+				$val = isset( $args[ $index ] ) ? $args[ $index ] : '';
+				++$index;
+				if ( '%d' === $match[0] ) {
+					return (int) $val;
+				} elseif ( '%f' === $match[0] ) {
+					return (float) $val;
+				} elseif ( '%i' === $match[0] ) {
+					return '`' . str_replace( '`', '``', $val ) . '`';
+				}
+				return "'" . addslashes( (string) $val ) . "'";
+			},
+			$query
+		);
+		$this->prepared_query = $result;
 		return $this->prepared_query;
 	}
 
