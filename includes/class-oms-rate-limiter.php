@@ -109,7 +109,13 @@ class OMS_Rate_Limiter {
 		}
 
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- OMS_ is the plugin prefix.
-		return OMS_RATE_LIMIT_ENABLED;
+		$enabled = OMS_RATE_LIMIT_ENABLED;
+
+		if ( ! $enabled ) {
+			$this->logger->warning( 'OMS rate limiting is disabled via OMS_RATE_LIMIT_ENABLED constant' );
+		}
+
+		return $enabled;
 	}
 
 	/**

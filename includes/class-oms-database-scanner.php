@@ -82,7 +82,11 @@ class OMS_Database_Scanner {
 
 		// Check against whitelist for table names (without prefix).
 		global $wpdb;
-		$table_base = str_replace( $wpdb->prefix, '', $identifier );
+		if ( 0 === strpos( $identifier, $wpdb->prefix ) ) {
+			$table_base = substr( $identifier, strlen( $wpdb->prefix ) );
+		} else {
+			$table_base = $identifier;
+		}
 		if ( in_array( $table_base, $this->critical_tables, true ) ) {
 			return $identifier;
 		}
@@ -153,7 +157,7 @@ class OMS_Database_Scanner {
 			return array(
 				'success' => false,
 				'issues'  => array(),
-				'message' => $e->getMessage(),
+				'message' => 'Database scan failed. Check logs for details.',
 			);
 		}
 	}
@@ -252,12 +256,12 @@ class OMS_Database_Scanner {
 			);
 
 			if ( ! is_array( $actual_columns ) ) {
-				$this->logger->error( sprintf( 'Query failed for table %s: %s', $table_name, $wpdb->last_error ) );
+				$this->logger->error( sprintf( 'Query failed for table %s: %s', esc_html( $table_name ), esc_html( $wpdb->last_error ) ) );
 				$issues[] = array(
 					'type'     => 'check_error',
 					'table'    => $table_name,
 					'severity' => 'HIGH',
-					'message'  => sprintf( 'Database query failed while checking structure of %s', $table_name ),
+					'message'  => sprintf( 'Database query failed while checking structure of %s', esc_html( $table_name ) ),
 				);
 				return $issues;
 			}
@@ -482,6 +486,10 @@ class OMS_Database_Scanner {
 					),
 					ARRAY_A
 				);
+
+				if ( empty( $rows ) ) {
+					break;
+				}
 
 				foreach ( $rows as $row ) {
 					$content = isset( $row[ $validated_column ] ) ? $row[ $validated_column ] : '';
@@ -715,7 +723,11 @@ class OMS_Database_Scanner {
 
 		// Extract table name without prefix.
 		global $wpdb;
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		if ( 0 === strpos( $table_name, $wpdb->prefix ) ) {
+			$table_base = substr( $table_name, strlen( $wpdb->prefix ) );
+		} else {
+			$table_base = $table_name;
+		}
 
 		$structure = isset( $structures[ $table_base ] ) ? $structures[ $table_base ] : array();
 
@@ -747,7 +759,11 @@ class OMS_Database_Scanner {
 
 		// Basic expected indexes for common tables.
 		global $wpdb;
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		if ( 0 === strpos( $table_name, $wpdb->prefix ) ) {
+			$table_base = substr( $table_name, strlen( $wpdb->prefix ) );
+		} else {
+			$table_base = $table_name;
+		}
 
 		$default_indexes = array(
 			'options' => array( 'PRIMARY', 'option_name' ),
@@ -822,7 +838,11 @@ class OMS_Database_Scanner {
 		global $wpdb;
 
 		// Strip prefix to identify table type.
-		$table_base = str_replace( $wpdb->prefix, '', $table_name );
+		if ( 0 === strpos( $table_name, $wpdb->prefix ) ) {
+			$table_base = substr( $table_name, strlen( $wpdb->prefix ) );
+		} else {
+			$table_base = $table_name;
+		}
 
 		// Known WordPress core table mappings.
 		switch ( $table_base ) {
